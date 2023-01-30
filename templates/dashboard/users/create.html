@@ -1,0 +1,10 @@
+{% extends 'dashboard/index.html' %}
+{% load bootstrap5 %}
+
+{% block dashboard_content %}
+    <form role="form" method="post" action="{% url 'dashboard:users_add' %}">
+        {% csrf_token %}
+        {% bootstrap_form form form_group_class='row mb-3' label_class='col-sm-2 col-form-label' field_class='col-sm-10' %}
+        {% buttons submit='Add user' type="submit" %}{% endbuttons %}
+    </form>
+{% endblock dashboard_content %}

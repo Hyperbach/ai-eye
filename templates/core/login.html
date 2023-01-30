@@ -1,0 +1,25 @@
+{% extends 'app/base.html' %}
+{% load bootstrap5 %}
+
+{% block title %}Ai-eye{% endblock %}
+
+{% block content %}
+    <h3>{% if user.is_authenticated %}
+        Hello, {{ user.email }}
+        {% else %}
+        Please login
+        {% endif %}
+    </h3>
+
+    {% if user.is_authenticated %}
+        <b>Already logged in</b>
+    {% else %}
+{#    {% bootstrap_form_errors form %}#}
+    <form role="form" method="post">
+        {% csrf_token %}
+        {% bootstrap_form form form_group_class='row mb-3' label_class='col-sm-2 col-form-label' field_class='col-sm-10' %}
+        {% buttons submit='Login' type="submit" %}{% endbuttons %}
+    </form>
+    {% endif %}
+
+{% endblock %}
