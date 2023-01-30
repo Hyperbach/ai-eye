@@ -162,4 +162,4 @@ fabric.properties
 
 dev.db
 .env
-db.sqlite3
+.mypy_cache
