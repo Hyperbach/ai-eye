@@ -1,3 +1,5 @@
+from typing import List
+
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser, Group
 from django.db import models
@@ -50,9 +52,9 @@ class User(AbstractUser):
     email = models.EmailField(_("email address"), unique=True)
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS: List[str] = []
 
-    objects = CustomUserManager()
+    objects = CustomUserManager()  # type: ignore
     aieye_users_objects = AiEyeUsersManager()
 
     def __str__(self):
