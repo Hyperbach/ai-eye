@@ -1,14 +1,23 @@
 from django.contrib import admin
-from core.models import User
 from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
 
+from core.models import User
+
 
 @admin.register(User)
-class UserAdmin(UserAdmin):
+class CustomUserAdmin(UserAdmin):
     fieldsets = (
         (None, {"fields": ("password", "email")}),
-        (_("Personal info"), {"fields": ("first_name", "last_name",)}),
+        (
+            _("Personal info"),
+            {
+                "fields": (
+                    "first_name",
+                    "last_name",
+                )
+            },
+        ),
         (
             _("Permissions"),
             {
@@ -28,11 +37,10 @@ class UserAdmin(UserAdmin):
             None,
             {
                 "classes": ("wide",),
-                "fields": ("password1", "password2", 'email'),
+                "fields": ("password1", "password2", "email"),
             },
         ),
     )
     list_display = ("email", "first_name", "last_name", "is_staff")
     search_fields = ("first_name", "last_name", "email")
-    ordering = ('email',)
-
+    ordering = ("email",)

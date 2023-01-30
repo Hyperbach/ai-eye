@@ -7,7 +7,6 @@ UserModel = get_user_model()
 
 
 class LoginForm(AuthenticationForm):
-
     def clean(self):
         cleaned_data = super().clean()
 
@@ -22,7 +21,6 @@ class LoginForm(AuthenticationForm):
 
 
 class CreateUserForm(ModelForm):
-
     class Meta:
         model = UserModel
-        fields = ['email', 'password']
+        fields = ["email", "password"]

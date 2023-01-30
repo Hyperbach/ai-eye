@@ -1,0 +1,47 @@
+repos:
+  - repo: 'https://github.com/pre-commit/pre-commit-hooks'
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: debug-statements
+      - id: check-added-large-files
+      - id: requirements-txt-fixer
+      - id: end-of-file-fixer
+  - repo: local
+    hooks:
+      - id: django-check
+        name: Check django project for potential problems
+        entry: sh -c 'python manage.py check'
+        types:
+          - python
+        pass_filenames: false
+        language: system
+      - id: django-check-migrations
+        name: Check django project for missing migrations.
+        entry: sh -c 'python manage.py makemigrations --check --dry-run'
+        files: models.py
+        types:
+          - python
+        pass_filenames: false
+        language: system
+  - repo: 'https://github.com/pycqa/flake8'
+    rev: 3.9.0
+    hooks:
+      - id: flake8
+  - repo: 'https://github.com/pycqa/isort'
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        exclude: "[a-zA-Z]*/(migrations)/(.)*"
+  - repo: 'https://github.com/python/black'
+    rev: 22.12.0
+    hooks:
+      - id: black
+        exclude: "[a-zA-Z]*/(migrations)/(.)*"
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.4
+    hooks:
+      - id: bandit
+        args: ['-iii', '-ll']

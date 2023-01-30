@@ -1,23 +1,20 @@
-from django.contrib.auth import login, get_user_model
+from django.contrib.auth import get_user_model, login
 from django.http import HttpResponseRedirect
-from django.shortcuts import render, redirect
+from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
-from django.views import generic, View
+from django.views import View, generic
 
-from core.enums import UserGroupType
 from core.forms import UserCreateForm
 from core.mixins import AiEyeAdminMixin
-from core.models import User
-from dashboard.forms import LoginForm, CreateUserForm
-from django.contrib.auth.models import Group
+from dashboard.forms import LoginForm
 
 UserModel = get_user_model()
 
 
 class UserCreateView(AiEyeAdminMixin, generic.CreateView):
-    template_name = 'dashboard/users/create.html'
+    template_name = "dashboard/users/create.html"
     form_class = UserCreateForm
-    success_url = reverse_lazy('dashboard:users')
+    success_url = reverse_lazy("dashboard:users")
 
     def form_valid(self, form):
         """If the form is valid, save the associated model."""
@@ -30,7 +27,7 @@ class UserCreateView(AiEyeAdminMixin, generic.CreateView):
 
 class UserListView(AiEyeAdminMixin, generic.ListView):
     model = UserModel
-    template_name = 'dashboard/index.html'
+    template_name = "dashboard/index.html"
 
     def get_queryset(self):
         return self.model.aieye_users_objects.all()
@@ -38,19 +35,19 @@ class UserListView(AiEyeAdminMixin, generic.ListView):
 
 class LoginFormView(View):
     form_class = LoginForm
-    template_name = 'dashboard/login.html'
+    template_name = "dashboard/login.html"
 
     def get(self, request):
         if request.user.is_authenticated:
-            return redirect('index')
+            return redirect("index")
 
         form = self.form_class(None)
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_name, {"form": form})
 
     def post(self, request):
         form = self.form_class(request, data=request.POST)
         if form.is_valid():
             login(request, form.get_user())
-            return redirect('index')
+            return redirect("index")
 
-        return render(request, self.template_name, {'form': form})
+        return render(request, self.template_name, {"form": form})
