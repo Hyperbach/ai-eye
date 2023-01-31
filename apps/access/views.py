@@ -2,18 +2,18 @@ from django.contrib.auth import login
 from django.shortcuts import redirect, render
 from django.views import View
 
-from dashboard.forms import LoginForm
+from .forms import LoginForm
 
 
 def index_view(request):
     if not request.user.is_authenticated:
-        return redirect("core:login")
+        return redirect("access:login")
     return redirect("dashboard:index")
 
 
 class LoginFormView(View):
     form_class = LoginForm
-    template_name = "core/login.html"
+    template_name = "access/login.html"
 
     def get(self, request):
         if request.user.is_authenticated:

@@ -5,10 +5,9 @@
 
 {% block content %}
     {% block personal %}
-
          <div class="btn-group" role="group" aria-label="Basic example">
              <h4>Howdy, {{ user.email }}</h4>
-             <span class="align-middle"><a href="{% url 'core:logout' %}">logout</a></span>
+             <span class="align-middle"><a href="{% url 'access:logout' %}">logout</a></span>
          </div>
     {% endblock personal %}
 
@@ -53,4 +52,5 @@
             <a href="{% url 'dashboard:users_add' %}">Create user</a>
         </div>
     {% endblock dashboard_content %}
+
 {% endblock %}

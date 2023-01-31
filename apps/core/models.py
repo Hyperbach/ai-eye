@@ -5,7 +5,7 @@ from django.contrib.auth.models import AbstractUser, Group
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from core.enums import UserGroupType
+from .enums import UserGroupType
 
 
 class CustomUserManager(BaseUserManager):
@@ -54,7 +54,7 @@ class User(AbstractUser):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS: List[str] = []
 
-    objects = CustomUserManager()  # type: ignore
+    objects = CustomUserManager()  # type: ignore[assignment]
     aieye_users_objects = AiEyeUsersManager()
 
     def __str__(self):
