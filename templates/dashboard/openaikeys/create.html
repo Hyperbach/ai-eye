@@ -2,17 +2,17 @@
 {% load bootstrap5 %}
 
 {% block dashboard_header %}
-<h2 class="text-left mt-5">Users Management - add user</h2>
+<h2 class="text-left mt-5">OpenAI Keys Management - add keys</h2>
 {% endblock dashboard_header %}
 
 {% block dashboard_content %}
-    <form role="form" method="post" action="{% url 'dashboard:users_create' %}">
+    <form role="form" method="post" action="{% url 'dashboard:openaikeys_create' %}">
         {% csrf_token %}
         {% bootstrap_form form form_group_class='row mb-3' label_class='col-sm-2 col-form-label' field_class='col-sm-10' %}
 
         <div class="container d-flex">
             <input type="submit" class="btn btn-primary" value="Submit" style="margin-right: 30px; margin-top: 30px;">
-            <input type="submit" class="btn btn-danger" style="margin-top: 30px;" onclick="window.location='{% url 'dashboard:users' %}'; return false;" value="Cancel">
+            <input type="submit" class="btn btn-danger" style="margin-top: 30px;" onclick="window.location='{% url 'dashboard:openaikeys' %}'; return false;" value="Cancel">
         </div>
     </form>
 {% endblock dashboard_content %}

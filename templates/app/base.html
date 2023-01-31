@@ -15,6 +15,7 @@
                 {% if user.is_authenticated %}
                 <a href="{% url 'dashboard:users' %}" class="nav-item nav-link active">Users Management</a>
                 <a href="#" class="nav-item nav-link ">Cache/Logs Management</a>
+                <a href="{% url 'dashboard:openaikeys' %}" class="nav-item nav-link ">OpenAI Keys Management</a>
                 {% endif %}
 <!--                <a href="#" class="nav-item nav-link active">Home</a>-->
 <!--                <a href="#" class="nav-item nav-link">Services</a>-->
@@ -24,7 +25,7 @@
             <div class="navbar-nav ms-auto">
 <!--                <a href="#" class="nav-item nav-link">Register</a>-->
                 {% if user.is_authenticated %}
-                <span class="navbar-text text-warning">Howdy, {{ user.first_name|default:user.email }}!</span>
+                <span class="navbar-text text-warning">Howdy {{ user.first_name|default:user.email }}!</span>
                 <a href="{% url 'access:logout' %}" class="nav-item nav-link">Logout</a>
                 {% else %}
                 <a href="{% url 'access:login' %}" class="nav-item nav-link">Login</a>
