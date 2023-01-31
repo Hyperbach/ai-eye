@@ -9,7 +9,7 @@ repos:
       - id: check-added-large-files
       - id: requirements-txt-fixer
       - id: end-of-file-fixer
-        exclude: "static/js/.+.js"
+        exclude: ^(static/js/.+.js)|(.+\.html)$
   - repo: local
     hooks:
       - id: django-check
