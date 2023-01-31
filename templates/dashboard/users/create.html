@@ -1,9 +1,9 @@
 {% extends 'dashboard/index.html' %}
 {% load bootstrap5 %}
 
-{% block header %}
+{% block dashboard_header %}
 <h2 class="text-left mt-5">Users Management - add user</h2>
-{% endblock header %}
+{% endblock dashboard_header %}
 
 {% block dashboard_content %}
     <form role="form" method="post" action="{% url 'dashboard:users_create' %}">
