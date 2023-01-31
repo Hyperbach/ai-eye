@@ -3,12 +3,105 @@
 {% load bootstrap5 %}
 
 {% block bootstrap5_content %}
-    <div class="container">
-        <h1>{% block title %}(no title){% endblock %}</h1>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a href="{% url 'dashboard:index' %}" class="navbar-brand">AI-Eye Dashboard</a>
+        <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-        {% autoescape off %}{% bootstrap_messages %}{% endautoescape %}
-
-        {% block content %}(no content){% endblock %}
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <div class="navbar-nav">
+                {% if user.is_authenticated %}
+                <a href="{% url 'dashboard:users' %}" class="nav-item nav-link active">Users Management</a>
+                <a href="#" class="nav-item nav-link ">Cache/Logs Management</a>
+                {% endif %}
+<!--                <a href="#" class="nav-item nav-link active">Home</a>-->
+<!--                <a href="#" class="nav-item nav-link">Services</a>-->
+<!--                <a href="#" class="nav-item nav-link">About</a>-->
+<!--                <a href="#" class="nav-item nav-link">Contact</a>-->
+            </div>
+            <div class="navbar-nav ms-auto">
+<!--                <a href="#" class="nav-item nav-link">Register</a>-->
+                {% if user.is_authenticated %}
+                <span class="navbar-text text-warning">Howdy, {{ user.first_name|default:user.email }}!</span>
+                <a href="{% url 'access:logout' %}" class="nav-item nav-link">Logout</a>
+                {% else %}
+                <a href="{% url 'access:login' %}" class="nav-item nav-link">Login</a>
+                {% endif %}
+            </div>
+        </div>
     </div>
+</nav>
+<div class="container">
+    {% autoescape off %}{% bootstrap_messages %}{% endautoescape %}
 
+<!--    <div class="p-5 my-4 bg-light rounded-3">-->
+<!--        <h1>Learn to Create Websites</h1>-->
+<!--        <p class="lead">In today's world internet is the most popular way of connecting with the people. At <a-->
+<!--                href="https://www.tutorialrepublic.com" class="text-success" target="_blank">tutorialrepublic.com</a>-->
+<!--            you will learn the essential web development technologies along with real life practice examples, so that-->
+<!--            you can create your own website to connect with the people around the world.</p>-->
+<!--        <p><a href="https://www.tutorialrepublic.com" target="_blank" class="btn btn-success btn-lg">Get started-->
+<!--            today</a></p>-->
+<!--    </div>-->
+<!--    <div class="row">-->
+<!--        <div class="col-md-4">-->
+<!--            <h2>HTML</h2>-->
+<!--            <p>HTML is the standard markup language for describing the structure of the web pages. Our HTML tutorials-->
+<!--                will help you to understand the basics of latest HTML5 language, so that you can create your own web-->
+<!--                pages or website.</p>-->
+<!--            <p><a href="https://www.tutorialrepublic.com/html-tutorial/" target="_blank" class="btn btn-success">Learn-->
+<!--                More &raquo;</a></p>-->
+<!--        </div>-->
+<!--        <div class="col-md-4">-->
+<!--            <h2>CSS</h2>-->
+<!--            <p>CSS is used for describing the presentation of web pages. CSS can save a lot of time and effort. Our CSS-->
+<!--                tutorials will help you to learn the essentials of latest CSS3, so that you can control the style and-->
+<!--                layout of your website.</p>-->
+<!--            <p><a href="https://www.tutorialrepublic.com/css-tutorial/" target="_blank" class="btn btn-success">Learn-->
+<!--                More &raquo;</a></p>-->
+<!--        </div>-->
+<!--        <div class="col-md-4">-->
+<!--            <h2>Bootstrap</h2>-->
+<!--            <p>Bootstrap is a powerful front-end framework for faster and easier web development. Our Bootstrap-->
+<!--                tutorials will help you to learn all the features of latest Bootstrap 4 framework so that you can easily-->
+<!--                create responsive websites.</p>-->
+<!--            <p><a href="https://www.tutorialrepublic.com/twitter-bootstrap-tutorial/" target="_blank"-->
+<!--                  class="btn btn-success">Learn More &raquo;</a></p>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--    <hr>-->
+</div>
+
+
+<div class="container">
+    {% autoescape off %}{% bootstrap_messages %}{% endautoescape %}
+
+    {% block content %}{% endblock %}
+
+    {% block footer %}
+    <footer>
+        <div class="row">
+            <div class="col-md-6">
+                <p>Copyright &copy; <span id="copyright-year">{% now 'Y' %}</span> Hyperbach</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <a href="#" class="text-dark">Terms of Use</a>
+                <span class="text-muted mx-2">|</span>
+                <a href="#" class="text-dark">Privacy Policy</a>
+            </div>
+        </div>
+    </footer>
+    {% endblock footer %}
+</div>
+{% endblock %}
+
+{% block bootstrap5_extra_script %}
+<script type="text/javascript">
+$(function(){
+    // ...
+    //$("#copyright-year").text(new Date().getFullYear());
+});
+</script>
 {% endblock %}
