@@ -1,21 +1,45 @@
 from typing import List
 
-from django.contrib.auth.base_user import BaseUserManager
-from django.contrib.auth.models import AbstractUser, Group
+from django.contrib.auth import get_user_model
+from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+from django.contrib.auth.models import Group, PermissionsMixin
+from django.core.validators import MaxLengthValidator, MinLengthValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
+import rest_framework.authtoken.models
 
 from .enums import UserGroupType
 
 
-class CustomUserManager(BaseUserManager):
-    use_in_migrations = True
+class TimestampMixin(models.Model):
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        abstract = True
+
+
+class IsActiveMixin(models.Model):
+    is_active = models.BooleanField(
+        _("active"),
+        default=True,
+        help_text=_(
+            "Designates whether this object should be treated as active. "
+            "Unselect this instead of deleting objects."
+        ),
+    )
+
+    class Meta:
+        abstract = True
+
+
+class CustomUserManager(BaseUserManager):
     def _create_user(self, email, password, **extra_fields):
         if not email:
             raise ValueError("Users require an email field")
         email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
+        user: User = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -43,18 +67,26 @@ class AiEyeUsersManager(models.Manager):
             super()
             .get_queryset()
             .filter(groups__name=UserGroupType.AIEYE_USERS)
-            .order_by("-date_joined")
+            .order_by("-date_created")
         )
 
 
-class User(AbstractUser):
-    username = None
+class User(AbstractBaseUser, PermissionsMixin, TimestampMixin, IsActiveMixin):  # type: ignore[misc]
+
+    # username = None
     email = models.EmailField(_("email address"), unique=True)
+    is_staff = models.BooleanField(
+        _("staff status"),
+        default=False,
+        help_text=_("Designates whether the user can log into this admin site."),
+    )
+    first_name = models.CharField(_("first name"), max_length=150, blank=True)
+    last_name = models.CharField(_("last name"), max_length=150, blank=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS: List[str] = []
 
-    objects = CustomUserManager()  # type: ignore[assignment]
+    objects = CustomUserManager()
     aieye_users_objects = AiEyeUsersManager()
 
     def __str__(self):
@@ -80,13 +112,37 @@ class User(AbstractUser):
         self.groups.add(group)
 
 
-class OpenAIKey(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="openaikeys")
+UserModel = get_user_model()
+
+
+class OpenAIKey(TimestampMixin, IsActiveMixin):
+    # an owner (AIEYE_ADMIN user), who issued this OpenAIKey. One owner can issue several OpenAIKeys
+    owner = models.ForeignKey(UserModel, on_delete=models.CASCADE)
     key = models.CharField(max_length=255, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    users = models.ManyToManyField(
+        UserModel, related_name="openaikeys", through="PublicToken"
+    )
+
+    def __str__(self):
+        return self.key
+
+
+class PublicToken(rest_framework.authtoken.models.Token, TimestampMixin, IsActiveMixin):
+    user = models.ForeignKey(UserModel, on_delete=models.CASCADE)
+    openaikey = models.ForeignKey(OpenAIKey, on_delete=models.CASCADE)
+    key = models.CharField(
+        _("Key"),
+        max_length=40,
+        db_index=True,
+        unique=True,
+        validators=[MinLengthValidator(40), MaxLengthValidator(40)],
+    )
+    created = None
 
     def __str__(self):
         return self.key
 
     class Meta:
-        db_table = "openai_key"
+        unique_together = (("user", "openaikey"),)
+        verbose_name = _("Public token")
+        verbose_name_plural = _("Public tokens")

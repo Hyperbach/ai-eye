@@ -2,9 +2,10 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
 
-from .models import OpenAIKey, User
+from .models import OpenAIKey, PublicToken, User
 
 admin.site.register(OpenAIKey)
+admin.site.register(PublicToken)
 
 
 @admin.register(User)
@@ -32,7 +33,7 @@ class CustomUserAdmin(UserAdmin):
                 ),
             },
         ),
-        (_("Important dates"), {"fields": ("last_login", "date_joined")}),
+        (_("Important dates"), {"fields": ("last_login",)}),
     )
     add_fieldsets = (
         (

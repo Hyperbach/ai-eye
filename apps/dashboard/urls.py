@@ -14,13 +14,29 @@ urlpatterns = [
         "openaikeys/add", views.OpenAIKeysCreateView.as_view(), name="openaikeys_create"
     ),
     path(
-        "openaikeys/<int:pk>/update",
+        "openaikeys/<int:pk>/update/",
         views.OpenAIKeysUpdateView.as_view(),
         name="openaikeys_update",
     ),
     path(
-        "openaikeys/<int:pk>/delete",
+        "openaikeys/<int:pk>/delete/",
         views.OpenAIKeysDeleteView.as_view(),
         name="openaikeys_delete",
+    ),
+    path("publictokens", views.PublicTokensListView.as_view(), name="publictokens"),
+    path(
+        "publictokens/add",
+        views.PublicTokensCreateView.as_view(),
+        name="publictokens_create",
+    ),
+    path(
+        "publictokens/<int:pk>/update/",
+        views.PublicTokensUpdateView.as_view(),
+        name="publictokens_update",
+    ),
+    path(
+        "publictokens/<int:pk>/delete/",
+        views.PublicTokensDeleteView.as_view(),
+        name="publictokens_delete",
     ),
 ]

@@ -2,7 +2,7 @@
 {% load bootstrap5 %}
 
 {% block dashboard_header %}
-    <h2 class="text-left mt-5">OpenAI Keys Management</h2>
+    <h2 class="text-left mt-5">Public Tokens Management</h2>
 {% endblock dashboard_header %}
 
 {% block dashboard_content %}
@@ -13,6 +13,8 @@
                 <tr>
                     <th scope="col">Id</th>
                     <th scope="col">Key</th>
+                    <th scope="col">User</th>
+                    <th scope="col">OpenAIKey</th>
                     <th scope="col">Date created</th>
                     <th scope="col">Date updated</th>
                     <th scope="col">Is active</th>
@@ -26,11 +28,17 @@
                         <tr>
                             <td>{{ obj.pk }}</td>
                             <td>{{ obj.key }}</td>
+                            <td>{{ obj.user }}</td>
+                            <td>{{ obj.openaikey }}</td>
                             <td>{{ obj.date_created }}</td>
                             <td>{{ obj.date_updated }}</td>
                             <td>{{ obj.is_active }}</td>
-                            <td><a href="{% url 'dashboard:openaikeys_update' obj.pk %}">Update</a></td>
-                            <td><a href="{% url 'dashboard:openaikeys_delete' obj.pk %}">Delete</a></td>
+                            <td>
+                                <a href="{% url 'dashboard:publictokens_update' obj.pk %}">Update</a>
+                            </td>
+                            <td>
+                                <a href="{% url 'dashboard:publictokens_delete' obj.pk %}">Delete</a>
+                            </td>
                         </tr>
                     {% endfor %}
                 {% endif %}
@@ -38,7 +46,7 @@
             </table>
 
             <div class="d-flex ">
-                <a href="{% url 'dashboard:openaikeys_create' %}" class="d-block btn btn-primary  my-2">Add New</a>
+                <a href="{% url 'dashboard:publictokens_create' %}" class="d-block btn btn-primary  my-2">Add New</a>
             </div>
         </div>
     </div>

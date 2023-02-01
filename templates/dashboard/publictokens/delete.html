@@ -1,0 +1,20 @@
+{% extends 'dashboard/index.html' %}
+{% load bootstrap5 %}
+
+{% block dashboard_header %}
+    <h2 class="text-left mt-5">Public Tokens Management - delete token</h2>
+{% endblock dashboard_header %}
+
+{% block dashboard_content %}
+    {% url 'dashboard:publictokens' as publictokens_list %}
+
+    <p class="h5">Are you sure you want to delete the Public Token: {{ publictoken.key }}</p>
+    <form action="" method="POST">
+        {% csrf_token %}
+        <div class="container d-flex">
+            <input type="submit" class="btn btn-primary" value="Confirm" style="margin-right: 30px; margin-top: 30px;">
+            <input type="submit" class="btn btn-danger" style="margin-top: 30px;"
+                   onclick="window.location='{{ publictokens_list }}'; return false;" value="Cancel">
+        </div>
+    </form>
+{% endblock dashboard_content %}

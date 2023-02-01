@@ -27,19 +27,21 @@ repos:
           - python
         pass_filenames: false
         language: system
-  - repo: 'https://github.com/pycqa/flake8'
-    rev: 6.0.0
-    hooks:
-      - id: flake8
-  - repo: 'https://github.com/pycqa/isort'
-    rev: 5.12.0
-    hooks:
-      - id: isort
-        exclude: "[a-zA-Z]*/(migrations)/(.)*"
   - repo: 'https://github.com/python/black'
     rev: 22.12.0
     hooks:
       - id: black
+        exclude: "[a-zA-Z]*/(migrations)/(.)*"
+  - repo: 'https://github.com/pycqa/flake8'
+    rev: 6.0.0
+    hooks:
+      - id: flake8
+        exclude: "[a-zA-Z]*/(migrations)/(.)*"
+  - repo: 'https://github.com/pycqa/isort'
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        args: ["--profile", "black"]
         exclude: "[a-zA-Z]*/(migrations)/(.)*"
   - repo: https://github.com/pycqa/bandit
     rev: 1.7.4
@@ -50,12 +52,14 @@ repos:
     rev: 'v0.991'
     hooks:
       - id: mypy
+        args: ['--config-file', 'mypy.ini']
         exclude: "[a-zA-Z]*/(migrations)/(.)*"
         additional_dependencies: [
           # mypy dependencies
-          djangorestframework-stubs,
-          django-stubs,
-          django-bootstrap-v5,
-          django-environ,
+          'django-stubs',
+          'djangorestframework-stubs',
+          'django-bootstrap-v5',
+          'django-environ',
+          'djangorestframework'
           # runtime dependencies
         ]
