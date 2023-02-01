@@ -5,12 +5,6 @@ from django.views import View
 from .forms import LoginForm
 
 
-def index_view(request):
-    if not request.user.is_authenticated:
-        return redirect("access:login")
-    return redirect("dashboard:index")
-
-
 class LoginFormView(View):
     form_class = LoginForm
     template_name = "access/login.html"
