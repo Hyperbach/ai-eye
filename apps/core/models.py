@@ -13,8 +13,8 @@ from .enums import UserGroupType
 
 
 class TimestampMixin(models.Model):
-    date_created = models.DateTimeField(auto_now_add=True)
-    date_updated = models.DateTimeField(auto_now=True)
+    date_created = models.DateTimeField(_("date created"), auto_now_add=True)
+    date_updated = models.DateTimeField(_("date updated"), auto_now=True)
 
     class Meta:
         abstract = True
@@ -63,17 +63,11 @@ class CustomUserManager(BaseUserManager):
 
 class AiEyeUsersManager(models.Manager):
     def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .filter(groups__name=UserGroupType.AIEYE_USERS)
-            .order_by("-date_created")
-        )
+        return super().get_queryset().filter(groups__name=UserGroupType.AIEYE_USERS)
 
 
 class User(AbstractBaseUser, PermissionsMixin, TimestampMixin, IsActiveMixin):  # type: ignore[misc]
 
-    # username = None
     email = models.EmailField(_("email address"), unique=True)
     is_staff = models.BooleanField(
         _("staff status"),
@@ -117,14 +111,24 @@ UserModel = get_user_model()
 
 class OpenAIKey(TimestampMixin, IsActiveMixin):
     # an owner (AIEYE_ADMIN user), who issued this OpenAIKey. One owner can issue several OpenAIKeys
-    owner = models.ForeignKey(UserModel, on_delete=models.CASCADE)
-    key = models.CharField(max_length=255, unique=True)
+    owner = models.ForeignKey(
+        UserModel,
+        on_delete=models.CASCADE,
+        help_text=_(
+            "Designates a user who issued this OpenAI key. It's supposed to be an AIEYE_ADMIN user"
+        ),
+    )
+    key = models.CharField(max_length=255, db_index=True, unique=True)
     users = models.ManyToManyField(
         UserModel, related_name="openaikeys", through="PublicToken"
     )
 
     def __str__(self):
         return self.key
+
+    class Meta:
+        verbose_name = _("OpenAI key")
+        verbose_name_plural = _("OpenAI keys")
 
 
 class PublicToken(rest_framework.authtoken.models.Token, TimestampMixin, IsActiveMixin):

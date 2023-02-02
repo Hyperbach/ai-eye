@@ -1,13 +1,12 @@
 from typing import List
 
 from django.contrib.auth import get_user_model
-from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.views import View, generic
 
 from core.forms import UserCreateForm
 from core.mixins import AiEyeAdminMixin, OwnerFilterViewMixin
-from core.models import OpenAIKey, PublicToken, User
+from core.models import OpenAIKey, PublicToken
 from dashboard.forms import CreatePublicTokenForm
 
 UserModel = get_user_model()
@@ -18,21 +17,13 @@ class UserCreateView(AiEyeAdminMixin, generic.CreateView):
     form_class = UserCreateForm
     success_url = reverse_lazy("dashboard:users")
 
-    def form_valid(self, form):
-        """If the form is valid, save the associated model."""
-        self.object: User = form.save()
-        # attach new owner to the role `UserGroupType.AIEYE_USERS`
-        self.object.set_aieye_users_role()
-
-        return HttpResponseRedirect(self.get_success_url())
-
 
 class UserListView(AiEyeAdminMixin, generic.ListView):
     model = UserModel
     template_name = "dashboard/users/list.html"
 
     def get_queryset(self):
-        return self.model.aieye_users_objects.all()
+        return self.model.aieye_users_objects.order_by("-date_created").all()
 
 
 class OpenAIKeysBaseView(AiEyeAdminMixin, OwnerFilterViewMixin, View):
@@ -43,6 +34,7 @@ class OpenAIKeysBaseView(AiEyeAdminMixin, OwnerFilterViewMixin, View):
 
 class OpenAIKeysListView(OpenAIKeysBaseView, generic.ListView):
     template_name = "dashboard/openaikeys/list.html"
+    ordering = ["-date_created"]
 
 
 class OpenAIKeysCreateView(OpenAIKeysBaseView, generic.CreateView):
@@ -72,6 +64,10 @@ class PublicTokensBaseView(AiEyeAdminMixin, View):
 
 class PublicTokensListView(PublicTokensBaseView, generic.ListView):
     template_name = "dashboard/publictokens/list.html"
+    ordering = ["-date_created"]
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related("user", "openaikey")
 
 
 class PublicTokensCreateView(PublicTokensBaseView, generic.CreateView):
@@ -81,9 +77,7 @@ class PublicTokensCreateView(PublicTokensBaseView, generic.CreateView):
 
 
 class PublicTokensUpdateView(PublicTokensBaseView, generic.UpdateView):
-    """View to update an OpenAIKeys linked with current Admin owner"""
-
-    fields = ["key", "is_active"]
+    fields = ["key", "user", "openaikey", "is_active"]
     template_name = "dashboard/publictokens/update.html"
 
 

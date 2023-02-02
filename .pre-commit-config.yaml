@@ -60,6 +60,7 @@ repos:
           'djangorestframework-stubs',
           'django-bootstrap-v5',
           'django-environ',
-          'djangorestframework'
+          'djangorestframework',
+          'django-debug-toolbar'
           # runtime dependencies
         ]

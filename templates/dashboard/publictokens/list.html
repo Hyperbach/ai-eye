@@ -14,7 +14,7 @@
                     <th scope="col">Id</th>
                     <th scope="col">Key</th>
                     <th scope="col">User</th>
-                    <th scope="col">OpenAIKey</th>
+                    <th scope="col">OpenAI Key</th>
                     <th scope="col">Date created</th>
                     <th scope="col">Date updated</th>
                     <th scope="col">Is active</th>
@@ -27,11 +27,15 @@
                     {% for obj in object_list %}
                         <tr>
                             <td>{{ obj.pk }}</td>
-                            <td>{{ obj.key }}</td>
+                            <td>
+                                {{ obj.key|truncatechars:10 }}
+                            </td>
                             <td>{{ obj.user }}</td>
-                            <td>{{ obj.openaikey }}</td>
-                            <td>{{ obj.date_created }}</td>
-                            <td>{{ obj.date_updated }}</td>
+                            <td>
+                                {{ obj.openaikey.key|truncatechars:10 }}
+                            </td>
+                            <td>{{ obj.date_created|date:'m-d-Y H:i:s' }}</td>
+                            <td>{{ obj.date_updated|date:'m-d-Y H:i:s' }}</td>
                             <td>{{ obj.is_active }}</td>
                             <td>
                                 <a href="{% url 'dashboard:publictokens_update' obj.pk %}">Update</a>

@@ -25,9 +25,11 @@
                     {% for obj in object_list %}
                         <tr>
                             <td>{{ obj.pk }}</td>
-                            <td>{{ obj.key }}</td>
-                            <td>{{ obj.date_created }}</td>
-                            <td>{{ obj.date_updated }}</td>
+                            <td>
+                                {{ obj.key|truncatechars:10 }}
+                            </td>
+                            <td>{{ obj.date_created|date:'m-d-Y H:i:s' }}</td>
+                            <td>{{ obj.date_updated|date:'m-d-Y H:i:s' }}</td>
                             <td>{{ obj.is_active }}</td>
                             <td><a href="{% url 'dashboard:openaikeys_update' obj.pk %}">Update</a></td>
                             <td><a href="{% url 'dashboard:openaikeys_delete' obj.pk %}">Delete</a></td>

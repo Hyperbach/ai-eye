@@ -7,6 +7,13 @@ UserModel = get_user_model()
 
 
 class UserCreateForm(UserCreationForm):
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        if commit:
+            user.save()
+            user.set_aieye_users_role()
+        return user
+
     class Meta:
         model = UserModel
         fields = ("email", "first_name", "last_name")

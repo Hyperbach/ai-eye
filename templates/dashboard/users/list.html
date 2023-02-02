@@ -13,8 +13,8 @@
             <tr>
                 <th scope="col">Id</th>
                 <th scope="col">Email</th>
-                <th scope="col">First Name</th>
-                <th scope="col">Last Name</th>
+                <th scope="col">First name</th>
+                <th scope="col">Last name</th>
                 <th scope="col">Date created</th>
                 <th scope="col">Date updated</th>
                 <th scope="col">Is active</th>
@@ -30,8 +30,8 @@
                 <td>{{ user.email }}</td>
                 <td>{{ user.first_name }}</td>
                 <td>{{ user.last_name }}</td>
-                <td>{{ user.date_created }}</td>
-                <td>{{ user.date_updated }}</td>
+                <td>{{ user.date_created|date:'m-d-Y H:i:s' }}</td>
+                <td>{{ user.date_updated|date:'m-d-Y H:i:s' }}</td>
                 <td>{{ user.is_active }}</td>
                 <td>TODO</td>
                 <td>TODO</td>

@@ -53,8 +53,25 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # third-party apps
+    # "rest_framework",
+    # "bootstrap5",
+    # "debug_toolbar",
+    # local apps
+    # "core",
+    # "access",
+    # "dashboard",
+    # "api",
+]
+
+INSTALLED_APPS += [
+    # third-party apps
     "rest_framework",
     "bootstrap5",
+]
+if DEBUG:
+    INSTALLED_APPS += ["debug_toolbar"]
+
+INSTALLED_APPS += [
     # local apps
     "core",
     "access",
@@ -71,6 +88,9 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+if DEBUG:
+    MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
 
 ROOT_URLCONF = "configs.urls"
 
@@ -150,8 +170,5 @@ LOGIN_URL = "/auth/login"
 LOGOUT_REDIRECT_URL = "/auth/login"
 AUTH_USER_MODEL = "core.User"
 
-# REST_FRAMEWORK = {
-#     'DEFAULT_AUTHENTICATION_CLASSES': [
-#         'rest_framework_simplejwt.authentication.JWTAuthentication',
-#     ],
-# }
+if DEBUG:
+    INTERNAL_IPS = ["127.0.0.1"]
