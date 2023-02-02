@@ -1,19 +1,11 @@
 from django import forms
-from django.contrib.auth import get_user_model
 
 from core.models import PublicToken
 
-UserModel = get_user_model()
 
-
-class CreateUserForm(forms.ModelForm):
-    class Meta:
-        model = UserModel
-        fields = ["email", "password"]
-
-
-class CreatePublicTokenForm(forms.ModelForm):
+class PublicTokenForm(forms.ModelForm):
     key = forms.CharField(required=False)
+    field_order = ["user", "openaikey", "key", "is_active"]
 
     def save(self, *args, **kwargs):
         key = self.cleaned_data.get("key", None)
@@ -23,4 +15,13 @@ class CreatePublicTokenForm(forms.ModelForm):
 
     class Meta:
         model = PublicToken
-        exclude = ["key", "is_active"]
+        fields = "__all__"
+
+
+class PublicTokenCreateForm(PublicTokenForm):
+    class Meta(PublicTokenForm.Meta):
+        exclude = ["is_active"]
+
+
+class PublicTokenUpdateForm(PublicTokenForm):
+    pass

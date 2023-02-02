@@ -1,13 +1,11 @@
-from typing import List
-
 from django.contrib.auth import get_user_model
 from django.urls import reverse_lazy
 from django.views import View, generic
 
 from core.forms import UserCreateForm
-from core.mixins import AiEyeAdminMixin, OwnerFilterViewMixin
+from core.mixins import AiEyeAdminMixin
 from core.models import OpenAIKey, PublicToken
-from dashboard.forms import CreatePublicTokenForm
+from dashboard.forms import PublicTokenCreateForm, PublicTokenUpdateForm
 
 UserModel = get_user_model()
 
@@ -19,22 +17,24 @@ class UserCreateView(AiEyeAdminMixin, generic.CreateView):
 
 
 class UserListView(AiEyeAdminMixin, generic.ListView):
-    model = UserModel
     template_name = "dashboard/users/list.html"
 
     def get_queryset(self):
-        return self.model.aieye_users_objects.order_by("-date_created").all()
+        return UserModel.aieye_users_objects.order_by("-date_created")
 
 
-class OpenAIKeysBaseView(AiEyeAdminMixin, OwnerFilterViewMixin, View):
-    model = OpenAIKey
-    fields: List | str = "__all__"
+class OpenAIKeysBaseView(AiEyeAdminMixin, View):
     success_url = reverse_lazy("dashboard:openaikeys")
+
+    def get_queryset(self):
+        return OpenAIKey.objects.filter(owner=self.request.user).order_by(
+            "-date_created"
+        )
 
 
 class OpenAIKeysListView(OpenAIKeysBaseView, generic.ListView):
+    fields = "__all__"
     template_name = "dashboard/openaikeys/list.html"
-    ordering = ["-date_created"]
 
 
 class OpenAIKeysCreateView(OpenAIKeysBaseView, generic.CreateView):
@@ -56,30 +56,44 @@ class OpenAIKeysDeleteView(OpenAIKeysBaseView, generic.DeleteView):  # type: ign
     template_name = "dashboard/openaikeys/delete.html"
 
 
-class PublicTokensBaseView(AiEyeAdminMixin, View):
-    model = PublicToken
-    fields: List | str = "__all__"
+class PublicTokensFormMixin:
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        form.fields["openaikey"].queryset = OpenAIKey.objects.filter(
+            owner=self.request.user
+        )
+        form.fields["user"].queryset = UserModel.aieye_users_objects
+        return form
+
+
+class PublicTokensBaseViewMixin(AiEyeAdminMixin):
     success_url = reverse_lazy("dashboard:publictokens")
 
+    def get_queryset(self):
+        return PublicToken.objects.filter(
+            openaikey__owner=self.request.user
+        ).prefetch_related("user", "openaikey")
 
-class PublicTokensListView(PublicTokensBaseView, generic.ListView):
+
+class PublicTokensListView(PublicTokensBaseViewMixin, generic.ListView):
+    fields = "__all__"
     template_name = "dashboard/publictokens/list.html"
     ordering = ["-date_created"]
 
-    def get_queryset(self):
-        return super().get_queryset().prefetch_related("user", "openaikey")
 
-
-class PublicTokensCreateView(PublicTokensBaseView, generic.CreateView):
-    fields = None
+class PublicTokensCreateView(
+    PublicTokensFormMixin, PublicTokensBaseViewMixin, generic.CreateView
+):
     template_name = "dashboard/publictokens/create.html"
-    form_class = CreatePublicTokenForm
+    form_class = PublicTokenCreateForm
 
 
-class PublicTokensUpdateView(PublicTokensBaseView, generic.UpdateView):
-    fields = ["key", "user", "openaikey", "is_active"]
+class PublicTokensUpdateView(
+    PublicTokensFormMixin, PublicTokensBaseViewMixin, generic.UpdateView
+):
     template_name = "dashboard/publictokens/update.html"
+    form_class = PublicTokenUpdateForm
 
 
-class PublicTokensDeleteView(PublicTokensBaseView, generic.DeleteView):  # type: ignore[misc]
+class PublicTokensDeleteView(PublicTokensBaseViewMixin, generic.DeleteView):  # type: ignore[misc]
     template_name = "dashboard/publictokens/delete.html"

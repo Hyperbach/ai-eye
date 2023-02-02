@@ -5,10 +5,3 @@ class AiEyeAdminMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
         user = self.request.user
         return user.is_aieye_admin
-
-
-class OwnerFilterViewMixin:
-    user_field = "owner"
-
-    def get_queryset(self):
-        return super().get_queryset().filter(**{self.user_field: self.request.user})
