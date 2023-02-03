@@ -24,6 +24,7 @@ env = environ.Env(
     # set casting, default value
     DEBUG=(bool, False),
     ALLOWED_HOSTS=(list, []),
+    INTERNAL_IPS=(list, []),
 )
 
 # Take environment variables from .env file
@@ -52,15 +53,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # third-party apps
-    # "rest_framework",
-    # "bootstrap5",
-    # "debug_toolbar",
-    # local apps
-    # "core",
-    # "access",
-    # "dashboard",
-    # "api",
 ]
 
 INSTALLED_APPS += [
@@ -68,6 +60,7 @@ INSTALLED_APPS += [
     "rest_framework",
     "bootstrap5",
 ]
+
 if DEBUG:
     INSTALLED_APPS += ["debug_toolbar"]
 
@@ -166,9 +159,9 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-LOGIN_URL = "/auth/login"
-LOGOUT_REDIRECT_URL = "/auth/login"
+LOGIN_URL = "access:login"
+LOGOUT_REDIRECT_URL = LOGIN_URL
 AUTH_USER_MODEL = "core.User"
 
 if DEBUG:
-    INTERNAL_IPS = ["127.0.0.1"]
+    INTERNAL_IPS = env("INTERNAL_IPS")
