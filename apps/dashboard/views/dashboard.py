@@ -7,7 +7,7 @@ from core.mixins import AiEyeAdminMixin
 from core.models import OpenAIKey, PublicToken
 from dashboard.forms import PublicTokenCreateForm, PublicTokenUpdateForm
 
-UserModel = get_user_model()
+User = get_user_model()
 
 
 class UserCreateView(AiEyeAdminMixin, generic.CreateView):
@@ -20,7 +20,7 @@ class UserListView(AiEyeAdminMixin, generic.ListView):
     template_name = "dashboard/users/list.html"
 
     def get_queryset(self):
-        return UserModel.aieye_users_objects.order_by("-date_created")
+        return User.aieye_users_objects.order_by("-date_created")
 
 
 class OpenAIKeysBaseView(AiEyeAdminMixin, View):
@@ -62,7 +62,7 @@ class PublicTokensFormMixin:
         form.fields["openaikey"].queryset = OpenAIKey.objects.filter(
             owner=self.request.user
         )
-        form.fields["user"].queryset = UserModel.aieye_users_objects
+        form.fields["user"].queryset = User.aieye_users_objects
         return form
 
 

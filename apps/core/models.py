@@ -87,11 +87,7 @@ class User(AbstractBaseUser, PermissionsMixin, TimestampMixin, IsActiveMixin):  
         return str(self.email)
 
     def _is_in_group(self, user_group_type: UserGroupType):
-        return self.groups.filter(
-            name__in=[
-                user_group_type.name,
-            ]
-        ).exists()
+        return self.groups.filter(name=user_group_type.name).exists()
 
     @property
     def is_aieye_admin(self):
@@ -105,6 +101,10 @@ class User(AbstractBaseUser, PermissionsMixin, TimestampMixin, IsActiveMixin):  
         group = Group.objects.get(name=UserGroupType.AIEYE_USERS.name)
         self.groups.add(group)
 
+    def set_aieye_admin_role(self):
+        group = Group.objects.get(name=UserGroupType.AIEYE_ADMINS.name)
+        self.groups.add(group)
+
 
 UserModel = get_user_model()
 
@@ -112,7 +112,7 @@ UserModel = get_user_model()
 class OpenAIKey(TimestampMixin, IsActiveMixin):
     # an owner (AIEYE_ADMIN user), who issued this OpenAIKey. One owner can issue several OpenAIKeys
     owner = models.ForeignKey(
-        UserModel,
+        User,
         on_delete=models.CASCADE,
         help_text=_(
             "Designates a user who issued this OpenAI key. It's supposed to be an AIEYE_ADMIN user"
@@ -120,7 +120,7 @@ class OpenAIKey(TimestampMixin, IsActiveMixin):
     )
     key = models.CharField(max_length=255, db_index=True, unique=True)
     users = models.ManyToManyField(
-        UserModel, related_name="openaikeys", through="PublicToken"
+        User, related_name="openaikeys", through="PublicToken"
     )
 
     def __str__(self):
@@ -132,7 +132,7 @@ class OpenAIKey(TimestampMixin, IsActiveMixin):
 
 
 class PublicToken(rest_framework.authtoken.models.Token, TimestampMixin, IsActiveMixin):
-    user = models.ForeignKey(UserModel, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     openaikey = models.ForeignKey(OpenAIKey, on_delete=models.CASCADE)
     key = models.CharField(
         _("Key"),

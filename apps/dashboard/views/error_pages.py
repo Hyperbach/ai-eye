@@ -1,7 +1,7 @@
 from django.shortcuts import render
 
 
-def handler404(request, exc):
+def handler404(request, exception):
     return render(request, "dashboard/errors/404.html", status=404)
 
 

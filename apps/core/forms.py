@@ -3,7 +3,7 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core.exceptions import ValidationError
 from django.forms import EmailField
 
-UserModel = get_user_model()
+User = get_user_model()
 
 
 class UserCreateForm(UserCreationForm):
@@ -15,7 +15,7 @@ class UserCreateForm(UserCreationForm):
         return user
 
     class Meta:
-        model = UserModel
+        model = User
         fields = ("email", "first_name", "last_name")
         field_classes = {"email": EmailField}
 
