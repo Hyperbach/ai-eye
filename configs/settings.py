@@ -53,18 +53,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-]
-
-INSTALLED_APPS += [
     # third-party apps
     "rest_framework",
     "bootstrap5",
-]
-
-if DEBUG:
-    INSTALLED_APPS += ["debug_toolbar"]
-
-INSTALLED_APPS += [
     # local apps
     "core",
     "access",
@@ -83,7 +74,9 @@ MIDDLEWARE = [
 ]
 
 if DEBUG:
+    INSTALLED_APPS += ["debug_toolbar"]
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
+    INTERNAL_IPS = env("INTERNAL_IPS")
 
 ROOT_URLCONF = "configs.urls"
 
@@ -110,7 +103,19 @@ WSGI_APPLICATION = "configs.wsgi.application"
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 DATABASES = {
-    "default": env.db(),
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': BASE_DIR / 'db.sqlite3',
+    # }
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": env("DB_NAME"),
+        "USER": env("DB_USER"),
+        "PASSWORD": env("DB_PASSWORD"),
+        "HOST": env("DB_HOST"),
+        "PORT": env("DB_PORT"),
+    }
+    # "default": env.db(),
 }
 
 
@@ -162,6 +167,3 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "access:login"
 LOGOUT_REDIRECT_URL = LOGIN_URL
 AUTH_USER_MODEL = "core.User"
-
-if DEBUG:
-    INTERNAL_IPS = env("INTERNAL_IPS")

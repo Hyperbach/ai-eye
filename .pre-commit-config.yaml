@@ -63,6 +63,7 @@ repos:
           'django-bootstrap-v5',
           'django-environ',
           'djangorestframework',
+          'psycopg2-binary',
           'django-debug-toolbar'
           # runtime dependencies
         ]
