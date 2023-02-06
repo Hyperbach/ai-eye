@@ -19,6 +19,14 @@ repos:
           - python
         pass_filenames: false
         language: system
+      - id: django-check-migrations
+        name: Check django project for missing migrations.
+        entry: sh -c 'python manage.py makemigrations --check --dry-run'
+        files: models.py
+        types:
+          - python
+        pass_filenames: false
+        language: system
   - repo: 'https://github.com/python/black'
     rev: 22.12.0
     hooks:
