@@ -14,9 +14,15 @@ $ python -m venv venv
 $ source venv/bin/activate
 ```
 
-Install the dependencies:
+Install project dependencies only (i.e. no dev. requirements):
 ```shell
 (venv) pip install -r requirements.txt
+```
+or
+
+Install project dependencies along with dev dependencies for local setup:
+```shell
+(venv) pip install -r requirements.dev.txt
 ```
 
 Setup settings:
@@ -42,5 +48,11 @@ From now on, to grant the `AIEYE_ADMINS` role to some users, follow these steps:
 7. You are done!
 
 Open http://127.0.0.1:8000, it is where your `AIEYE_ADMINS` dashboard resides
+
+
+```useful commands
+(env) pre-commit run
+(env) python manage.py wait_for_db
+```
 
 ## TO BE CONTINUED
