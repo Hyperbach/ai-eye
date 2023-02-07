@@ -53,7 +53,8 @@ repos:
     hooks:
       - id: mypy
         name: Check mypy static types match
-        types: [ python ]
+        types:
+          - python
         args: ['--config-file', 'mypy.ini']
         exclude: "[a-zA-Z]*/(migrations)/(.)*"
         additional_dependencies: [
