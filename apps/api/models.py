@@ -1,16 +1,10 @@
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from core.models import OpenAIKey
 
 User = get_user_model()
-
-
-def get_expire_time():
-    # TODO: parameterize the expire time
-    return timezone.now() + timezone.timedelta(days=5)
 
 
 class Log(models.Model):
