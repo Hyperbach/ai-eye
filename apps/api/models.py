@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -16,6 +18,13 @@ class Log(models.Model):
     response = models.TextField()
     cache_hit = models.BooleanField()
     timestamp = models.DateTimeField(auto_now_add=True)
+
+    @staticmethod
+    def stringify_parameters(parameters: dict[str, Any]):
+        parameters_keys = list(parameters.keys())
+        parameters_keys.sort()
+
+        return "&".join([f"{k}={parameters[k]}" for k in parameters_keys])
 
     def __str__(self):
         return f"{self.api_type} {self.endpoint} {self.parameters}"

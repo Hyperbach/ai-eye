@@ -1,18 +1,16 @@
-from django.conf import settings
-from django.urls import include, path
+from django.urls import include, path, re_path
 
-from api import views
 from rest_framework import routers
 
-# TODO:
+from .views import CreateLogViewSet
+
+app_name = "api"
+
 router = routers.DefaultRouter()
-router.register(r"users", views.UserViewSet)
 
 urlpatterns = [
-    path("api/", include(router.urls)),
+    path("", include(router.urls)),
+    re_path(
+        r"^openai/(?P<endpoint>.+)/$", CreateLogViewSet.as_view({"post": "create"})
+    ),
 ]
-
-if settings.DEBUG:
-    urlpatterns.append(
-        path("api-auth/", include("rest_framework.urls", namespace="rest_framework"))
-    )

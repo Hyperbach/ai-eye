@@ -1,11 +1,14 @@
-from django.contrib.auth import get_user_model
-
 from rest_framework import serializers
 
-UserModel = get_user_model()
+from .models import Log
 
 
-class UserSerializer(serializers.ModelSerializer):
+class CacheHitResponseSerializer(serializers.ModelSerializer):
     class Meta:
-        model = UserModel
-        fields = ["url", "first_name", "email", "groups"]
+        model = Log
+        fields = ["response", "cache_hit"]
+
+
+class ProxyResponseSerializer(serializers.Serializer):
+    text = serializers.CharField(required=True)
+    cache_hit = serializers.BooleanField(required=True)
