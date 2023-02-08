@@ -39,4 +39,10 @@ urlpatterns = [
         views.PublicTokensDeleteView.as_view(),
         name="publictokens_delete",
     ),
+    path("caches", views.CachesListView.as_view(), name="caches"),
+    path(
+        "caches/<int:pk>/delete/",
+        views.CachesDeleteView.as_view(),
+        name="caches_delete",
+    ),
 ]

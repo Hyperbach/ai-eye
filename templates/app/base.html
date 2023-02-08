@@ -17,7 +17,7 @@
                 <a href="{% url 'dashboard:users' %}" class="nav-item nav-link {% if "dashboard/users" in request.path %}active{% endif %}">Users Management</a>
                 <a href="{% url 'dashboard:openaikeys' %}" class="nav-item nav-link {% if "dashboard/openaikeys" in request.path %}active{% endif %}">OpenAI Keys Management</a>
                 <a href="{% url 'dashboard:publictokens' %}" class="nav-item nav-link {% if "dashboard/publictokens" in request.path %}active{% endif %}">Public Tokens Management</a>
-                <a href="#" class="nav-item nav-link {% if "dashboard/cachelogs" in request.path %}active{% endif %} ">Cache/Logs Management</a>
+                <a href="{% url 'dashboard:caches' %}" class="nav-item nav-link {% if "dashboard/caches" in request.path %}active{% endif %} ">Cache/Logs Management</a>
                 {% endif %}
 {#                <a href="#" class="nav-item nav-link active">Home</a>#}
 {#                <a href="#" class="nav-item nav-link">Services</a>#}

@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse_lazy
 from django.views import View, generic
 
+from api.models import Log
 from core.forms import UserCreateForm
 from core.mixins import AiEyeAdminMixin
 from core.models import OpenAIKey, PublicToken
@@ -70,15 +71,16 @@ class PublicTokensBaseViewMixin(AiEyeAdminMixin):
     success_url = reverse_lazy("dashboard:publictokens")
 
     def get_queryset(self):
-        return PublicToken.objects.filter(
-            openaikey__owner=self.request.user
-        ).prefetch_related("user", "openaikey")
+        return (
+            PublicToken.objects.filter(openaikey__owner=self.request.user)
+            .prefetch_related("user", "openaikey")
+            .order_by("-date_created")
+        )
 
 
 class PublicTokensListView(PublicTokensBaseViewMixin, generic.ListView):
     fields = "__all__"
     template_name = "dashboard/publictokens/list.html"
-    ordering = ["-date_created"]
 
 
 class PublicTokensCreateView(
@@ -97,3 +99,19 @@ class PublicTokensUpdateView(
 
 class PublicTokensDeleteView(PublicTokensBaseViewMixin, generic.DeleteView):  # type: ignore[misc]
     template_name = "dashboard/publictokens/delete.html"
+
+
+class CachesBaseViewMixin(AiEyeAdminMixin):
+    success_url = reverse_lazy("dashboard:caches")
+
+    def get_queryset(self):
+        return Log.objects.prefetch_related("user", "api_key").order_by("-timestamp")
+
+
+class CachesListView(CachesBaseViewMixin, generic.ListView):
+    fields = "__all__"
+    template_name = "dashboard/caches/list.html"
+
+
+class CachesDeleteView(CachesBaseViewMixin, generic.DeleteView):  # type: ignore[misc]
+    template_name = "dashboard/caches/delete.html"
