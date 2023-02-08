@@ -19,13 +19,8 @@
                 <a href="{% url 'dashboard:publictokens' %}" class="nav-item nav-link {% if "dashboard/publictokens" in request.path %}active{% endif %}">Public Tokens Management</a>
                 <a href="{% url 'dashboard:caches' %}" class="nav-item nav-link {% if "dashboard/caches" in request.path %}active{% endif %} ">Cache/Logs Management</a>
                 {% endif %}
-{#                <a href="#" class="nav-item nav-link active">Home</a>#}
-{#                <a href="#" class="nav-item nav-link">Services</a>#}
-{#                <a href="#" class="nav-item nav-link">About</a>#}
-{#                <a href="#" class="nav-item nav-link">Contact</a>#}
             </div>
             <div class="navbar-nav ms-auto">
-{#                <a href="#" class="nav-item nav-link">Register</a>#}
                 {% if user.is_authenticated %}
                 <span class="navbar-text text-warning">Howdy {{ user.first_name|default:user.email }}!</span>
                 <a href="{% url 'access:logout' %}" class="nav-item nav-link">Logout</a>
