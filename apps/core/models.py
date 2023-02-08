@@ -123,12 +123,12 @@ class OpenAIKey(TimestampMixin, IsActiveMixin):
         User, related_name="openaikeys", through="PublicToken"
     )
 
-    def __str__(self):
-        return self.key
-
     class Meta:
         verbose_name = _("OpenAI key")
         verbose_name_plural = _("OpenAI keys")
+
+    def __str__(self):
+        return self.key
 
 
 class PublicToken(rest_framework.authtoken.models.Token, TimestampMixin, IsActiveMixin):
@@ -143,10 +143,10 @@ class PublicToken(rest_framework.authtoken.models.Token, TimestampMixin, IsActiv
     )
     created = None
 
-    def __str__(self):
-        return self.key
-
     class Meta:
         unique_together = (("user", "openaikey"),)
         verbose_name = _("Public token")
         verbose_name_plural = _("Public tokens")
+
+    def __str__(self):
+        return self.key

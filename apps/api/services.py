@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Dict
 
 import requests
 from api.exceptions import OpenAIRequestException
@@ -6,7 +6,7 @@ from api.exceptions import OpenAIRequestException
 OPENAI_HOST = "https://api.openai.com"
 
 
-def openai_request(openaikey: str, endpoint: str, parameters: dict[str, Any]):
+def openai_request(openaikey: str, endpoint: str, parameters: Dict[str, Any]):
     openai_api_url = f"{OPENAI_HOST}/{endpoint}"
     headers = {
         "Content-Type": "application/json",
