@@ -1,36 +1,45 @@
-from rest_framework import permissions, status, viewsets
-from rest_framework.exceptions import ValidationError
+from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.response import Response
 
 from .authentication import AiEyeTokenAuthentication
 from .exceptions import OpenAIRequestException
+from .mixins import PrepareParametersMixin
 from .models import Log
 from .permissions import AiEyeUserPermission
 from .serializers import CacheHitResponseSerializer
 from .services import openai_request
 
 
-class CreateLogViewSet(viewsets.ViewSet):
+class RetrieveLogViewSet(
+    viewsets.GenericViewSet, mixins.ListModelMixin, PrepareParametersMixin
+):
+    permission_classes = (permissions.IsAuthenticated, AiEyeUserPermission)
+    authentication_classes = (AiEyeTokenAuthentication,)
+    serializer_class = CacheHitResponseSerializer
+
+    def get_queryset(self):
+        endpoint = self.kwargs["endpoint"]
+        parameters, parameters_stringified = self.prepare_parameters()
+
+        return (
+            Log.objects.filter(
+                cache_hit=True,
+                api_type=self.request.data["api_type"],
+                endpoint=endpoint,
+                parameters=parameters_stringified,
+            )
+            .distinct("response")
+            .all()
+        )
+
+
+class CreateLogViewSet(viewsets.GenericViewSet, PrepareParametersMixin):
     permission_classes = (permissions.IsAuthenticated, AiEyeUserPermission)
     authentication_classes = (AiEyeTokenAuthentication,)
 
-    ALLOWED_OPENAI_ENDPOINTS = [
-        "v1/completions",
-        "v1/edits",
-    ]
-
     def create(self, request, *args, **kwargs):
-        endpoint = kwargs.pop("endpoint")
-        if endpoint not in self.ALLOWED_OPENAI_ENDPOINTS:
-            raise ValidationError("Invalid data")
-
-        if not request.data:
-            raise ValidationError("Invalid data")
-        if "api_type" not in request.data or type(request.data["api_type"]) is not str:
-            raise ValidationError("Invalid data")
-
-        parameters = {k: v for k, v in request.data.items() if k != "api_type"}
-        parameters_stringified = Log.stringify_parameters(parameters)
+        endpoint = kwargs["endpoint"]
+        parameters, parameters_stringified = self.prepare_parameters()
 
         public_token = request.auth
         openaikey = public_token.openaikey
@@ -50,21 +59,22 @@ class CreateLogViewSet(viewsets.ViewSet):
         )
 
         if log_instance is not None:
-            new_log_instance = Log.objects.create(
-                **log_instance_kwargs
-                | dict(response=log_instance.response, cache_hit=True)
-            )
+            response = log_instance.response
+            cache_hit = True
         else:
             try:
-                response = openai_request(
+                openai_response = openai_request(
                     openaikey=openaikey.key, endpoint=endpoint, parameters=parameters
                 )
             except OpenAIRequestException as exc:
                 raise exc
             else:
-                new_log_instance = Log.objects.create(
-                    **log_instance_kwargs | dict(response=response, cache_hit=False)
-                )
+                response = openai_response
+                cache_hit = False
+
+        log_instance_kwargs.update({"response": response, "cache_hit": cache_hit})
+
+        new_log_instance = Log.objects.create(**log_instance_kwargs)
 
         response_serializer = CacheHitResponseSerializer(instance=new_log_instance)
         return Response(data=response_serializer.data, status=status.HTTP_200_OK)
