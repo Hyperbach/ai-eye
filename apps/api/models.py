@@ -10,7 +10,6 @@ User = get_user_model()
 
 
 class Log(models.Model):
-    api_type = models.CharField(max_length=50)
     endpoint = models.CharField(max_length=100)
     parameters = models.TextField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -24,7 +23,7 @@ class Log(models.Model):
         verbose_name_plural = _("Logs")
 
     def __str__(self):
-        return f"{self.api_type} {self.endpoint} {self.parameters}"
+        return f"{self.endpoint} {self.parameters}"
 
     @staticmethod
     def stringify_parameters(parameters: dict[str, Any]):
