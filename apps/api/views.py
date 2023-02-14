@@ -19,39 +19,40 @@ class RetrieveLogViewSet(
 
     def get_queryset(self):
         endpoint = self.kwargs["endpoint"]
-        parameters, parameters_stringified = self.prepare_parameters()
+        parameters, parameters_stringified = self.prepare_parameters(
+            self.request.query_params
+        )
 
         return (
             Log.objects.filter(
                 cache_hit=True,
-                api_type=self.request.data["api_type"],
                 endpoint=endpoint,
                 parameters=parameters_stringified,
             )
             .distinct("response")
-            .all()
+            .order_by("response", "-timestamp")
         )
 
 
-class CreateLogViewSet(viewsets.GenericViewSet, PrepareParametersMixin):
+class CreateLogViewSet(
+    mixins.CreateModelMixin, viewsets.GenericViewSet, PrepareParametersMixin
+):
     permission_classes = (permissions.IsAuthenticated, AiEyeUserPermission)
     authentication_classes = (AiEyeTokenAuthentication,)
 
     def create(self, request, *args, **kwargs):
         endpoint = kwargs["endpoint"]
-        parameters, parameters_stringified = self.prepare_parameters()
+        parameters, parameters_stringified = self.prepare_parameters(self.request.data)
 
         public_token = request.auth
         openaikey = public_token.openaikey
 
         log_instance = Log.objects.filter(
-            api_type=request.data["api_type"],
             endpoint=endpoint,
             parameters=parameters_stringified,
         ).first()
 
         log_instance_kwargs = dict(
-            api_type=request.data["api_type"],
             endpoint=endpoint,
             parameters=parameters_stringified,
             user=self.request.user,
