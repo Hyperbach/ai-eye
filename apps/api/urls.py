@@ -1,17 +1,16 @@
-from django.urls import include, path, re_path
+from django.urls import include, path
 
-from rest_framework import routers
+from rest_framework.routers import DefaultRouter
 
 from .views import CreateLogViewSet, RetrieveLogViewSet
 
 app_name = "api"
 
-router = routers.DefaultRouter()
+router = DefaultRouter()
+
+router.register(r"openai/(?P<endpoint>.+)", CreateLogViewSet, basename="openai")
+router.register(r"cache/(?P<endpoint>.+)", RetrieveLogViewSet, basename="cache")
 
 urlpatterns = [
     path("", include(router.urls)),
-    re_path(
-        r"^openai/(?P<endpoint>.+)/$", CreateLogViewSet.as_view({"post": "create"})
-    ),
-    re_path(r"^cache/(?P<endpoint>.+)/$", RetrieveLogViewSet.as_view({"post": "list"})),
 ]
