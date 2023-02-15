@@ -17,13 +17,6 @@ class Command(BaseCommand):
             help="Number of seconds to wait before retrying",
             default=1,
         )
-        # parser.add_argument(
-        #     '--retries',
-        #     nargs='?',
-        #     type=int,
-        #     help='Number of retries before exiting',
-        #     default=3,
-        # )
 
     def handle(self, *args, **options):
         self.stdout.write("Waiting for database...")
