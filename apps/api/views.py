@@ -19,9 +19,7 @@ class RetrieveLogViewSet(
 
     def get_queryset(self):
         endpoint = self.kwargs["endpoint"]
-        parameters, parameters_stringified = self.prepare_parameters(
-            self.request.query_params
-        )
+        parameters_stringified = self.prepare_parameters(self.request.query_params)
 
         return (
             Log.objects.filter(
@@ -42,7 +40,8 @@ class CreateLogViewSet(
 
     def create(self, request, *args, **kwargs):
         endpoint = kwargs["endpoint"]
-        parameters, parameters_stringified = self.prepare_parameters(self.request.data)
+        parameters = self.request.data
+        parameters_stringified = self.prepare_parameters(parameters)
 
         public_token = request.auth
         openaikey = public_token.openaikey
