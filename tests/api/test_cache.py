@@ -121,6 +121,6 @@ class CacheTests(TestCase):
 
     @patch("api.views.openai_request", side_effect=openai_request_mock)
     def test_cache_case_3(self, mock_openai_request):
-        request_data = {"model": "text-davinci-003", "prompt": ""}
+        request_data = {"model": "text-davinci-003", "prompt": "&"}
         endpoint = "v1/completions"
         self.exec(request_data, endpoint)
