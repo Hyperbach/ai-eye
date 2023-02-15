@@ -8,30 +8,30 @@
 {% endblock dashboard_header %}
 
 {% block dashboard_content %}
-<div class="p-5 rounded-3">
-    <p class="text-center" id="nothing-good-here" style="font-size: 40px;">
-        Something evil happened.
-    </p>
+    <div class="p-5 rounded-3">
+        <p class="text-center" id="nothing-good-here" style="font-size: 40px;">
+            Something evil happened.
+        </p>
 
-</div>
+    </div>
 {% endblock dashboard_content %}
 
 {% block bootstrap5_extra_script %}
-<script type="text/javascript">
-$(function(){
-    const errorTexts = [
-  "Our servers are taking a coffee break. Please try again later.",
-  "Error 500: We're on it, just not as quickly as you wanted.",
-  "Our servers are having a bad hair day, please bear with us.",
-  "500 error: It's not you, it's us. We're fixing it.",
-  "We're experiencing a technical glitch. Please stand by.",
-  "Error 500: Our servers are having an existential crisis.",
-  "Sorry, our servers are too busy being awesome to respond.",
-  "Our servers are taking a nap. Please wake them up later.",
-  "Our servers are busy chasing unicorns. Please try again later.",
-  "Error 500: It's not just an error, it's an adventure!"
-];
-    $("#nothing-good-here").text(errorTexts[Math.floor(Math.random() * errorTexts.length)]);
-});
-</script>
+    <script type="text/javascript">
+        $(function () {
+            const errorTexts = [
+                "Our servers are taking a coffee break. Please try again later.",
+                "Error 500: We're on it, just not as quickly as you wanted.",
+                "Our servers are having a bad hair day, please bear with us.",
+                "500 error: It's not you, it's us. We're fixing it.",
+                "We're experiencing a technical glitch. Please stand by.",
+                "Error 500: Our servers are having an existential crisis.",
+                "Sorry, our servers are too busy being awesome to respond.",
+                "Our servers are taking a nap. Please wake them up later.",
+                "Our servers are busy chasing unicorns. Please try again later.",
+                "Error 500: It's not just an error, it's an adventure!"
+            ];
+            $("#nothing-good-here").text(errorTexts[Math.floor(Math.random() * errorTexts.length)]);
+        });
+    </script>
 {% endblock %}
