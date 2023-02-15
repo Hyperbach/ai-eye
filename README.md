@@ -49,8 +49,13 @@ From now on, to grant the `AIEYE_ADMINS` role to some users, follow these steps:
 
 Open http://127.0.0.1:8000, it is where your `AIEYE_ADMINS` dashboard resides
 
+Run tests:
+```shell
+(env) python manage.py test
+```
 
-```useful commands
+Useful commands:
+```
 (env) pre-commit run
 (env) python manage.py wait_for_db
 ```
