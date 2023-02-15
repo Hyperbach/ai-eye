@@ -8,12 +8,12 @@
 {% block dashboard_content %}
     {% url 'dashboard:caches' as caches_list %}
 
-    <p class="h5">Are you sure you want to delete the Log: {{ log.id }}</p>
-    <form action="" method="POST">
+    <p class="h5">Are you sure you want to delete the Log: {{ log.id }}?</p>
+    <form action="" method="post">
         {% csrf_token %}
-        <div class="container d-flex">
-            <input type="submit" class="btn btn-primary" value="Confirm" style="margin-right: 30px; margin-top: 30px;">
-            <input type="submit" class="btn btn-danger" style="margin-top: 30px;"
+        <div class="container d-flex ps-0">
+            <input type="submit" class="btn btn-primary me-4 mt-4" value="Confirm">
+            <input type="submit" class="btn btn-danger mt-4"
                    onclick="window.location='{{ caches_list }}'; return false;" value="Cancel">
         </div>
     </form>

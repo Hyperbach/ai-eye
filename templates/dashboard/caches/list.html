@@ -2,7 +2,10 @@
 {% load bootstrap5 %}
 
 {% block dashboard_header %}
-    <h2 class="text-left mt-5">Cache/Logs Management</h2>
+    <div class="header-container">
+        <h2 class="text-left mt-5" style="display: inline-block; margin-right: 5px;">Cache/Logs Management</h2>
+        <a href="{% url 'dashboard:caches_delete_all' %}" style="display: inline-block;">Delete all</a>
+    </div>
 {% endblock dashboard_header %}
 
 {% block dashboard_content %}
