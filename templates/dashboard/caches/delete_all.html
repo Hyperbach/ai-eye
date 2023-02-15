@@ -1,0 +1,20 @@
+{% extends 'dashboard/index.html' %}
+{% load bootstrap5 %}
+
+{% block dashboard_header %}
+    <h2 class="text-left mt-5">Cache/Logs Management - delete cache</h2>
+{% endblock dashboard_header %}
+
+{% block dashboard_content %}
+    {% url 'dashboard:caches' as caches_list %}
+
+    <p class="h5">Are you sure you want to delete all the Logs?</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="container d-flex">
+            <input type="submit" class="btn btn-primary" value="Confirm" style="margin-right: 30px; margin-top: 30px;">
+            <input type="submit" class="btn btn-danger" style="margin-top: 30px;"
+                   onclick="window.location='{{ caches_list }}'; return false;" value="Cancel">
+        </div>
+    </form>
+{% endblock dashboard_content %}

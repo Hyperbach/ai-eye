@@ -45,4 +45,9 @@ urlpatterns = [
         views.CachesDeleteView.as_view(),
         name="caches_delete",
     ),
+    path(
+        "caches/delete/",
+        views.CachesDeleteAllView.as_view(),
+        name="caches_delete_all",
+    ),
 ]

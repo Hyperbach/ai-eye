@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib.auth import get_user_model
 from django.urls import reverse_lazy
 from django.views import View, generic
@@ -115,3 +116,14 @@ class CachesListView(CachesBaseViewMixin, generic.ListView):
 
 class CachesDeleteView(CachesBaseViewMixin, generic.DeleteView):  # type: ignore[misc]
     template_name = "dashboard/caches/delete.html"
+
+
+class CachesDeleteAllView(AiEyeAdminMixin, generic.FormView):
+    template_name = "dashboard/caches/delete_all.html"
+    success_url = reverse_lazy("dashboard:caches")
+
+    form_class = forms.Form
+
+    def form_valid(self, form):
+        Log.objects.all().delete()
+        return super().form_valid(form)
