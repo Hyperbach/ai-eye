@@ -12,7 +12,6 @@
             <thead>
             <tr>
                 <th scope="col">Id</th>
-                <th scope="col">API type</th>
                 <th scope="col">Endpoint</th>
                 <th scope="col">Parameters</th>
                 <th scope="col">User</th>
@@ -28,11 +27,10 @@
             {% for cache in object_list %}
             <tr>
                 <td>{{ cache.id }}</td>
-                <td>{{ cache.api_type }}</td>
                 <td>{{ cache.endpoint }}</td>
                 <td>{{ cache.parameters }}</td>
                 <td>{{ cache.user }}</td>
-                <td>{{ cache.api_key }}</td>
+                <td>{{ cache.api_key|truncatechars:10 }}</td>
                 <td>{{ cache.response }}</td>
                 <td>{{ cache.cache_hit }}</td>
                 <td>{{ cache.timestamp|date:'m-d-Y H:i:s' }}</td>

@@ -19,7 +19,6 @@
                 <th scope="col">Date updated</th>
                 <th scope="col">Is active</th>
                 <th scope="col"></th>
-                <th scope="col"></th>
             </tr>
             </thead>
             <tbody>
@@ -33,8 +32,7 @@
                 <td>{{ user.date_created|date:'m-d-Y H:i:s' }}</td>
                 <td>{{ user.date_updated|date:'m-d-Y H:i:s' }}</td>
                 <td>{{ user.is_active }}</td>
-                <td>TODO</td>
-                <td>TODO</td>
+                <td></td>
             </tr>
             {% endfor %}
             {% endif %}
@@ -42,7 +40,7 @@
         </table>
 
         <div class="d-flex ">
-            <a href="{% url 'dashboard:users_create' %}" class="d-block btn btn-primary  my-2">Add New</a>
+            <a href="{% url 'dashboard:users_create' %}" class="d-block btn btn-primary  my-2">Add new</a>
         </div>
     </div>
 </div>
