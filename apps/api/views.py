@@ -22,7 +22,7 @@ class RetrieveLogViewSet(
         return (
             Log.objects.filter(cache_hit=True)
             .filter(
-                self.comparator(self.prepare_parameters(parameters)),
+                self.create_logs_comparator(self.prepare_parameters(parameters)),
             )
             .distinct("response")
             .order_by("response", "-timestamp")
@@ -44,7 +44,7 @@ class CreateLogViewSet(
         openaikey = public_token.openaikey
 
         log_instance = Log.objects.filter(
-            self.comparator(prepared_parameters),
+            self.create_logs_comparator(prepared_parameters),
         ).first()
 
         if log_instance is not None:

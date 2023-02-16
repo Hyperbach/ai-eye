@@ -22,7 +22,7 @@ class PrepareParametersMixin:
 
         return Log.jsonify_parameters(parameters)
 
-    def comparator(self, prepared_parameters) -> Q:
+    def create_logs_comparator(self, prepared_parameters) -> Q:
         return Q(
             endpoint=self.kwargs["endpoint"],  # type: ignore[attr-defined]
             parameters__exact=prepared_parameters,
