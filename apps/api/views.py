@@ -18,14 +18,11 @@ class RetrieveLogViewSet(
     serializer_class = CacheHitResponseSerializer
 
     def get_queryset(self):
-        endpoint = self.kwargs["endpoint"]
-        parameters_stringified = self.prepare_parameters(self.request.query_params)
-
+        parameters = self.request.query_params
         return (
             Log.objects.filter(
+                self.comparator(self.prepare_parameters(parameters)),
                 cache_hit=True,
-                endpoint=endpoint,
-                parameters=parameters_stringified,
             )
             .distinct("response")
             .order_by("response", "-timestamp")
@@ -41,22 +38,14 @@ class CreateLogViewSet(
     def create(self, request, *args, **kwargs):
         endpoint = kwargs["endpoint"]
         parameters = self.request.data
-        parameters_stringified = self.prepare_parameters(parameters)
+        prepared_parameters = self.prepare_parameters(parameters)
 
         public_token = request.auth
         openaikey = public_token.openaikey
 
         log_instance = Log.objects.filter(
-            endpoint=endpoint,
-            parameters__exact=parameters_stringified,
+            self.comparator(prepared_parameters),
         ).first()
-
-        log_instance_kwargs = dict(
-            endpoint=endpoint,
-            parameters=parameters_stringified,
-            user=self.request.user,
-            api_key=openaikey,
-        )
 
         if log_instance is not None:
             response = log_instance.response
@@ -72,9 +61,14 @@ class CreateLogViewSet(
                 response = openai_response
                 cache_hit = False
 
-        log_instance_kwargs.update({"response": response, "cache_hit": cache_hit})
-
-        new_log_instance = Log.objects.create(**log_instance_kwargs)
+        new_log_instance = Log.objects.create(
+            endpoint=endpoint,
+            parameters=prepared_parameters,
+            user=self.request.user,
+            api_key=openaikey,
+            response=response,
+            cache_hit=cache_hit,
+        )
 
         response_serializer = CacheHitResponseSerializer(instance=new_log_instance)
         return Response(data=response_serializer.data, status=status.HTTP_200_OK)

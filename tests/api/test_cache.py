@@ -18,20 +18,17 @@ from tests.factories import (
 
 def openai_request_mock(openaikey: str, endpoint: str, parameters: Dict[str, Any]):
     # actually we don't care what textual response it returns because we test data caching only
+
     return "some response from OpenAI API"
 
 
 class CacheTests(TestCase):
     def setUp(self) -> None:
-        aieye_admin = AiEyeAdminFactory.create()
-        aieye_user = AiEyeUserFactory.create()
-        openaikey = OpenAIKeyFactory.create(owner=aieye_admin)
-
-        self.aieye_admin = aieye_admin
-        self.aieye_user = aieye_user
-        self.openaikey = openaikey
+        self.aieye_admin = AiEyeAdminFactory.create()
+        self.openaikey = OpenAIKeyFactory.create(owner=self.aieye_admin)
+        self.aieye_user = AiEyeUserFactory.create()
         self.publictoken = PublicTokenFactory.create(
-            user=aieye_user, openaikey=openaikey
+            user=self.aieye_user, openaikey=self.openaikey
         )
 
         self.client = APIClient()
