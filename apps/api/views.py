@@ -20,9 +20,9 @@ class RetrieveLogViewSet(
     def get_queryset(self):
         parameters = self.request.query_params
         return (
-            Log.objects.filter(
+            Log.objects.filter(cache_hit=True)
+            .filter(
                 self.comparator(self.prepare_parameters(parameters)),
-                cache_hit=True,
             )
             .distinct("response")
             .order_by("response", "-timestamp")
