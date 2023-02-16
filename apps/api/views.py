@@ -48,7 +48,7 @@ class CreateLogViewSet(
 
         log_instance = Log.objects.filter(
             endpoint=endpoint,
-            parameters=parameters_stringified,
+            parameters__exact=parameters_stringified,
         ).first()
 
         log_instance_kwargs = dict(

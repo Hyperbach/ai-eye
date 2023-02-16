@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 from django.contrib.auth import get_user_model
@@ -11,7 +12,7 @@ User = get_user_model()
 
 class Log(models.Model):
     endpoint = models.CharField(max_length=100)
-    parameters = models.TextField()
+    parameters = models.JSONField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     api_key = models.ForeignKey(OpenAIKey, on_delete=models.CASCADE)
     response = models.TextField()
@@ -26,8 +27,5 @@ class Log(models.Model):
         return f"{self.endpoint} {self.parameters}"
 
     @staticmethod
-    def stringify_parameters(parameters: dict[str, Any]):
-        parameters_keys = list(parameters.keys())
-        parameters_keys.sort()
-
-        return "&".join([f"{k}={parameters[k]}" for k in parameters_keys])
+    def jsonify_parameters(parameters: dict[str, Any]):
+        return json.dumps(parameters, sort_keys=True)

@@ -17,10 +17,8 @@ from tests.factories import (
 
 
 def openai_request_mock(openaikey: str, endpoint: str, parameters: Dict[str, Any]):
-    # actually we don't care what response it returns because we test data caching only
-
-    params_glued = "_".join([f"{k}_{v}" for k, v in parameters.items()])
-    return f"{openaikey} {endpoint} {params_glued}"
+    # actually we don't care what textual response it returns because we test data caching only
+    return "some response from OpenAI API"
 
 
 class CacheTests(TestCase):
@@ -51,7 +49,7 @@ class CacheTests(TestCase):
     def exec(self, request_data, endpoint):
         filter_kwargs = dict(
             endpoint=endpoint,
-            parameters=Log.stringify_parameters(request_data),
+            parameters=Log.jsonify_parameters(request_data),
             user=self.aieye_user,
         )
 

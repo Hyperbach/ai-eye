@@ -18,4 +18,4 @@ class PrepareParametersMixin:
         if not parameters:
             raise ValidationError("Invalid data")
 
-        return Log.stringify_parameters(parameters)
+        return Log.jsonify_parameters(parameters)
