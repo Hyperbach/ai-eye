@@ -43,25 +43,16 @@ class CreateLogViewSet(
         public_token = request.auth
         openaikey = public_token.openaikey
 
-        log_instance = Log.objects.filter(
-            self.create_logs_comparator(prepared_parameters),
-        ).first()
+        log_instance = self.get_log_instance(prepared_parameters)
 
         if log_instance is not None:
             response = log_instance.response
             cache_hit = True
         else:
-            try:
-                openai_response = openai_request(
-                    openaikey=openaikey.key, endpoint=endpoint, parameters=parameters
-                )
-            except OpenAIRequestException as exc:
-                raise exc
-            else:
-                response = openai_response
-                cache_hit = False
+            response = self.get_openai_response(openaikey, endpoint, parameters)
+            cache_hit = False
 
-        new_log_instance = Log.objects.create(
+        new_log_instance = self.create_log_instance(
             endpoint=endpoint,
             parameters=prepared_parameters,
             user=self.request.user,
@@ -72,3 +63,23 @@ class CreateLogViewSet(
 
         response_serializer = CacheHitResponseSerializer(instance=new_log_instance)
         return Response(data=response_serializer.data, status=status.HTTP_200_OK)
+
+    def get_log_instance(self, prepared_parameters):
+        return Log.objects.filter(
+            self.create_logs_comparator(prepared_parameters),
+        ).first()
+
+    @staticmethod
+    def create_log_instance(**kwargs):
+        return Log.objects.create(**kwargs)
+
+    @staticmethod
+    def get_openai_response(openaikey, endpoint, parameters):
+        try:
+            openai_response = openai_request(
+                openaikey=openaikey, endpoint=endpoint, parameters=parameters
+            )
+        except OpenAIRequestException as exc:
+            raise exc
+        else:
+            return openai_response
