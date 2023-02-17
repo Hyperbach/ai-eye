@@ -6,6 +6,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from api.models import Log
+from parameterized import parameterized
 from rest_framework.test import APIClient
 
 from tests.factories import (
@@ -102,20 +103,14 @@ class CacheTests(TestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["cache_hit"], True)
 
+    @parameterized.expand(
+        [
+            [{"model": "text-davinci-003", "prompt": "how do you do?"}],
+            [{"model": "text-davinci-003", "prompt": ""}],
+            [{"model": "text-davinci-003", "prompt": "&"}],
+        ]
+    )
     @patch("api.views.openai_request", side_effect=openai_request_mock)
-    def test_cache_case1(self, mock_openai_request):
-        request_data = {"model": "text-davinci-003", "prompt": "how do you do"}
-        endpoint = "v1/completions"
-        self.exec(request_data, endpoint)
-
-    @patch("api.views.openai_request", side_effect=openai_request_mock)
-    def test_cache_case_2(self, mock_openai_request):
-        request_data = {"model": "text-davinci-003", "prompt": ""}
-        endpoint = "v1/completions"
-        self.exec(request_data, endpoint)
-
-    @patch("api.views.openai_request", side_effect=openai_request_mock)
-    def test_cache_case_3(self, mock_openai_request):
-        request_data = {"model": "text-davinci-003", "prompt": "&"}
+    def test_cache_case(self, request_data, mock_openai_request):
         endpoint = "v1/completions"
         self.exec(request_data, endpoint)
