@@ -29,7 +29,6 @@ class OpenAIKeyFactory(factory.django.DjangoModelFactory):
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = User
-        exclude = ("plaintext_password",)
 
     first_name = factory.Faker("first_name")
     last_name = factory.Faker("last_name")
