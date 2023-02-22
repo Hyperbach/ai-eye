@@ -51,7 +51,7 @@ IGNORED_FUNCTION_NAMES = [
     "dict_functions",
     "invoke_builtin_function",
     "get_builtin_function_names",
-    "get_arity_of_func",
+    "get_arity_of_function",
 ]
 
 BUILTIN_FUNCTIONS_DICT = dict_functions(sys.modules[__name__])
