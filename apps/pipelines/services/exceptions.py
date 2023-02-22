@@ -1,36 +1,27 @@
 class PipelineException(Exception):
-    def __init__(self, msg=None):
-        self.msg = "Generic Pipeline Exception" if msg is None else msg
-
-    def __str__(self):
-        return self.msg
+    def __init__(self, msg):
+        super().__init__("Pipeline Exception: " + msg)
 
 
 class InvalidFunctionNameError(PipelineException):
-    def __init__(self, msg):
-        super().__init__(msg)
+    pass
 
 
 class NoDAGNodesError(PipelineException):
-    def __init__(self, msg):
-        super().__init__(msg)
+    pass
 
 
 class UnableToDetermineRootError(PipelineException):
-    def __init__(self, msg):
-        super().__init__(msg)
+    pass
 
 
 class CallBuiltinFunctionError(PipelineException):
-    def __init__(self, msg):
-        super().__init__(msg)
+    pass
 
 
 class CallPromptError(PipelineException):
-    def __init__(self, msg):
-        super().__init__(msg)
+    pass
 
 
 class InvalidArgumentsError(PipelineException):
-    def __init__(self, msg):
-        super().__init__(msg)
+    pass
