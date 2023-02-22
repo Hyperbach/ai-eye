@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "access",
     "dashboard",
     "api",
+    "pipelines",
 ]
 
 MIDDLEWARE = [

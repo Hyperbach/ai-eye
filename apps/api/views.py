@@ -1,3 +1,5 @@
+from pipelines.services.exceptions import PipelineException
+from pipelines.services.pipeline_executor import PipelineExecutor
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.response import Response
 
@@ -6,7 +8,7 @@ from .exceptions import OpenAIRequestException
 from .mixins import PrepareParametersMixin
 from .models import Log
 from .permissions import AiEyeUserPermission
-from .serializers import CacheHitResponseSerializer
+from .serializers import CacheHitResponseSerializer, PipelineCallSerializer
 from .services import openai_request
 
 
@@ -83,3 +85,30 @@ class CreateLogViewSet(
             raise exc
         else:
             return openai_response
+
+
+class PipelineCallViewSet(viewsets.ViewSet):
+    permission_classes = (
+        permissions.IsAuthenticated,
+        # AiEyeAdminPermission
+    )
+
+    def create(self, request):
+        serializer = PipelineCallSerializer(data=request.data)
+        if serializer.is_valid():
+            pipeline_id = serializer.validated_data["pipeline_id"]
+            args = serializer.validated_data["args"]
+            try:
+                # some cases
+                # p = PipelineExecutor(1, [[1], [2, 3]])
+                # #p = PipelineExecutor(3, [["a", "b", "c"]])
+                # res = p.exec()
+
+                p = PipelineExecutor(pipeline_source_id=pipeline_id, args=args)
+                result = p.exec()
+            except PipelineException as exc:
+                return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({"success": True, "response": result})
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

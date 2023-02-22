@@ -50,4 +50,36 @@ urlpatterns = [
         views.CachesDeleteAllView.as_view(),
         name="caches_delete_all",
     ),
+    path("prompts", views.PromptListView.as_view(), name="prompts"),
+    path("prompts/add", views.PromptCreateView.as_view(), name="prompt_create"),
+    path(
+        "prompts/<int:pk>/update/",
+        views.PromptUpdateView.as_view(),
+        name="prompt_update",
+    ),
+    path(
+        "prompts/<int:pk>/delete/",
+        views.PromptDeleteView.as_view(),
+        name="prompt_delete",
+    ),
+    path("builtins", views.BuiltinFunctionListView.as_view(), name="builtins"),
+    path(
+        "builtins/add", views.BuiltinFunctionCreateView.as_view(), name="builtin_create"
+    ),
+    path(
+        "builtins/<int:pk>/update/",
+        views.BuiltinFunctionUpdateView.as_view(),
+        name="builtin_update",
+    ),
+    path(
+        "builtins/<int:pk>/delete/",
+        views.BuiltinFunctionDeleteView.as_view(),
+        name="builtin_delete",
+    ),
+    path("pipelines", views.PipelineSourceListView.as_view(), name="pipelines"),
+    path(
+        "pipelines/add",
+        views.PipelineSourceCreateView.as_view(),
+        name="pipeline_create",
+    ),
 ]

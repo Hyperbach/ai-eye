@@ -8,6 +8,8 @@ from core.forms import UserCreateForm
 from core.mixins import AiEyeAdminMixin
 from core.models import OpenAIKey, PublicToken
 from dashboard.forms import PublicTokenCreateForm, PublicTokenUpdateForm
+from pipelines.forms import PipelineCreateForm
+from pipelines.models import BuiltinFunction, PipelineSource, Prompt
 
 User = get_user_model()
 
@@ -127,3 +129,83 @@ class CachesDeleteAllView(AiEyeAdminMixin, generic.FormView):
     def form_valid(self, form):
         Log.objects.all().delete()
         return super().form_valid(form)
+
+
+class PromptBaseView(AiEyeAdminMixin, View):
+    success_url = reverse_lazy("dashboard:prompts")
+
+    def get_queryset(self):
+        return Prompt.objects.order_by("-date_created")
+
+
+class PromptListView(PromptBaseView, generic.ListView):
+    fields = "__all__"
+    template_name = "dashboard/prompts/list.html"
+
+
+class PromptCreateView(PromptBaseView, generic.CreateView):
+    fields = ["name", "body", "description"]
+    template_name = "dashboard/prompts/create.html"
+
+    def form_valid(self, form):
+        obj = form.save(commit=False)
+        obj.owner = self.request.user
+        return super().form_valid(form)
+
+
+class PromptDeleteView(PromptBaseView, generic.DeleteView):  # type: ignore[misc]
+    template_name = "dashboard/prompts/delete.html"
+
+
+class PromptUpdateView(PromptBaseView, generic.UpdateView):
+    fields = ["name", "body", "description", "is_active"]
+    template_name = "dashboard/prompts/update.html"
+
+
+class BuiltinFunctionBaseView(AiEyeAdminMixin, View):
+    success_url = reverse_lazy("dashboard:builtins")
+
+    def get_queryset(self):
+        return BuiltinFunction.objects.order_by("-date_created")
+
+
+class BuiltinFunctionListView(BuiltinFunctionBaseView, generic.ListView):
+    fields = "__all__"
+    template_name = "dashboard/builtins/list.html"
+
+
+class BuiltinFunctionCreateView(BuiltinFunctionBaseView, generic.CreateView):
+    fields = ["name", "description"]
+    template_name = "dashboard/builtins/create.html"
+
+    def form_valid(self, form):
+        obj = form.save(commit=False)
+        obj.owner = self.request.user
+        return super().form_valid(form)
+
+
+class BuiltinFunctionDeleteView(BuiltinFunctionBaseView, generic.DeleteView):  # type: ignore[misc]
+    template_name = "dashboard/builtins/delete.html"
+
+
+class BuiltinFunctionUpdateView(BuiltinFunctionBaseView, generic.UpdateView):
+    fields = ["name", "description", "is_active"]
+    template_name = "dashboard/builtins/update.html"
+
+
+class PipelineSourceBaseView(AiEyeAdminMixin, View):
+    success_url = reverse_lazy("dashboard:pipelines")
+
+    def get_queryset(self):
+        return PipelineSource.objects.order_by("-date_created")
+
+
+class PipelineSourceListView(PipelineSourceBaseView, generic.ListView):
+    fields = "__all__"
+    template_name = "dashboard/pipelines/list.html"
+
+
+class PipelineSourceCreateView(AiEyeAdminMixin, generic.CreateView):
+    template_name = "dashboard/pipelines/create.html"
+    form_class = PipelineCreateForm
+    success_url = reverse_lazy("dashboard:pipelines")
