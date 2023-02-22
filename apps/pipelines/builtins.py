@@ -31,7 +31,7 @@ def dict_functions(mod):
     return {func.__name__: func for func in list_functions(mod)}
 
 
-def get_list_of_builtin_function_names():
+def get_builtin_function_names():
     return (
         (func.__name__, func.__name__) for func in list_functions(sys.modules[__name__])
     )
@@ -50,7 +50,7 @@ IGNORED_FUNCTION_NAMES = [
     "list_functions",
     "dict_functions",
     "invoke_builtin_function",
-    "get_list_of_builtin_function_names",
+    "get_builtin_function_names",
     "get_arity_of_func",
 ]
 

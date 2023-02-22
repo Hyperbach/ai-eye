@@ -4,7 +4,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from core.models import IsActiveMixin, TimestampMixin
-from pipelines.builtins import get_list_of_builtin_function_names
+from pipelines.builtins import get_builtin_function_names
 
 User = get_user_model()
 
@@ -35,7 +35,7 @@ class Prompt(TimestampMixin, IsActiveMixin):
 
 class BuiltinFunction(TimestampMixin, IsActiveMixin):
     name: models.CharField = models.CharField(
-        max_length=100, choices=get_list_of_builtin_function_names(), unique=True
+        max_length=100, choices=get_builtin_function_names(), unique=True
     )
     description: models.TextField = models.TextField(blank=True)
 
