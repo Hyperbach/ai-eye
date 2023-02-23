@@ -8,7 +8,8 @@ GRAMMAR = """
     name: /[a-zA-Z][a-zA-Z_0-9]*/
     func_invocation: name "(" func_args? ")"
     func_args: func_arg ("," func_arg)*
-    func_arg: expression
+    func_arg: arg_assign | expression
+    arg_assign: name "=" expression
     %import common.WS
     %ignore WS
 """
@@ -60,8 +61,20 @@ class DAGBuilder(Transformer):
                 node.add_edge(edge)
             else:
                 for nested_arg in arg:
-                    edge = Edge(node, nested_arg)
-                    node.add_edge(edge)
+                    # arg_assign
+                    if isinstance(nested_arg, tuple):
+                        arg_name, arg_value = nested_arg
+                        # create a new node with the name of the argument
+                        arg_node = arg_name
+                        # add an edge from the function node to the argument node
+                        edge = Edge(node, arg_node)
+                        node.add_edge(edge)
+                        # add an edge from the argument node to the argument value
+                        edge = Edge(arg_node, arg_value)
+                        arg_node.add_edge(edge)
+                    else:
+                        edge = Edge(node, nested_arg)
+                        node.add_edge(edge)
         return node
 
     def func_args(self, *args):
@@ -77,6 +90,10 @@ class DAGBuilder(Transformer):
     @v_args(inline=True)
     def expression(self, *args):
         return args[0]
+
+    @v_args(inline=True)
+    def arg_assign(self, name, value):
+        return name, value
 
     def build(self, expr):
         parser = Lark(GRAMMAR, parser="lalr", transformer=self)

@@ -1,12 +1,17 @@
 import re
 
 import networkx as nx
-from pipelines.builtins import get_arity_of_function, invoke_builtin_function
+from pipelines.builtins import (
+    get_arg_name_by_index,
+    get_arity_of_function,
+    invoke_builtin_function,
+)
 from pipelines.models import BuiltinFunction, DAGEdge, DAGNode, Prompt
 from pipelines.services.exceptions import (
     CallBuiltinFunctionError,
     CallPromptError,
     InvalidArgumentsError,
+    InvalidNodeStructureError,
     NoDAGNodesError,
     UnableToDetermineRootError,
 )
@@ -22,13 +27,16 @@ class CallBuiltinFunction:
     def get_arity_of_function(self):
         return get_arity_of_function(self.builtin_fn.name)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, **kwargs):
         try:
-            return invoke_builtin_function(self.builtin_fn.name, *args)
+            return invoke_builtin_function(self.builtin_fn.name, **kwargs)
         except Exception as exc:
             raise CallBuiltinFunctionError(
                 f"An error occurred while calling the function '{self.builtin_fn.name}'. Details: {exc}"
             )
+
+    def get_arg_name_by_index(self, index):
+        return get_arg_name_by_index(self.builtin_fn.name, index)
 
 
 class CallPrompt:
@@ -44,7 +52,7 @@ class CallPrompt:
         arg_names = self.ARGS_PATTERN_RX.findall(self.prompt.body)
         return len(set(arg_names))
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, **kwargs):
         body = self.prompt.body
         try:
             result = body.format(**kwargs)
@@ -93,7 +101,9 @@ class PipelineExecutor:
     def get_root(graph):
         roots = [n for n, d in graph.in_degree() if d == 0]
         if not roots or len(roots) > 1:
-            raise UnableToDetermineRootError("Unable to determine root node of a DAG.")
+            raise UnableToDetermineRootError(
+                "The root node of the DAG cannot be determined."
+            )
         return roots[0]
 
     def find_func_by_name(self, name):
@@ -119,29 +129,43 @@ class PipelineExecutor:
     def _exec(self, node):
         target_fn = self.find_func_by_name(node.name)
         if self.is_placeholder(target_fn):
-            arg_value = self.find_arg_value(node.name)
-            return arg_value
+            return self.find_arg_value(node.name)
 
-        args = []
         kwargs = {}
 
-        for child in self.graph.successors(node):
+        for index, child in enumerate(self.graph.successors(node)):
             child_func = self.find_func_by_name(child.name)
             arg_name = child.name
+
+            placeholder_assign_found = False
             if self.is_placeholder(child_func):
-                arg_value = self.find_arg_value(arg_name)
+                assign_placeholder_nodes = list(self.graph.successors(child))
+                if placeholder_assign_found := len(assign_placeholder_nodes) > 0:
+                    if len(assign_placeholder_nodes) != 1:
+                        raise InvalidNodeStructureError(
+                            f"""Incorrect nodes structure.
+                                Expected 1 node for assign_args,
+                                found {len(assign_placeholder_nodes)}
+                            """
+                        )
+                    arg_value = self._exec(assign_placeholder_nodes[0])
+                else:
+                    arg_value = self.find_arg_value(arg_name)
             else:
                 arg_value = self._exec(child)
 
-            if isinstance(target_fn, CallPrompt):
-                kwargs[arg_name] = arg_value
-            else:
-                args.append(arg_value)
+            if not placeholder_assign_found and isinstance(
+                target_fn, CallBuiltinFunction
+            ):
+                try:
+                    arg_name = target_fn.get_arg_name_by_index(index)
+                except IndexError as exc:
+                    raise InvalidArgumentsError(f"Invalid arguments. Details {exc}")
+
+            kwargs[arg_name] = arg_value
 
         fn_arity = target_fn.get_arity_of_function()
-        call_arity = (
-            len(args) if isinstance(target_fn, CallBuiltinFunction) else len(kwargs)
-        )
+        call_arity = len(kwargs)
         if fn_arity != call_arity:
             raise InvalidArgumentsError(
                 f"Invalid arguments amount specified. "
@@ -149,7 +173,20 @@ class PipelineExecutor:
                 f"but user provided {call_arity}."
             )
 
-        return target_fn(args, **kwargs)
+        return target_fn(**kwargs)
 
     def exec(self):
+        """
+        builtins:
+        --
+        identity(s)
+        identity(s=xxx)
+        identity(testme) <-- works also
+
+        prompts:
+        --
+        some_prompt_with_one_argument(xyz)
+        some_prompt_with_one_argument(xyz=r)
+        some_prompt_with_one_argument(testme) <-- wont work
+        """
         return self._exec(self.root)
