@@ -16,6 +16,11 @@ def now(timezone):
     return str(datetime.datetime.now(tz=tz))
 
 
+# example of builtin function
+def identity(s):
+    return s
+
+
 def list_functions(mod):
     def is_module_function(mod, func):
         return inspect.isfunction(func) and inspect.getmodule(func) == mod
@@ -37,8 +42,14 @@ def get_builtin_function_names():
     )
 
 
-def invoke_builtin_function(name, args):
-    return BUILTIN_FUNCTIONS_DICT[name](*args)
+def invoke_builtin_function(name, **kwargs):
+    return BUILTIN_FUNCTIONS_DICT[name](**kwargs)
+
+
+def get_arg_name_by_index(function_name, index):
+    func = BUILTIN_FUNCTIONS_DICT[function_name]
+    argspec = inspect.getfullargspec(func)
+    return argspec.args[index]
 
 
 def get_arity_of_function(func_name):
@@ -52,6 +63,7 @@ IGNORED_FUNCTION_NAMES = [
     "invoke_builtin_function",
     "get_builtin_function_names",
     "get_arity_of_function",
+    "get_arg_name_by_index",
 ]
 
 BUILTIN_FUNCTIONS_DICT = dict_functions(sys.modules[__name__])
