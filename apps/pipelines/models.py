@@ -70,15 +70,15 @@ class PipelineSource(TimestampMixin):
 class TypesOfDAGNodes(models.IntegerChoices):
     PROMPT = 0, "Prompt"
     BUILTIN_FUNCTION = 1, "Builtin Function"
+    PLACEHOLDER = 2, "Placeholder"
 
 
 class DAGNode(models.Model):
-
     type = models.IntegerField(
         default=TypesOfDAGNodes.PROMPT, choices=TypesOfDAGNodes.choices
     )
 
-    full_name = models.CharField(max_length=50)
+    full_name = models.TextField()
     name = models.CharField(max_length=150)
     pipeline_source = models.ForeignKey(
         PipelineSource, on_delete=models.CASCADE, related_name="nodes"

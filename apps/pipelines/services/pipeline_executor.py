@@ -7,7 +7,6 @@ from pipelines.services.exceptions import (
     CallBuiltinFunctionError,
     CallPromptError,
     InvalidArgumentsError,
-    InvalidFunctionNameError,
     NoDAGNodesError,
     UnableToDetermineRootError,
 )
@@ -48,8 +47,7 @@ class CallPrompt:
     def __call__(self, *args, **kwargs):
         body = self.prompt.body
         try:
-            placeholders = [f"arg{i + 1}" for i in range(len(args[0]))]
-            result = body.format(*args, **dict(zip(placeholders, *args)))
+            result = body.format(**kwargs)
             # TODO: Openai API
             return result
         except Exception as exc:
@@ -59,9 +57,11 @@ class CallPrompt:
 
 
 class PipelineExecutor:
-    def __init__(self, pipeline_source_id, args):
+    def __init__(self, pipeline_source_id, args, openaikey):
         self.pipeline_source_id = pipeline_source_id
         self.args = args
+        self.openaikey = openaikey
+
         self.graph, self.prompts, self.builtins = self.build_graph()
         self.root = self.get_root(self.graph)
 
@@ -71,8 +71,8 @@ class PipelineExecutor:
         ).all()
         if not dag_nodes:
             raise NoDAGNodesError(
-                f"Unable to find DAG nodes belonging to this pipeline "
-                f"with id {self.pipeline_source_id}"
+                f"Unable to find DAG nodes belonging to the pipeline "
+                f"with id {self.pipeline_source_id}."
             )
 
         dag_edges = DAGEdge.objects.filter(from_node__in=dag_nodes).all()
@@ -93,7 +93,7 @@ class PipelineExecutor:
     def get_root(graph):
         roots = [n for n, d in graph.in_degree() if d == 0]
         if not roots or len(roots) > 1:
-            raise UnableToDetermineRootError("Unable to determine root node of a DAG")
+            raise UnableToDetermineRootError("Unable to determine root node of a DAG.")
         return roots[0]
 
     def find_func_by_name(self, name):
@@ -104,35 +104,52 @@ class PipelineExecutor:
             return CallPrompt(prompt_fn)
         if builtin_fn := find_first(self.builtins):
             return CallBuiltinFunction(builtin_fn)
-        raise InvalidFunctionNameError(f"Function {name} was not found.")
+        return None
+
+    def find_arg_value(self, arg_name):
+        arg_value = self.args.get(arg_name, None)
+        if arg_value is None:
+            raise InvalidArgumentsError(f"Argument named `{arg_name}` is not supplied.")
+        return arg_value
+
+    @staticmethod
+    def is_placeholder(target_fn):
+        return target_fn is None
 
     def _exec(self, node):
         target_fn = self.find_func_by_name(node.name)
+        if self.is_placeholder(target_fn):
+            arg_value = self.find_arg_value(node.name)
+            return arg_value
+
         args = []
+        kwargs = {}
 
-        neighbors_found = False
-        for neighbor in self.graph.successors(node):
-            neighbors_found = True
-            arg = self._exec(neighbor)
-            args.append(arg)
+        for child in self.graph.successors(node):
+            child_func = self.find_func_by_name(child.name)
+            arg_name = child.name
+            if self.is_placeholder(child_func):
+                arg_value = self.find_arg_value(arg_name)
+            else:
+                arg_value = self._exec(child)
 
-        if not neighbors_found:
-            if not self.args:
-                raise InvalidArgumentsError(
-                    "Non sufficient amount of parameters specified"
-                )
-            args = self.args[0]
-            self.args = self.args[1:]
+            if isinstance(target_fn, CallPrompt):
+                kwargs[arg_name] = arg_value
+            else:
+                args.append(arg_value)
 
         fn_arity = target_fn.get_arity_of_function()
-        if fn_arity != len(args):
+        call_arity = (
+            len(args) if isinstance(target_fn, CallBuiltinFunction) else len(kwargs)
+        )
+        if fn_arity != call_arity:
             raise InvalidArgumentsError(
                 f"Invalid arguments amount specified. "
                 f"Function expects {fn_arity}, "
-                f"but user provided {len(args)}"
+                f"but user provided {call_arity}."
             )
 
-        return target_fn(args)
+        return target_fn(args, **kwargs)
 
     def exec(self):
         return self._exec(self.root)

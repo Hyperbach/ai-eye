@@ -1,19 +1,19 @@
+import datetime
 import inspect
 import sys
 
-
-def builtin_fn1(arg1, arg2):
-    return "For only {arg1} dollars you'll get {arg2} goods".format(
-        arg1=arg1, arg2=arg2
-    )
+import pytz
 
 
-def builtin_fn2(arg):
-    return f"{arg} B"
+# example of builtin function
+def concat(arg1, arg2):
+    return f"{arg1} {arg2}"
 
 
-def builtin_fn3(arg1, arg2):
-    return "C" * arg1 + f" {arg2}"
+# example of builtin function
+def now(timezone):
+    tz = pytz.timezone(timezone)
+    return str(datetime.datetime.now(tz=tz))
 
 
 def list_functions(mod):

@@ -88,23 +88,21 @@ class CreateLogViewSet(
 
 
 class PipelineCallViewSet(viewsets.ViewSet):
-    permission_classes = (
-        permissions.IsAuthenticated,
-        # AiEyeAdminPermission
-    )
+    permission_classes = (permissions.IsAuthenticated, AiEyeUserPermission)
+    authentication_classes = (AiEyeTokenAuthentication,)
 
     def create(self, request):
         serializer = PipelineCallSerializer(data=request.data)
         if serializer.is_valid():
+            public_token = request.auth
+            openaikey = public_token.openaikey
+
             pipeline_id = serializer.validated_data["pipeline_id"]
             args = serializer.validated_data["args"]
             try:
-                # some cases
-                # p = PipelineExecutor(1, [[1], [2, 3]])
-                # #p = PipelineExecutor(3, [["a", "b", "c"]])
-                # res = p.exec()
-
-                p = PipelineExecutor(pipeline_source_id=pipeline_id, args=args)
+                p = PipelineExecutor(
+                    pipeline_source_id=pipeline_id, args=args, openaikey=openaikey
+                )
                 result = p.exec()
             except PipelineException as exc:
                 return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)

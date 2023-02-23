@@ -4,11 +4,11 @@ from lark import Lark, Transformer, v_args
 
 GRAMMAR = """
     start: expression
-    expression: func_name | func_invocation
-    func_name: /[a-zA-Z][a-zA-Z_0-9]*/
-    func_invocation: func_name "(" func_args? ")"
+    expression: name | func_invocation
+    name: /[a-zA-Z][a-zA-Z_0-9]*/
+    func_invocation: name "(" func_args? ")"
     func_args: func_arg ("," func_arg)*
-    func_arg: func_name | func_invocation
+    func_arg: expression
     %import common.WS
     %ignore WS
 """
@@ -30,6 +30,9 @@ class Node:
     def __str__(self):
         return self.full_name
 
+    def __repr__(self):
+        return self.full_name
+
 
 class Edge:
     def __init__(self, source, target):
@@ -39,10 +42,13 @@ class Edge:
     def __str__(self):
         return f"{self.source} -> {self.target}"
 
+    def __repr__(self):
+        return f"{self.source} -> {self.target}"
+
 
 class DAGBuilder(Transformer):
     @v_args(inline=True)
-    def func_name(self, name):
+    def name(self, name):
         return Node(name.value)
 
     @v_args(inline=True)
@@ -66,7 +72,11 @@ class DAGBuilder(Transformer):
 
     @v_args(inline=True)
     def start(self, *args):
-        return args
+        return args[0]
+
+    @v_args(inline=True)
+    def expression(self, *args):
+        return args[0]
 
     def build(self, expr):
         parser = Lark(GRAMMAR, parser="lalr", transformer=self)

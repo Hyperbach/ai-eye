@@ -26,13 +26,6 @@ class PipelineCreateForm(forms.ModelForm):
             raise ValidationError("Invalid body provided.")
 
         nodes, edges, prompts, builtins = self.parse_dag(body)
-        nodes_names = set(n.name for n in nodes)
-
-        if len(prompts) + len(builtins) != len(nodes_names):
-            raise ValidationError(
-                "Unable to parse specified body, invalid prompts and/or builtins provided. "
-                "Unable to determine used functions."
-            )
 
         self.cleaned_data["nodes"] = nodes
         self.cleaned_data["edges"] = edges
@@ -56,8 +49,9 @@ class PipelineCreateForm(forms.ModelForm):
 
         try:
             root = builder.build(body)
-            nodes, edges = traverse_root(root[0].children[0])
+            nodes, edges = traverse_root(root)
 
+            # designate either builtins or prompts or placeholders
             node_names = [node.name for node in nodes]
 
             prompts = Prompt.objects.filter(name__in=node_names).all()
@@ -71,6 +65,22 @@ class PipelineCreateForm(forms.ModelForm):
 
         return nodes, edges, prompts, builtins
 
+    def get_dag_node_type(self, node_name):
+        def find_first(search_node_name, src_coll):
+            return next(filter(lambda p: p.name == search_node_name, src_coll), None)
+
+        prompt = find_first(node_name, self.cleaned_data["prompts"])
+        builtin = find_first(node_name, self.cleaned_data["builtins"])
+
+        if prompt is not None:
+            dag_node_type = TypesOfDAGNodes.PROMPT
+        elif builtin is not None:
+            dag_node_type = TypesOfDAGNodes.BUILTIN_FUNCTION
+        else:
+            dag_node_type = TypesOfDAGNodes.PLACEHOLDER
+
+        return dag_node_type
+
     def create_dag_nodes(self, pipeline):
         dag_nodes = []
 
@@ -78,15 +88,7 @@ class PipelineCreateForm(forms.ModelForm):
             node_name = node.name
             node_full_name = node.full_name
 
-            prompt = next(
-                (p for p in self.cleaned_data["prompts"] if p.name == node_name), None
-            )
-            dag_node_type = (
-                TypesOfDAGNodes.PROMPT
-                if prompt is not None
-                else TypesOfDAGNodes.BUILTIN_FUNCTION
-            )
-
+            dag_node_type = self.get_dag_node_type(node_name)
             dagnode = DAGNode(
                 full_name=node_full_name,
                 name=node_name,
