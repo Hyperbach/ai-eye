@@ -12,6 +12,7 @@ from pipelines.models import (
     TypesOfDAGNodes,
 )
 from pipelines.services.dag_builder import DAGBuilder, traverse_root
+from pipelines.utils import find_first
 
 
 class PipelineCreateForm(forms.ModelForm):
@@ -51,7 +52,7 @@ class PipelineCreateForm(forms.ModelForm):
             root = builder.build(body)
             nodes, edges = traverse_root(root)
 
-            # designate either builtins or prompts or placeholders
+            # designates either builtins or prompts or placeholders
             node_names = [node.name for node in nodes]
 
             prompts = Prompt.objects.filter(name__in=node_names).all()
@@ -66,11 +67,10 @@ class PipelineCreateForm(forms.ModelForm):
         return nodes, edges, prompts, builtins
 
     def get_dag_node_type(self, node_name):
-        def find_first(search_node_name, src_coll):
-            return next(filter(lambda p: p.name == search_node_name, src_coll), None)
-
-        prompt = find_first(node_name, self.cleaned_data["prompts"])
-        builtin = find_first(node_name, self.cleaned_data["builtins"])
+        prompt = find_first(lambda p: p.name == node_name, self.cleaned_data["prompts"])
+        builtin = find_first(
+            lambda p: p.name == node_name, self.cleaned_data["builtins"]
+        )
 
         if prompt is not None:
             dag_node_type = TypesOfDAGNodes.PROMPT
@@ -85,13 +85,10 @@ class PipelineCreateForm(forms.ModelForm):
         dag_nodes = []
 
         for node in self.cleaned_data["nodes"]:
-            node_name = node.name
-            node_full_name = node.full_name
-
-            dag_node_type = self.get_dag_node_type(node_name)
+            dag_node_type = self.get_dag_node_type(node.name)
             dagnode = DAGNode(
-                full_name=node_full_name,
-                name=node_name,
+                identifier=node.identifier,
+                name=node.name,
                 type=dag_node_type,
                 pipeline_source=pipeline,
             )
@@ -107,11 +104,13 @@ class PipelineCreateForm(forms.ModelForm):
         for edge in self.cleaned_data["edges"]:
             src = edge.source
             target = edge.target
-            from_node = next(
-                (n for n in dag_nodes if n.full_name == src.full_name), None
+            from_node = find_first(
+                lambda n: n.name == src.name and n.identifier == src.identifier,
+                dag_nodes,
             )
-            to_node = next(
-                (n for n in dag_nodes if n.full_name == target.full_name), None
+            to_node = find_first(
+                lambda n: n.name == target.name and n.identifier == target.identifier,
+                dag_nodes,
             )
             edge = DAGEdge(from_node=from_node, to_node=to_node)
             edges.append(edge)

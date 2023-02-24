@@ -25,7 +25,3 @@ class CallPromptError(PipelineException):
 
 class InvalidArgumentsError(PipelineException):
     pass
-
-
-class InvalidNodeStructureError(PipelineException):
-    pass

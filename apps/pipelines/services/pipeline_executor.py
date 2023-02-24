@@ -1,20 +1,21 @@
 import re
 
 import networkx as nx
+from api.services import openai_request
 from pipelines.builtins import (
+    call_builtin_function,
     get_arg_name_by_index,
     get_arity_of_function,
-    invoke_builtin_function,
 )
 from pipelines.models import BuiltinFunction, DAGEdge, DAGNode, Prompt
 from pipelines.services.exceptions import (
     CallBuiltinFunctionError,
     CallPromptError,
     InvalidArgumentsError,
-    InvalidNodeStructureError,
     NoDAGNodesError,
     UnableToDetermineRootError,
 )
+from pipelines.utils import find_first
 
 
 class CallBuiltinFunction:
@@ -29,7 +30,7 @@ class CallBuiltinFunction:
 
     def __call__(self, **kwargs):
         try:
-            return invoke_builtin_function(self.builtin_fn.name, **kwargs)
+            return call_builtin_function(self.builtin_fn.name, **kwargs)
         except Exception as exc:
             raise CallBuiltinFunctionError(
                 f"An error occurred while calling the function '{self.builtin_fn.name}'. Details: {exc}"
@@ -42,25 +43,32 @@ class CallBuiltinFunction:
 class CallPrompt:
     ARGS_PATTERN_RX = re.compile(r"{[a-zA-Z][a-zA-Z_0-9]*}")
 
-    def __init__(self, prompt):
-        self.prompt = prompt
+    def __init__(self, prompt_fn, openaikey):
+        self.prompt_fn = prompt_fn
+        self.openaikey = openaikey
+        self.endpoint = "v1/completions"
+        self.model = "text-davinci-003"
 
     def __str__(self):
-        return self.prompt.name
+        return self.prompt_fn.name
 
     def get_arity_of_function(self):
-        arg_names = self.ARGS_PATTERN_RX.findall(self.prompt.body)
+        arg_names = self.ARGS_PATTERN_RX.findall(self.prompt_fn.body)
         return len(set(arg_names))
 
     def __call__(self, **kwargs):
-        body = self.prompt.body
+        body = self.prompt_fn.body
+
         try:
-            result = body.format(**kwargs)
-            # TODO: Openai API
-            return result
+            prompt = body.format(**kwargs)
+            return openai_request(
+                openaikey=self.openaikey,
+                endpoint=self.endpoint,
+                parameters={"model": self.model, "prompt": prompt},
+            )
         except Exception as exc:
             raise CallPromptError(
-                f"An error occurred while calling the function '{self.prompt.name}'. Details: {exc}"
+                f"An error occurred while calling the function '{self.prompt_fn.name}'. Details: {exc}"
             )
 
 
@@ -79,8 +87,7 @@ class PipelineExecutor:
         ).all()
         if not dag_nodes:
             raise NoDAGNodesError(
-                f"Unable to find DAG nodes belonging to the pipeline "
-                f"with id {self.pipeline_source_id}."
+                f"Unable to find DAG nodes belonging to the pipeline with id {self.pipeline_source_id}."
             )
 
         dag_edges = DAGEdge.objects.filter(from_node__in=dag_nodes).all()
@@ -100,19 +107,16 @@ class PipelineExecutor:
     @staticmethod
     def get_root(graph):
         roots = [n for n, d in graph.in_degree() if d == 0]
-        if not roots or len(roots) > 1:
+        if len(roots) != 1:
             raise UnableToDetermineRootError(
                 "The root node of the DAG cannot be determined."
             )
         return roots[0]
 
     def find_func_by_name(self, name):
-        def find_first(src_coll):
-            return next(filter(lambda p: p.name == name, src_coll), None)
-
-        if prompt_fn := find_first(self.prompts):
-            return CallPrompt(prompt_fn)
-        if builtin_fn := find_first(self.builtins):
+        if prompt_fn := find_first(lambda p: p.name == name, self.prompts):
+            return CallPrompt(prompt_fn=prompt_fn, openaikey=self.openaikey)
+        if builtin_fn := find_first(lambda p: p.name == name, self.builtins):
             return CallBuiltinFunction(builtin_fn)
         return None
 
@@ -137,26 +141,18 @@ class PipelineExecutor:
             child_func = self.find_func_by_name(child.name)
             arg_name = child.name
 
-            placeholder_assign_found = False
+            assign_arg = False
             if self.is_placeholder(child_func):
-                assign_placeholder_nodes = list(self.graph.successors(child))
-                if placeholder_assign_found := len(assign_placeholder_nodes) > 0:
-                    if len(assign_placeholder_nodes) != 1:
-                        raise InvalidNodeStructureError(
-                            f"""Incorrect nodes structure.
-                                Expected 1 node for assign_args,
-                                found {len(assign_placeholder_nodes)}
-                            """
-                        )
-                    arg_value = self._exec(assign_placeholder_nodes[0])
+                assign_arg_nodes = list(self.graph.successors(child))
+                if assign_arg := len(assign_arg_nodes) > 0:
+                    assert len(assign_arg_nodes) == 1
+                    arg_value = self._exec(assign_arg_nodes[0])
                 else:
                     arg_value = self.find_arg_value(arg_name)
             else:
                 arg_value = self._exec(child)
 
-            if not placeholder_assign_found and isinstance(
-                target_fn, CallBuiltinFunction
-            ):
+            if not assign_arg and isinstance(target_fn, CallBuiltinFunction):
                 try:
                     arg_name = target_fn.get_arg_name_by_index(index)
                 except IndexError as exc:
@@ -165,12 +161,12 @@ class PipelineExecutor:
             kwargs[arg_name] = arg_value
 
         fn_arity = target_fn.get_arity_of_function()
-        call_arity = len(kwargs)
-        if fn_arity != call_arity:
+        fn_call_arity = len(kwargs)
+        if fn_arity != fn_call_arity:
             raise InvalidArgumentsError(
                 f"Invalid arguments amount specified. "
                 f"Function expects {fn_arity}, "
-                f"but user provided {call_arity}."
+                f"but user provided {fn_call_arity}."
             )
 
         return target_fn(**kwargs)

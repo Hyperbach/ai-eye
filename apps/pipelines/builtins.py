@@ -42,7 +42,7 @@ def get_builtin_function_names():
     )
 
 
-def invoke_builtin_function(name, **kwargs):
+def call_builtin_function(name, **kwargs):
     return BUILTIN_FUNCTIONS_DICT[name](**kwargs)
 
 
