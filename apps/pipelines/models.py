@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 from core.models import IsActiveMixin, TimestampMixin
 from pipelines.builtins import get_builtin_function_names
+from pipelines.choices import TypesOfDAGNodes
 
 User = get_user_model()
 
@@ -67,18 +68,12 @@ class PipelineSource(TimestampMixin):
         return f"{self.body[:5]}..."
 
 
-class TypesOfDAGNodes(models.IntegerChoices):
-    PROMPT = 0, "Prompt"
-    BUILTIN_FUNCTION = 1, "Builtin Function"
-    PLACEHOLDER = 2, "Placeholder"
-
-
 class DAGNode(models.Model):
     type = models.IntegerField(
         default=TypesOfDAGNodes.PROMPT, choices=TypesOfDAGNodes.choices
     )
 
-    full_name = models.TextField()
+    identifier = models.PositiveIntegerField()
     name = models.CharField(max_length=150)
     pipeline_source = models.ForeignKey(
         PipelineSource, on_delete=models.CASCADE, related_name="nodes"
@@ -89,12 +84,13 @@ class DAGNode(models.Model):
         verbose_name_plural = _("DAGNodes")
         constraints = [
             models.UniqueConstraint(
-                fields=["type", "full_name", "pipeline_source"], name="unique_dagnodes"
+                fields=["type", "name", "identifier", "pipeline_source"],
+                name="unique_dagnodes",
             )
         ]
 
     def __str__(self):
-        return self.name
+        return f"{self.name} {self.identifier}"
 
 
 class DAGEdge(models.Model):

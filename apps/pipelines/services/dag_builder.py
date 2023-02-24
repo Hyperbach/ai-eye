@@ -1,5 +1,3 @@
-import uuid
-
 from lark import Lark, Transformer, v_args
 
 GRAMMAR = """
@@ -16,10 +14,13 @@ GRAMMAR = """
 
 
 class Node:
+    last_id = 0
+
     def __init__(self, name):
         self.name = name
-        self.id = uuid.uuid4().hex
+        self.id = Node.last_id
         self.edges = []
+        Node.last_id += 1
 
     def add_edge(self, edge):
         self.edges.append(edge)
@@ -27,6 +28,10 @@ class Node:
     @property
     def full_name(self):
         return f"{self.name} {self.id}"
+
+    @property
+    def identifier(self):
+        return self.id
 
     def __str__(self):
         return self.full_name
