@@ -54,6 +54,13 @@ Run tests:
 (env) python manage.py test
 ```
 
+Code coverage:
+```shell
+(env) coverage run --source='.' manage.py test
+(env) coverage report
+(env) coverage html
+```
+
 Useful commands:
 ```
 (env) pre-commit run
