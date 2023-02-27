@@ -10,9 +10,9 @@ from tests.factories import AiEyeAdminFactory
 
 class DAGSaverTestCase(TestCase):
     def setUp(self):
-        self.aieye_admin = AiEyeAdminFactory.create()
-        Prompt.objects.create(name="prompt_a", owner=self.aieye_admin)
-        Prompt.objects.create(name="prompt_b", owner=self.aieye_admin)
+        aieye_admin = AiEyeAdminFactory.create()
+        Prompt.objects.create(name="prompt_a", owner=aieye_admin)
+        Prompt.objects.create(name="prompt_b", owner=aieye_admin)
 
         BuiltinFunction.objects.create(name="builtin_a")
 
