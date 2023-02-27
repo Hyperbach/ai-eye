@@ -103,17 +103,3 @@ class DAGBuilder(Transformer):
     def build(self, expr):
         parser = Lark(GRAMMAR, parser="lalr", transformer=self)
         return parser.parse(expr)
-
-
-def traverse_root(root: Node):
-    nodes = []
-    edges = []
-
-    def traverse(node: Node):
-        nodes.append(node)
-        for edge in node.edges:
-            edges.append(edge)
-            traverse(edge.target)
-
-    traverse(root)
-    return nodes, edges

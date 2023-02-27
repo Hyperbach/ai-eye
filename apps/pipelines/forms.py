@@ -3,16 +3,9 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from lark import LarkError
-from pipelines.models import (
-    BuiltinFunction,
-    DAGEdge,
-    DAGNode,
-    PipelineSource,
-    Prompt,
-    TypesOfDAGNodes,
-)
-from pipelines.services.dag_builder import DAGBuilder, traverse_root
-from pipelines.utils import find_first
+from pipelines.models import PipelineSource
+from pipelines.services.dag_builder import DAGBuilder
+from pipelines.services.dag_saver import DAGSaver
 
 
 class PipelineCreateForm(forms.ModelForm):
@@ -26,94 +19,21 @@ class PipelineCreateForm(forms.ModelForm):
         if not body:
             raise ValidationError("Invalid body provided.")
 
-        nodes, edges, prompts, builtins = self.parse_dag(body)
+        dag_builder = DAGBuilder()
 
-        self.cleaned_data["nodes"] = nodes
-        self.cleaned_data["edges"] = edges
-        self.cleaned_data["prompts"] = prompts
-        self.cleaned_data["builtins"] = builtins
+        try:
+            self.cleaned_data["root"] = dag_builder.build(body)
+        except LarkError as exc:
+            raise ValidationError(f"Unable to parse specified body. Details: {exc}")
 
         return cleaned_data
 
     def save(self, commit=True):
         pipeline = super().save(commit=False)
         if commit:
+            dag_saver = DAGSaver(self.cleaned_data["root"])
             with transaction.atomic():
                 pipeline.save()
-                dag_nodes = self.create_dag_nodes(pipeline)
-                self.create_dag_edges(dag_nodes)
+                dag_saver.save(pipeline=pipeline)
 
         return pipeline
-
-    def parse_dag(self, body):
-        builder = DAGBuilder()
-
-        try:
-            root = builder.build(body)
-            nodes, edges = traverse_root(root)
-
-            # designates either builtins or prompts or placeholders
-            node_names = [node.name for node in nodes]
-
-            prompts = Prompt.objects.filter(name__in=node_names).all()
-            builtins = BuiltinFunction.objects.filter(name__in=node_names).all()
-        except LarkError as exc:
-            raise ValidationError(f"Unable to parse specified body. Details: {exc}")
-        except Exception as exc:
-            raise ValidationError(
-                f"Unable to parse specified body. Unknown error. Details: {exc}"
-            )
-
-        return nodes, edges, prompts, builtins
-
-    def get_dag_node_type(self, node_name):
-        prompt = find_first(lambda p: p.name == node_name, self.cleaned_data["prompts"])
-        builtin = find_first(
-            lambda p: p.name == node_name, self.cleaned_data["builtins"]
-        )
-
-        if prompt is not None:
-            dag_node_type = TypesOfDAGNodes.PROMPT
-        elif builtin is not None:
-            dag_node_type = TypesOfDAGNodes.BUILTIN_FUNCTION
-        else:
-            dag_node_type = TypesOfDAGNodes.PLACEHOLDER
-
-        return dag_node_type
-
-    def create_dag_nodes(self, pipeline):
-        dag_nodes = []
-
-        for node in self.cleaned_data["nodes"]:
-            dag_node_type = self.get_dag_node_type(node.name)
-            dagnode = DAGNode(
-                identifier=node.identifier,
-                name=node.name,
-                type=dag_node_type,
-                pipeline_source=pipeline,
-            )
-            dag_nodes.append(dagnode)
-
-        if dag_nodes:
-            DAGNode.objects.bulk_create(dag_nodes)
-        return dag_nodes
-
-    def create_dag_edges(self, dag_nodes):
-        edges = []
-
-        for edge in self.cleaned_data["edges"]:
-            src = edge.source
-            target = edge.target
-            from_node = find_first(
-                lambda n: n.name == src.name and n.identifier == src.identifier,
-                dag_nodes,
-            )
-            to_node = find_first(
-                lambda n: n.name == target.name and n.identifier == target.identifier,
-                dag_nodes,
-            )
-            edge = DAGEdge(from_node=from_node, to_node=to_node)
-            edges.append(edge)
-
-        if edges:
-            DAGEdge.objects.bulk_create(edges)

@@ -101,7 +101,7 @@ class PipelineCallViewSet(viewsets.ViewSet):
             args = serializer.validated_data["args"]
             try:
                 p = PipelineExecutor(
-                    pipeline_source_id=pipeline_id, args=args, openaikey=openaikey
+                    pipeline_source_id=pipeline_id, user_args=args, openaikey=openaikey
                 )
                 result = p.exec()
             except PipelineException as exc:

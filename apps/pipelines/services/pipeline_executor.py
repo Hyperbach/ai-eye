@@ -73,9 +73,9 @@ class CallPrompt:
 
 
 class PipelineExecutor:
-    def __init__(self, pipeline_source_id, args, openaikey):
+    def __init__(self, pipeline_source_id, user_args, openaikey):
         self.pipeline_source_id = pipeline_source_id
-        self.args = args
+        self.user_args = user_args
         self.openaikey = openaikey
 
         self.graph, self.prompts, self.builtins = self.build_graph()
@@ -121,7 +121,7 @@ class PipelineExecutor:
         return None
 
     def find_arg_value(self, arg_name):
-        arg_value = self.args.get(arg_name, None)
+        arg_value = self.user_args.get(arg_name, None)
         if arg_value is None:
             raise InvalidArgumentsError(f"Argument named `{arg_name}` is not supplied.")
         return arg_value
@@ -183,6 +183,6 @@ class PipelineExecutor:
         --
         some_prompt_with_one_argument(xyz)
         some_prompt_with_one_argument(xyz=r)
-        some_prompt_with_one_argument(testme) <-- wont work
+        some_prompt_with_one_argument(testme) <-- won't work
         """
         return self._exec(self.root)
