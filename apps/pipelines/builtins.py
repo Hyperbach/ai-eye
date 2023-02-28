@@ -60,10 +60,10 @@ def get_arity_of_function(func_name):
 IGNORED_FUNCTION_NAMES = [
     "list_functions",
     "dict_functions",
-    "invoke_builtin_function",
     "get_builtin_function_names",
     "get_arity_of_function",
     "get_arg_name_by_index",
+    "call_builtin_function",
 ]
 
 BUILTIN_FUNCTIONS_DICT = dict_functions(sys.modules[__name__])
