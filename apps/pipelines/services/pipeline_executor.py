@@ -1,6 +1,7 @@
 import re
 
 import networkx as nx
+from api.exceptions import OpenAIRequestException
 from api.services import openai_request
 from pipelines.builtins import (
     call_builtin_function,
@@ -66,7 +67,7 @@ class CallPrompt:
                 endpoint=self.endpoint,
                 parameters={"model": self.model, "prompt": prompt},
             )
-        except Exception as exc:
+        except (KeyError, OpenAIRequestException) as exc:
             raise CallPromptError(
                 f"An error occurred while calling the function '{self.prompt_fn.name}'. Details: {exc}"
             )

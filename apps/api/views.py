@@ -101,9 +101,9 @@ class PipelineCallViewSet(viewsets.ViewSet):
             args = serializer.validated_data["args"]
             try:
                 p = PipelineExecutor(
-                    pipeline_source_id=pipeline_id, user_args=args, openaikey=openaikey
+                    pipeline_source_id=pipeline_id, openaikey=openaikey
                 )
-                result = p.exec()
+                result = p.exec(user_args=args)
             except PipelineException as exc:
                 return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
             else:

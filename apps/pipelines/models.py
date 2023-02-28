@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from core.models import IsActiveMixin, TimestampMixin
@@ -66,6 +67,19 @@ class PipelineSource(TimestampMixin):
 
     def __str__(self):
         return f"{self.body[:5]}..."
+
+    def delete_dependents(self):
+        with transaction.atomic():
+            DAGEdge.objects.filter(
+                Q(from_node__pipeline_source=self) | Q(to_node__pipeline_source=self)
+            ).delete()
+
+            DAGNode.objects.filter(pipeline_source=self).delete()
+
+    def delete(self, *args, **kwargs):
+        with transaction.atomic():
+            self.delete_dependents()
+            super().delete(*args, **kwargs)
 
 
 class DAGNode(models.Model):
