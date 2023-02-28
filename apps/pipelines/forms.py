@@ -29,11 +29,13 @@ class PipelineCreateForm(forms.ModelForm):
         return cleaned_data
 
     def save(self, commit=True):
+        update = self.instance.id is not None
+
         pipeline = super().save(commit=False)
         if commit:
             dag_saver = DAGSaver(self.cleaned_data["root"])
             with transaction.atomic():
                 pipeline.save()
-                dag_saver.save(pipeline=pipeline)
+                dag_saver.save(pipeline=pipeline, update=update)
 
         return pipeline

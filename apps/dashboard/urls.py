@@ -82,4 +82,14 @@ urlpatterns = [
         views.PipelineSourceCreateView.as_view(),
         name="pipeline_create",
     ),
+    path(
+        "pipelines/<int:pk>/update/",
+        views.PipelineSourceUpdateView.as_view(),
+        name="pipeline_update",
+    ),
+    path(
+        "pipelines/<int:pk>/delete/",
+        views.PipelineSourceDeleteView.as_view(),
+        name="pipeline_delete",
+    ),
 ]

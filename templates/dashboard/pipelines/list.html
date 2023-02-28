@@ -27,8 +27,8 @@
                             <td>{{ pipeline.body }}</td>
                             <td>{{ pipeline.date_created|date:'m-d-Y H:i:s' }}</td>
                             <td>{{ pipeline.date_updated|date:'m-d-Y H:i:s' }}</td>
-                            <td></td>
-                            <td></td>
+                            <td><a href="{% url 'dashboard:pipeline_update' pipeline.pk %}">Update</a></td>
+                            <td><a href="{% url 'dashboard:pipeline_delete' pipeline.pk %}">Delete</a></td>
                         </tr>
                     {% endfor %}
                 {% endif %}
@@ -36,7 +36,7 @@
             </table>
 
             <div class="d-flex ">
-                <a href="{% url 'dashboard:pipeline_create' %}" class="d-block btn btn-primary  my-2">Add new</a>
+                <a href="{% url 'dashboard:pipeline_create' %}" class="d-block btn btn-primary my-2">Add new</a>
             </div>
         </div>
     </div>

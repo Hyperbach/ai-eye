@@ -205,7 +205,16 @@ class PipelineSourceListView(PipelineSourceBaseView, generic.ListView):
     template_name = "dashboard/pipelines/list.html"
 
 
-class PipelineSourceCreateView(AiEyeAdminMixin, generic.CreateView):
+class PipelineSourceCreateView(PipelineSourceBaseView, generic.CreateView):
     template_name = "dashboard/pipelines/create.html"
     form_class = PipelineCreateForm
     success_url = reverse_lazy("dashboard:pipelines")
+
+
+class PipelineSourceUpdateView(PipelineSourceBaseView, generic.UpdateView):
+    form_class = PipelineCreateForm
+    template_name = "dashboard/pipelines/update.html"
+
+
+class PipelineSourceDeleteView(PipelineSourceBaseView, generic.DeleteView):  # type: ignore[misc]
+    template_name = "dashboard/pipelines/delete.html"

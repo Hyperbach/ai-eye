@@ -1,5 +1,5 @@
 from pipelines.choices import TypesOfDAGNodes
-from pipelines.models import BuiltinFunction, DAGEdge, DAGNode, Prompt
+from pipelines.models import BuiltinFunction, DAGEdge, DAGNode, PipelineSource, Prompt
 from pipelines.utils import find_first
 
 
@@ -24,7 +24,10 @@ class DAGSaver:
         traverse(root)
         return nodes, edges
 
-    def save(self, pipeline):
+    def save(self, pipeline: PipelineSource, update: bool = False):
+        if update:
+            pipeline.delete_dependents()
+
         dag_nodes = self.create_dag_nodes(pipeline)
         self.create_dag_edges(dag_nodes)
 
