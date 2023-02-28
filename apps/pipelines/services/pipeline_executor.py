@@ -28,7 +28,7 @@ class CallBuiltinFunction:
     def get_arity_of_function(self):
         return get_arity_of_function(self.builtin_fn.name)
 
-    def __call__(self, **kwargs):
+    def __call__(self, *args, **kwargs):
         try:
             return call_builtin_function(self.builtin_fn.name, **kwargs)
         except Exception as exc:
@@ -56,7 +56,7 @@ class CallPrompt:
         arg_names = self.ARGS_PATTERN_RX.findall(self.prompt_fn.body)
         return len(set(arg_names))
 
-    def __call__(self, **kwargs):
+    def __call__(self, *args, **kwargs):
         body = self.prompt_fn.body
 
         try:
@@ -73,15 +73,15 @@ class CallPrompt:
 
 
 class PipelineExecutor:
-    def __init__(self, pipeline_source_id, user_args, openaikey):
+    def __init__(self, pipeline_source_id, openaikey):
         self.pipeline_source_id = pipeline_source_id
-        self.user_args = user_args
+        self.user_args = {}
         self.openaikey = openaikey
 
-        self.graph, self.prompts, self.builtins = self.build_graph()
-        self.root = self.get_root(self.graph)
+        self.graph, self.prompts, self.builtins = self._build_graph()
+        self.root = self._get_root(self.graph)
 
-    def build_graph(self):
+    def _build_graph(self):
         dag_nodes = DAGNode.objects.filter(
             pipeline_source_id=self.pipeline_source_id
         ).all()
@@ -105,7 +105,7 @@ class PipelineExecutor:
         return graph, prompts, builtins
 
     @staticmethod
-    def get_root(graph):
+    def _get_root(graph):
         roots = [n for n, d in graph.in_degree() if d == 0]
         if len(roots) != 1:
             raise UnableToDetermineRootError(
@@ -113,42 +113,42 @@ class PipelineExecutor:
             )
         return roots[0]
 
-    def find_func_by_name(self, name):
+    def _find_func_by_name(self, name):
         if prompt_fn := find_first(lambda p: p.name == name, self.prompts):
             return CallPrompt(prompt_fn=prompt_fn, openaikey=self.openaikey)
         if builtin_fn := find_first(lambda p: p.name == name, self.builtins):
             return CallBuiltinFunction(builtin_fn)
         return None
 
-    def find_arg_value(self, arg_name):
+    def _find_arg_value(self, arg_name):
         arg_value = self.user_args.get(arg_name, None)
         if arg_value is None:
             raise InvalidArgumentsError(f"Argument named `{arg_name}` is not supplied.")
         return arg_value
 
     @staticmethod
-    def is_placeholder(target_fn):
+    def _is_placeholder(target_fn):
         return target_fn is None
 
     def _exec(self, node):
-        target_fn = self.find_func_by_name(node.name)
-        if self.is_placeholder(target_fn):
-            return self.find_arg_value(node.name)
+        target_fn = self._find_func_by_name(node.name)
+        if self._is_placeholder(target_fn):
+            return self._find_arg_value(node.name)
 
         kwargs = {}
 
         for index, child in enumerate(self.graph.successors(node)):
-            child_func = self.find_func_by_name(child.name)
+            child_func = self._find_func_by_name(child.name)
             arg_name = child.name
 
             assign_arg = False
-            if self.is_placeholder(child_func):
+            if self._is_placeholder(child_func):
                 assign_arg_nodes = list(self.graph.successors(child))
                 if assign_arg := len(assign_arg_nodes) > 0:
                     assert len(assign_arg_nodes) == 1
                     arg_value = self._exec(assign_arg_nodes[0])
                 else:
-                    arg_value = self.find_arg_value(arg_name)
+                    arg_value = self._find_arg_value(arg_name)
             else:
                 arg_value = self._exec(child)
 
@@ -171,7 +171,7 @@ class PipelineExecutor:
 
         return target_fn(**kwargs)
 
-    def exec(self):
+    def exec(self, user_args):
         """
         builtins:
         --
@@ -185,4 +185,5 @@ class PipelineExecutor:
         some_prompt_with_one_argument(xyz=r)
         some_prompt_with_one_argument(testme) <-- won't work
         """
+        self.user_args = user_args
         return self._exec(self.root)
