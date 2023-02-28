@@ -18,6 +18,9 @@
                 <a href="{% url 'dashboard:openaikeys' %}" class="nav-item nav-link {% if "dashboard/openaikeys" in request.path %}active{% endif %}">OpenAI Keys Management</a>
                 <a href="{% url 'dashboard:publictokens' %}" class="nav-item nav-link {% if "dashboard/publictokens" in request.path %}active{% endif %}">Public Tokens Management</a>
                 <a href="{% url 'dashboard:caches' %}" class="nav-item nav-link {% if "dashboard/caches" in request.path %}active{% endif %} ">Cache/Logs Management</a>
+                <a href="{% url 'dashboard:prompts' %}" class="nav-item nav-link {% if "dashboard/prompts" in request.path %}active{% endif %} ">Prompts Management</a>
+                <a href="{% url 'dashboard:builtins' %}" class="nav-item nav-link {% if "dashboard/builtins" in request.path %}active{% endif %} ">Builtins Management</a>
+                <a href="{% url 'dashboard:pipelines' %}" class="nav-item nav-link {% if "dashboard/pipelines" in request.path %}active{% endif %} ">Pipelines Management</a>
                 {% endif %}
             </div>
             <div class="navbar-nav ms-auto">
