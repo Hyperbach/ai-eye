@@ -66,7 +66,7 @@ class PipelineSource(TimestampMixin):
         verbose_name_plural = _("PipelineSources")
 
     def __str__(self):
-        return f"{self.body[:5]}..."
+        return self.body
 
     def delete_dependents(self):
         with transaction.atomic():
