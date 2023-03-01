@@ -76,8 +76,8 @@ class CallPrompt:
 class PipelineExecutor:
     def __init__(self, pipeline_source_id, openaikey):
         self.pipeline_source_id = pipeline_source_id
-        self.user_args = {}
         self.openaikey = openaikey
+        self.user_args = {}
 
         self.graph, self.prompts, self.builtins = self._build_graph()
         self.root = self._get_root(self.graph)
@@ -105,8 +105,7 @@ class PipelineExecutor:
 
         return graph, prompts, builtins
 
-    @staticmethod
-    def _get_root(graph):
+    def _get_root(self, graph):
         roots = [n for n, d in graph.in_degree() if d == 0]
         if len(roots) != 1:
             raise UnableToDetermineRootError(
@@ -114,7 +113,7 @@ class PipelineExecutor:
             )
         return roots[0]
 
-    def _find_func_by_name(self, name):
+    def _create_call_func_by_name(self, name):
         if prompt_fn := find_first(lambda p: p.name == name, self.prompts):
             return CallPrompt(prompt_fn=prompt_fn, openaikey=self.openaikey)
         if builtin_fn := find_first(lambda p: p.name == name, self.builtins):
@@ -132,14 +131,14 @@ class PipelineExecutor:
         return target_fn is None
 
     def _exec(self, node):
-        target_fn = self._find_func_by_name(node.name)
+        target_fn = self._create_call_func_by_name(node.name)
         if self._is_placeholder(target_fn):
             return self._find_arg_value(node.name)
 
         kwargs = {}
 
         for index, child in enumerate(self.graph.successors(node)):
-            child_func = self._find_func_by_name(child.name)
+            child_func = self._create_call_func_by_name(child.name)
             arg_name = child.name
 
             assign_arg = False
