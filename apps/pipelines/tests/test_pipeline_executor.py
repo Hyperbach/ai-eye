@@ -107,7 +107,7 @@ class DAGSaverTestCase(TestCase):
             result = pipeline_executor.exec(user_args=user_args)
             self.assertEqual(result, expected)
         except Exception as exc:
-            self.fail(f"test_exec raised an exception : {exc}")
+            self.fail(f"test_positive_exec raised an exception : {exc}")
 
     @staticmethod
     def _create_pipeline_executor(input_str):
