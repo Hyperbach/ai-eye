@@ -148,6 +148,7 @@ class TestDAGBuilder(TestCase):
             param("x(123=z)"),
             param("x(y=123z)"),
             param("x(123y=z)"),
+            param("x=123"),
         ]
     )
     def test_invalid_inputs(self, input_str):
