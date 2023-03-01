@@ -7,6 +7,7 @@ from parameterized import parameterized
 from pipelines.models import BuiltinFunction, PipelineSource, Prompt
 from pipelines.services.dag_builder import DAGBuilder
 from pipelines.services.dag_saver import DAGSaver
+from pipelines.services.exceptions import PipelineException
 from pipelines.services.pipeline_executor import PipelineExecutor
 
 from tests.factories import AiEyeAdminFactory
@@ -108,6 +109,40 @@ class DAGSaverTestCase(TestCase):
             self.assertEqual(result, expected)
         except Exception as exc:
             self.fail(f"test_positive_exec raised an exception : {exc}")
+
+    @parameterized.expand(
+        [
+            [
+                {
+                    "input": "prompt_a(whatever_named_arg)",
+                    "user_args": {"whatever_named_arg": "a"},
+                }
+            ],
+            [{"input": "prompt_a()", "user_args": {}}],
+            [{"input": "prompt_a(x, y)", "user_args": {}}],
+            [{"input": "non_existing_prompt_or_builtin_fn()", "user_args": {}}],
+            [{"input": "prompt_a(a_arg=prompt_a)", "user_args": {"prompt_a": "ABC"}}],
+            [{"input": "prompt_a(prompt_a)", "user_args": {}}],
+            [{"input": "builtin_concat()", "user_args": {}}],
+            [
+                {
+                    "input": "builtin_concat(a, b, c)",
+                    "user_args": {"a": "1", "b": "2", "c": "3"},
+                }
+            ],
+        ]
+    )
+    @patch(
+        "pipelines.services.pipeline_executor.openai_request",
+        side_effect=openai_request_mock,
+    )
+    def test_negative_exec(self, test_data, mock_openai_request):
+        input_str = test_data["input"]
+        user_args = test_data["user_args"]
+
+        with self.assertRaises(PipelineException):
+            pipeline_executor = self._create_pipeline_executor(input_str=input_str)
+            _ = pipeline_executor.exec(user_args=user_args)
 
     @staticmethod
     def _create_pipeline_executor(input_str):
