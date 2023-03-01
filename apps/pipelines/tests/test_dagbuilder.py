@@ -5,7 +5,7 @@ from parameterized import param, parameterized
 from pipelines.services.dag_builder import DAGBuilder, Edge, Node
 
 
-class TestDAGBuilder(TestCase):
+class DAGBuilderTestCase(TestCase):
     def setUp(self) -> None:
         self.builder = DAGBuilder()
 
