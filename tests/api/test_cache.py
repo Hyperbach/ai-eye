@@ -17,7 +17,7 @@ from tests.factories import (
 )
 
 
-def openai_request_mock(openaikey: str, endpoint: str, parameters: Dict[str, Any]):
+def mock_openai_request(openaikey: str, endpoint: str, parameters: Dict[str, Any]):
     # actually we don't care what textual response it returns because we test data caching only
 
     return "some response from OpenAI API"
@@ -110,7 +110,7 @@ class CacheTests(TestCase):
             [{"model": "text-davinci-003", "prompt": "&"}],
         ]
     )
-    @patch("api.views.openai_request", side_effect=openai_request_mock)
+    @patch("api.views.openai_request", side_effect=mock_openai_request)
     def test_cache_case(self, request_data, mock_openai_request):
         endpoint = "v1/completions"
         self.exec(request_data, endpoint)
