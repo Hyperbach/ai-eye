@@ -1,0 +1,129 @@
+import abc
+from typing import Any, Dict, Iterable, List
+
+import networkx as nx
+from pipelines.models import BuiltinFunction, Prompt
+from pipelines.services.exceptions import InvalidArgumentsError
+from pipelines.services.pipeline_executor.calls import CallBuiltinFunction, CallPrompt
+from pipelines.utils import find_first
+
+
+class BaseVisitor(metaclass=abc.ABCMeta):
+    def __init__(
+        self,
+        graph: nx.DiGraph,
+        prompts: List[Prompt],
+        builtins: List[BuiltinFunction],
+        openaikey: str,
+    ):
+        self.graph = graph
+        self.prompts = prompts
+        self.openaikey = openaikey
+        self.builtins = builtins
+
+    def _create_call_func_by_name(self, name):
+        if prompt_fn := find_first(lambda p: p.name == name, self.prompts):
+            return CallPrompt(prompt_fn=prompt_fn, openaikey=self.openaikey)
+        if builtin_fn := find_first(lambda p: p.name == name, self.builtins):
+            return CallBuiltinFunction(builtin_fn=builtin_fn)
+        return None
+
+    @staticmethod
+    def _is_placeholder(target_fn):
+        return target_fn is None
+
+    def visit(self, node) -> Any:
+        target_fn = self._create_call_func_by_name(node.name)
+        if self._is_placeholder(target_fn):
+            return self.visit_leaf(node)
+        return self.visit_fn(node, target_fn)
+
+    @abc.abstractmethod
+    def visit_leaf(self, node) -> Any:
+        pass
+
+    @abc.abstractmethod
+    def visit_fn(self, node, target_fn) -> Any:
+        pass
+
+
+class ArgumentsGathererVisitor(BaseVisitor):
+    def visit_leaf(self, node) -> Iterable:
+        return {node.name}
+
+    def visit_fn(self, node, target_fn):
+        arg_names = set()
+
+        for index, child in enumerate(self.graph.successors(node)):
+            child_func = self._create_call_func_by_name(child.name)
+            if self._is_placeholder(child_func):
+                assign_arg_nodes = list(self.graph.successors(child))
+                if len(assign_arg_nodes) > 0:
+                    assert len(assign_arg_nodes) == 1
+                    arg_names.update(self.visit(assign_arg_nodes[0]))
+                else:
+                    arg_names.update(self.visit_leaf(child))
+            else:
+                arg_names.update(self.visit_fn(child, child_func))
+
+        return arg_names
+
+
+class ExecutorVisitor(BaseVisitor):
+    def __init__(
+        self,
+        graph: nx.DiGraph,
+        prompts: List[Prompt],
+        builtins: List[BuiltinFunction],
+        openaikey: str,
+        user_args: Dict[str, str],
+    ):
+        super().__init__(
+            graph=graph, prompts=prompts, openaikey=openaikey, builtins=builtins
+        )
+        self.user_args = user_args
+
+    def _find_arg_value(self, arg_name):
+        arg_value = self.user_args.get(arg_name, None)
+        if arg_value is None:
+            raise InvalidArgumentsError(f"Argument named `{arg_name}` is not supplied.")
+        return arg_value
+
+    def visit_leaf(self, node):
+        return self._find_arg_value(node.name)
+
+    def visit_fn(self, node, target_fn):
+        kwargs = {}
+        for index, child in enumerate(self.graph.successors(node)):
+            child_func = self._create_call_func_by_name(child.name)
+            arg_name = child.name
+
+            assign_arg = False
+            if self._is_placeholder(child_func):
+                assign_arg_nodes = list(self.graph.successors(child))
+                if assign_arg := len(assign_arg_nodes) > 0:
+                    assert len(assign_arg_nodes) == 1
+                    arg_value = self.visit(assign_arg_nodes[0])
+                else:
+                    arg_value = self.visit_leaf(child)
+            else:
+                arg_value = self.visit(child)
+
+            if not assign_arg and isinstance(target_fn, CallBuiltinFunction):
+                try:
+                    arg_name = target_fn.get_arg_name_by_index(index)
+                except IndexError as exc:
+                    raise InvalidArgumentsError(f"Invalid arguments. Details {exc}")
+
+            kwargs[arg_name] = arg_value
+
+        fn_arity = target_fn.get_arity_of_function()
+        fn_call_arity = len(kwargs)
+        if fn_arity != fn_call_arity:
+            raise InvalidArgumentsError(
+                f"Invalid arguments amount specified. "
+                f"Function expects {fn_arity}, "
+                f"but user provided {fn_call_arity}."
+            )
+
+        return target_fn(**kwargs)
