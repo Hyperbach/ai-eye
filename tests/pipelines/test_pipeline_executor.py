@@ -13,7 +13,7 @@ from pipelines.services.pipeline_executor import PipelineExecutor
 from tests.factories import AiEyeAdminFactory
 
 
-def openai_request_mock(openaikey: str, endpoint: str, parameters: dict[str, Any]):
+def mock_openai_request(openaikey: str, endpoint: str, parameters: dict[str, Any]):
     return f"OpenAI reply for {parameters['prompt']}"
 
 
@@ -21,7 +21,7 @@ def openai_request_mock(openaikey: str, endpoint: str, parameters: dict[str, Any
     "pipelines.builtins.BUILTIN_FUNCTIONS_DICT",
     new={"builtin_concat": lambda x, y: f"{x} {y}", "builtin_identity": lambda s: s},
 )
-class DAGSaverTestCase(TestCase):
+class PipelineExecutorTestCase(TestCase):
     def setUp(self):
         aieye_admin = AiEyeAdminFactory.create()
         Prompt.objects.create(
@@ -95,8 +95,8 @@ class DAGSaverTestCase(TestCase):
         ]
     )
     @patch(
-        "pipelines.services.pipeline_executor.openai_request",
-        side_effect=openai_request_mock,
+        "pipelines.services.pipeline_executor.calls.openai_request",
+        side_effect=mock_openai_request,
     )
     def test_positive_exec(self, test_data, mock_openai_request):
         input_str = test_data["input"]
@@ -133,8 +133,8 @@ class DAGSaverTestCase(TestCase):
         ]
     )
     @patch(
-        "pipelines.services.pipeline_executor.openai_request",
-        side_effect=openai_request_mock,
+        "pipelines.services.pipeline_executor.calls.openai_request",
+        side_effect=mock_openai_request,
     )
     def test_negative_exec(self, test_data, mock_openai_request):
         input_str = test_data["input"]
@@ -152,3 +152,67 @@ class DAGSaverTestCase(TestCase):
         dag_saver.save(pipeline)
 
         return PipelineExecutor(pipeline_source_id=pipeline.id, openaikey="")
+
+    @parameterized.expand(
+        [
+            [
+                {
+                    "input": "builtin_concat(prompt_a(a_arg), prompt_b(b_arg))",
+                    "expected_user_args": {"a_arg", "b_arg"},
+                }
+            ],
+            [
+                {
+                    "input": "builtin_concat(prompt_a(a_arg=a_arg_val), prompt_b(b_arg=b_arg_val))",
+                    "expected_user_args": {"a_arg_val", "b_arg_val"},
+                }
+            ],
+            [
+                {
+                    "input": "builtin_identity(s)",
+                    "expected_user_args": {"s"},
+                }
+            ],
+            [
+                {
+                    "input": "builtin_identity(s=x_arg)",
+                    "expected_user_args": {"x_arg"},
+                }
+            ],
+            [
+                {
+                    "input": "builtin_identity(whatever_named_arg)",
+                    "expected_user_args": {"whatever_named_arg"},
+                }
+            ],
+            [
+                {
+                    "input": "prompt_a(a_arg)",
+                    "expected_user_args": {"a_arg"},
+                }
+            ],
+            [
+                {
+                    "input": "prompt_a(a_arg=a_arg_val)",
+                    "expected_user_args": {"a_arg_val"},
+                }
+            ],
+            [
+                {
+                    "input": "foo",
+                    "expected_user_args": {"foo"},
+                }
+            ],
+        ]
+    )
+    @patch(
+        "pipelines.services.pipeline_executor.calls.openai_request",
+        side_effect=mock_openai_request,
+    )
+    def test_exec_arg_names_only(self, test_data, mock_openai_request):
+        input_str = test_data["input"]
+        expected_user_args = test_data["expected_user_args"]
+
+        pipeline_executor = self._create_pipeline_executor(input_str=input_str)
+        result_user_args = pipeline_executor.get_arg_names()
+        self.assertCountEqual(expected_user_args, result_user_args)
