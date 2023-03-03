@@ -22,7 +22,8 @@ def mock_openai_request(openaikey: str, endpoint: str, parameters: dict[str, Any
     new={"builtin_concat": lambda x, y: f"{x} {y}", "builtin_identity": lambda s: s},
 )
 class PipelineExecutorTestCase(TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         aieye_admin = AiEyeAdminFactory.create()
         Prompt.objects.create(
             name="prompt_a", body="this is {a_arg}", owner=aieye_admin
@@ -105,7 +106,7 @@ class PipelineExecutorTestCase(TestCase):
 
         try:
             pipeline_executor = self._create_pipeline_executor(input_str=input_str)
-            result = pipeline_executor.exec(user_args=user_args)
+            result = pipeline_executor.exec(user_args=user_args, openaikey="")
             self.assertEqual(result, expected)
         except Exception as exc:
             self.fail(f"test_positive_exec raised an exception : {exc}")
@@ -142,7 +143,7 @@ class PipelineExecutorTestCase(TestCase):
 
         with self.assertRaises(PipelineException):
             pipeline_executor = self._create_pipeline_executor(input_str=input_str)
-            _ = pipeline_executor.exec(user_args=user_args)
+            _ = pipeline_executor.exec(user_args=user_args, openaikey="")
 
     @staticmethod
     def _create_pipeline_executor(input_str):
@@ -150,8 +151,7 @@ class PipelineExecutorTestCase(TestCase):
         dag_root = DAGBuilder().build(input_str)
         dag_saver = DAGSaver(dag_root)
         dag_saver.save(pipeline)
-
-        return PipelineExecutor(pipeline_source_id=pipeline.id, openaikey="")
+        return PipelineExecutor(pipeline_source_id=pipeline.id)
 
     @parameterized.expand(
         [
