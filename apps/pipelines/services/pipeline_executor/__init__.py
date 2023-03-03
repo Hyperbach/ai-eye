@@ -8,9 +8,8 @@ from pipelines.services.pipeline_executor.visitors import (
 
 
 class PipelineExecutor:
-    def __init__(self, pipeline_source_id, openaikey):
+    def __init__(self, pipeline_source_id):
         self.pipeline_source_id = pipeline_source_id
-        self.openaikey = openaikey
         self.user_args = {}
 
         self.graph, self.prompts, self.builtins = self._build_graph()
@@ -47,7 +46,7 @@ class PipelineExecutor:
             )
         return roots[0]
 
-    def exec(self, user_args):
+    def exec(self, user_args, openaikey):
         """
         builtins:
         --
@@ -65,7 +64,7 @@ class PipelineExecutor:
             graph=self.graph,
             prompts=self.prompts,
             builtins=self.builtins,
-            openaikey=self.openaikey,
+            openaikey=openaikey,
             user_args=user_args,
         ).visit(node=self.root)
 
@@ -74,5 +73,4 @@ class PipelineExecutor:
             graph=self.graph,
             prompts=self.prompts,
             builtins=self.builtins,
-            openaikey=self.openaikey,
         ).visit(node=self.root)
