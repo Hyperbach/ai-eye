@@ -1,14 +1,25 @@
+from django.db.models import Q
+
+from core.models import OpenAIKey
 from pipelines.services.exceptions import PipelineException
 from pipelines.services.pipeline_executor import PipelineExecutor
+from pipelines.utils import find_first
 from rest_framework import mixins, permissions, status, viewsets
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from .authentication import AiEyeTokenAuthentication
 from .exceptions import OpenAIRequestException
 from .mixins import PrepareParametersMixin
 from .models import Log
-from .permissions import AiEyeUserPermission
-from .serializers import CacheHitResponseSerializer, PipelineCallSerializer
+from .permissions import AiEyeAdminPermission, AiEyeUserPermission
+from .serializers import (
+    CacheHitResponseSerializer,
+    PipelineCallSerializer,
+    PipelineCallWithOpenaiKeyId,
+    PipelineRetrieveArgumentsCallSerializer,
+)
 from .services import openai_request
 
 
@@ -88,25 +99,95 @@ class CreateLogViewSet(
 
 
 class PipelineCallViewSet(viewsets.ViewSet):
-    permission_classes = (permissions.IsAuthenticated, AiEyeUserPermission)
-    authentication_classes = (AiEyeTokenAuthentication,)
+    permission_classes = (
+        permissions.IsAuthenticated,
+        (AiEyeUserPermission | AiEyeAdminPermission),
+    )
+    authentication_classes = (AiEyeTokenAuthentication, SessionAuthentication)
+
+    @staticmethod
+    def retrieve_openaikey_for_aieyetokenauthenticated_user(request, _):
+        public_token = request.auth
+        return public_token.openaikey
+
+    @staticmethod
+    def retrieve_openaikey_for_session_authenticated_user(request, validated_data):
+        openaikey_id = validated_data["openaikey_id"]
+
+        try:
+            openaikey_instance = OpenAIKey.objects.get(
+                Q(owner=request.user) | Q(users__in=[request.user]), pk=openaikey_id
+            )
+        except OpenAIKey.DoesNotExist:
+            raise ValidationError("OpenAIKey not found")
+        else:
+            return openaikey_instance.key
+
+    helper = {
+        AiEyeTokenAuthentication: {
+            "serializer": PipelineCallSerializer,
+            "retrieve_openaikey_fn": retrieve_openaikey_for_aieyetokenauthenticated_user,
+        },
+        SessionAuthentication: {
+            "serializer": PipelineCallWithOpenaiKeyId,
+            "retrieve_openaikey_fn": retrieve_openaikey_for_session_authenticated_user,
+        },
+    }
+
+    @staticmethod
+    def retrieve_serializer_class(request):
+        authenticator = find_first(
+            lambda auth: auth.authenticate(request), request.authenticators
+        )
+        if isinstance(authenticator, AiEyeTokenAuthentication):
+            return PipelineCallSerializer
+        else:
+            return PipelineCallWithOpenaiKeyId
 
     def create(self, request):
-        serializer = PipelineCallSerializer(data=request.data)
+        authenticator = find_first(
+            lambda auth: auth.authenticate(request), request.authenticators
+        )
+
+        helper_struct = self.helper[authenticator.__class__]
+        serializer_class = helper_struct["serializer"]
+        serializer = serializer_class(data=request.data)
+
         if serializer.is_valid():
-            public_token = request.auth
-            openaikey = public_token.openaikey
+            openaikey = helper_struct["retrieve_openaikey_fn"](
+                request, serializer.validated_data
+            )
 
             pipeline_id = serializer.validated_data["pipeline_id"]
             args = serializer.validated_data["args"]
             try:
-                p = PipelineExecutor(
-                    pipeline_source_id=pipeline_id, openaikey=openaikey
-                )
-                result = p.exec(user_args=args)
+                p = PipelineExecutor(pipeline_source_id=pipeline_id)
+                result = p.exec(user_args=args, openaikey=openaikey)
             except PipelineException as exc:
                 return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response({"success": True, "response": result})
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PipelineRetrieveArgumentsViewSet(viewsets.ViewSet):
+    permission_classes = (
+        permissions.IsAuthenticated,
+        (AiEyeUserPermission | AiEyeAdminPermission),
+    )
+    authentication_classes = (SessionAuthentication,)
+
+    def list(self, request):
+        serializer = PipelineRetrieveArgumentsCallSerializer(data=request.query_params)
+        if serializer.is_valid():
+            pipeline_id = serializer.validated_data["pipeline_id"]
+            try:
+                p = PipelineExecutor(pipeline_source_id=pipeline_id)
+                arg_names = p.get_arg_names()
+            except PipelineException as exc:
+                return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({"success": True, "response": arg_names})
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
