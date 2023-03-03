@@ -9,19 +9,24 @@ from tests.factories import AiEyeAdminFactory
 
 
 class DAGSaverTestCase(TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         aieye_admin = AiEyeAdminFactory.create()
         Prompt.objects.create(name="prompt_a", owner=aieye_admin)
         Prompt.objects.create(name="prompt_b", owner=aieye_admin)
 
         BuiltinFunction.objects.create(name="builtin_a")
 
-        self.input_str = "builtin_a(prompt_a, prompt_b)"
-        self.pipeline = PipelineSource.objects.create(body=self.input_str)
+        input_str = "builtin_a(prompt_a, prompt_b)"
+        cls.input_str = input_str
+        pipeline = PipelineSource.objects.create(body=input_str)
+        cls.pipeline = pipeline
 
-        self.dag_root = DAGBuilder().build(self.input_str)
-        self.dag_saver = DAGSaver(self.dag_root)
-        self.dag_saver.save(self.pipeline)
+        dag_root = DAGBuilder().build(input_str)
+        cls.dag_root = dag_root
+        dag_saver = DAGSaver(dag_root)
+        dag_saver.save(pipeline)
+        cls.dag_saver = dag_saver
 
     def test_traverse_root(self):
         nodes, edges = self.dag_saver.traverse_root(self.dag_root)
