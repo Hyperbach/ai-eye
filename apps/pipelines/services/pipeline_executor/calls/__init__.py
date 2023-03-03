@@ -35,12 +35,11 @@ class CallBuiltinFunction:
 
 class CallPrompt:
     ARGS_PATTERN_RX = re.compile(r"{[a-zA-Z][a-zA-Z_0-9]*}")
+    ENDPOINT = "v1/completions"
+    MODEL = "text-davinci-003"
 
-    def __init__(self, prompt_fn, openaikey):
+    def __init__(self, prompt_fn):
         self.prompt_fn = prompt_fn
-        self.openaikey = openaikey
-        self.endpoint = "v1/completions"
-        self.model = "text-davinci-003"
 
     def __str__(self):
         return self.prompt_fn.name
@@ -50,14 +49,15 @@ class CallPrompt:
         return len(set(arg_names))
 
     def __call__(self, *args, **kwargs) -> Any:
+        openaikey = kwargs.pop("openaikey")
         body = self.prompt_fn.body
 
         try:
             prompt = body.format(**kwargs)
             return openai_request(
-                openaikey=self.openaikey,
-                endpoint=self.endpoint,
-                parameters={"model": self.model, "prompt": prompt},
+                openaikey=openaikey,
+                endpoint=self.ENDPOINT,
+                parameters={"model": self.MODEL, "prompt": prompt},
             )
         except (KeyError, OpenAIRequestException) as exc:
             raise CallPromptError(

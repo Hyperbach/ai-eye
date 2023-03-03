@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, List
 
 import networkx as nx
 from pipelines.models import BuiltinFunction, Prompt
@@ -10,20 +10,15 @@ from pipelines.utils import find_first
 
 class BaseVisitor(metaclass=abc.ABCMeta):
     def __init__(
-        self,
-        graph: nx.DiGraph,
-        prompts: List[Prompt],
-        builtins: List[BuiltinFunction],
-        openaikey: str,
+        self, graph: nx.DiGraph, prompts: List[Prompt], builtins: List[BuiltinFunction]
     ):
         self.graph = graph
         self.prompts = prompts
-        self.openaikey = openaikey
         self.builtins = builtins
 
     def _create_call_func_by_name(self, name):
         if prompt_fn := find_first(lambda p: p.name == name, self.prompts):
-            return CallPrompt(prompt_fn=prompt_fn, openaikey=self.openaikey)
+            return CallPrompt(prompt_fn=prompt_fn)
         if builtin_fn := find_first(lambda p: p.name == name, self.builtins):
             return CallBuiltinFunction(builtin_fn=builtin_fn)
         return None
@@ -48,10 +43,10 @@ class BaseVisitor(metaclass=abc.ABCMeta):
 
 
 class ArgumentsGathererVisitor(BaseVisitor):
-    def visit_leaf(self, node) -> Iterable:
+    def visit_leaf(self, node) -> Any:
         return {node.name}
 
-    def visit_fn(self, node, target_fn):
+    def visit_fn(self, node, target_fn) -> Any:
         arg_names = set()
 
         for index, child in enumerate(self.graph.successors(node)):
@@ -78,9 +73,8 @@ class ExecutorVisitor(BaseVisitor):
         openaikey: str,
         user_args: Dict[str, str],
     ):
-        super().__init__(
-            graph=graph, prompts=prompts, openaikey=openaikey, builtins=builtins
-        )
+        super().__init__(graph=graph, prompts=prompts, builtins=builtins)
+        self.openaikey = openaikey
         self.user_args = user_args
 
     def _find_arg_value(self, arg_name):
@@ -89,11 +83,12 @@ class ExecutorVisitor(BaseVisitor):
             raise InvalidArgumentsError(f"Argument named `{arg_name}` is not supplied.")
         return arg_value
 
-    def visit_leaf(self, node):
+    def visit_leaf(self, node) -> Any:
         return self._find_arg_value(node.name)
 
-    def visit_fn(self, node, target_fn):
+    def visit_fn(self, node, target_fn) -> Any:
         kwargs = {}
+
         for index, child in enumerate(self.graph.successors(node)):
             child_func = self._create_call_func_by_name(child.name)
             arg_name = child.name
@@ -125,5 +120,8 @@ class ExecutorVisitor(BaseVisitor):
                 f"Function expects {fn_arity}, "
                 f"but user provided {fn_call_arity}."
             )
+
+        if isinstance(target_fn, CallPrompt):
+            kwargs.update({"openaikey": self.openaikey})
 
         return target_fn(**kwargs)
