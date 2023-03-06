@@ -3,10 +3,6 @@ class PipelineException(Exception):
         super().__init__("Pipeline Exception: " + msg)
 
 
-class InvalidFunctionNameError(PipelineException):
-    pass
-
-
 class NoDAGNodesError(PipelineException):
     pass
 
