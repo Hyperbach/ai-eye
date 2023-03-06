@@ -229,7 +229,7 @@ class PipelineSourceExecuteView(AiEyeAdminMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        pipelines = PipelineSource.objects.all()
+        pipelines = PipelineSource.objects.order_by("-date_created").all()
         openaikeys = (
             OpenAIKey.objects.filter(
                 Q(owner=user) | Q(users__in=[user]), is_active=True
@@ -239,5 +239,4 @@ class PipelineSourceExecuteView(AiEyeAdminMixin, TemplateView):
         )
 
         context.update({"pipelines": pipelines, "openaikeys": openaikeys})
-
         return context
