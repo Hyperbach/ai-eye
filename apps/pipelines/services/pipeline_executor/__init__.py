@@ -16,19 +16,21 @@ class PipelineExecutor:
         self.root = self._get_root(self.graph)
 
     def _build_graph(self):
-        dag_nodes = DAGNode.objects.filter(
+        dag_nodes = DAGNode.objects.select_related().filter(
             pipeline_source_id=self.pipeline_source_id
-        ).all()
+        )
         if not dag_nodes:
             raise NoDAGNodesError(
                 f"Unable to find DAG nodes for the pipeline with id {self.pipeline_source_id}."
             )
 
-        dag_edges = DAGEdge.objects.filter(from_node__in=dag_nodes).all()
+        dag_edges = DAGEdge.objects.select_related("from_node", "to_node").filter(
+            from_node__in=dag_nodes
+        )
 
-        node_names = [n.name for n in dag_nodes]
-        prompts = Prompt.objects.filter(name__in=node_names).all()
-        builtins = BuiltinFunction.objects.filter(name__in=node_names).all()
+        node_names = dag_nodes.values_list("name", flat=True)
+        prompts = list(Prompt.objects.filter(name__in=node_names))
+        builtins = list(BuiltinFunction.objects.filter(name__in=node_names))
 
         graph = nx.DiGraph()
         for node in dag_nodes:

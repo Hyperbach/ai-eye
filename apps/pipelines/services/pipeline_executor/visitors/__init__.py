@@ -19,17 +19,17 @@ class BaseVisitor(metaclass=abc.ABCMeta):
     def _create_call_func_by_name(self, name):
         if prompt_fn := find_first(lambda p: p.name == name, self.prompts):
             return CallPrompt(prompt_fn=prompt_fn)
-        if builtin_fn := find_first(lambda p: p.name == name, self.builtins):
+        if builtin_fn := find_first(lambda b: b.name == name, self.builtins):
             return CallBuiltinFunction(builtin_fn=builtin_fn)
         return None
 
     @staticmethod
-    def _is_placeholder(target_fn):
+    def is_placeholder(target_fn):
         return target_fn is None
 
     def visit(self, node) -> Any:
         target_fn = self._create_call_func_by_name(node.name)
-        if self._is_placeholder(target_fn):
+        if self.is_placeholder(target_fn):
             return self.visit_leaf(node)
         return self.visit_fn(node, target_fn)
 
@@ -51,7 +51,7 @@ class ArgumentsGathererVisitor(BaseVisitor):
 
         for index, child in enumerate(self.graph.successors(node)):
             child_func = self._create_call_func_by_name(child.name)
-            if self._is_placeholder(child_func):
+            if self.is_placeholder(child_func):
                 assign_arg_nodes = list(self.graph.successors(child))
                 if len(assign_arg_nodes) > 0:
                     assert len(assign_arg_nodes) == 1
@@ -94,7 +94,7 @@ class ExecutorVisitor(BaseVisitor):
             arg_name = child.name
 
             assign_arg = False
-            if self._is_placeholder(child_func):
+            if self.is_placeholder(child_func):
                 assign_arg_nodes = list(self.graph.successors(child))
                 if assign_arg := len(assign_arg_nodes) > 0:
                     assert len(assign_arg_nodes) == 1

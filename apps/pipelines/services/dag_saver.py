@@ -7,8 +7,8 @@ class DAGSaver:
     def __init__(self, dag_root):
         self.nodes, self.edges = self.traverse_root(dag_root)
         node_names = [node.name for node in self.nodes]
-        self.prompts = Prompt.objects.filter(name__in=node_names).all()
-        self.builtins = BuiltinFunction.objects.filter(name__in=node_names).all()
+        self.prompts = Prompt.objects.filter(name__in=node_names)
+        self.builtins = BuiltinFunction.objects.filter(name__in=node_names)
 
     @classmethod
     def traverse_root(cls, root):
@@ -68,7 +68,7 @@ class DAGSaver:
 
     def get_dag_node_type(self, node_name):
         prompt = find_first(lambda p: p.name == node_name, self.prompts)
-        builtin = find_first(lambda p: p.name == node_name, self.builtins)
+        builtin = find_first(lambda b: b.name == node_name, self.builtins)
 
         if prompt is not None:
             dag_node_type = TypesOfDAGNodes.PROMPT
