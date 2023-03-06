@@ -1,7 +1,9 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from django.urls import reverse_lazy
 from django.views import View, generic
+from django.views.generic import TemplateView
 
 from api.models import Log
 from core.forms import UserCreateForm
@@ -218,3 +220,24 @@ class PipelineSourceUpdateView(PipelineSourceBaseView, generic.UpdateView):
 
 class PipelineSourceDeleteView(PipelineSourceBaseView, generic.DeleteView):  # type: ignore[misc]
     template_name = "dashboard/pipelines/delete.html"
+
+
+class PipelineSourceExecuteView(AiEyeAdminMixin, TemplateView):
+    template_name = "dashboard/pipelines/execute.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+
+        pipelines = PipelineSource.objects.all()
+        openaikeys = (
+            OpenAIKey.objects.filter(
+                Q(owner=user) | Q(users__in=[user]), is_active=True
+            )
+            .order_by("-date_created")
+            .all()
+        )
+
+        context.update({"pipelines": pipelines, "openaikeys": openaikeys})
+
+        return context
