@@ -1,0 +1,209 @@
+{% extends 'dashboard/index.html' %}
+{% load bootstrap5 %}
+{% load static %}
+
+{% block bootstrap5_extra_head %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/custom.css' %}">
+{% endblock %}
+
+{% block dashboard_header %}
+    <h2 class="text-left mt-5">Pipelines Management - execute pipeline</h2>
+{% endblock dashboard_header %}
+
+{% block dashboard_content %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert" id="error-alert" style="display: none;">
+        <span class="msg"></span>
+    </div>
+
+    <form role="form" id="execute_pipeline_form" method="post">
+        {% csrf_token %}
+        <div class="row mb-3 item-block">
+            <label class="col-sm-2 col-form-label" for="id_openaikey">OpenAI Key</label>
+            <div class="col-sm-10">
+                <select name="pipeline" class="form-select" title="" required="" id="id_openaikey">
+                    <option value="">---------</option>
+                    {% for openaikey in openaikeys %}
+                        <option value="{{ openaikey.id }}">{{ openaikey.key }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="row mb-3 item-block">
+            <label class="col-sm-2 col-form-label" for="id_pipeline">Pipeline</label>
+            <div class="col-sm-10">
+                <select name="pipeline" class="form-select" title="" required="" id="id_pipeline">
+                    <option value="">---------</option>
+                    {% for pipeline in pipelines %}
+                        <option value="{{ pipeline.id }}">{{ pipeline.body }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="container d-flex ps-0">
+            <input type="submit" class="btn btn-primary me-4 mt-4" value="Submit" id="submit-btn">
+            <input type="submit" class="btn btn-danger mt-4"
+                   onclick="window.location='{% url 'dashboard:pipelines' %}'; return false;" value="Cancel">
+        </div>
+    </form>
+
+    <div class="d-flex justify-content-center align-items-center" id="spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <div class="alert alert-success mt-3" role="alert" id="success-alert" style="display:none;">
+        <span class="msg"></span>
+    </div>
+{% endblock dashboard_content %}
+
+{% block bootstrap5_extra_script %}
+    <script type="text/javascript">
+        $('#spinner').addClass('hidden');
+
+        const show_item = function (item_id, show) {
+            if (show) {
+                $(item_id).show();
+            } else {
+                $(item_id).hide();
+            }
+        }
+
+        const output_msg = function (item_id, msg) {
+            $(item_id).find(".msg").text(msg);
+        }
+
+        const $submit_form = $("#execute_pipeline_form");
+        $submit_form.on('submit', function (event) {
+            event.preventDefault();
+            const $submit_button = $(this).find('#submit-btn');
+            if ($submit_button.prop('disabled')) {
+                console.log("return");
+                return;
+            }
+
+            show_item("#success-alert", false);
+            show_item("#error-alert", false);
+
+            const pipeline_id_selected = $("#id_pipeline").val();
+            const openaikey_id_selected = $("#id_openaikey").val();
+
+            const $tag_vals = $(".tag_value");
+
+            const should_submit = $tag_vals.length === 0 || $tag_vals.filter(function() {
+                return !this.value.trim();
+            }).length === 0;
+
+            if (should_submit) {
+                const args = $tag_vals.toArray().reduce((acc, el) => {
+                    const id = el.id.substring(3);
+                    acc[id] = el.value.trim();
+                    return acc;
+                }, {});
+
+                $.ajax({
+                    url: '/api/pipeline/call/',
+                    type: 'POST',
+                    data: JSON.stringify({
+                        pipeline_id: pipeline_id_selected,
+                        openaikey_id: openaikey_id_selected,
+                        args: args
+                    }),
+                    headers: {
+                        'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val(),
+                        'Content-Type': 'application/json'
+                    },
+                    success: function (response) {
+                        const response_text = response.response;
+                        output_msg("#success-alert", response_text);
+                        show_item("#success-alert", true);
+                    },
+                    error: function (error) {
+                        output_msg("#error-alert", error.responseJSON["error"]);
+                        show_item("#error-alert", true);
+                    },
+                    beforeSend: function () {
+                        $submit_button.prop('disabled', true);
+                        $('#spinner').removeClass('hidden');
+                    },
+                    complete: function () {
+                        $('#spinner').addClass('hidden');
+                        $submit_button.prop('disabled', false);
+                    },
+                });
+            } else {
+                output_msg("#error-alert", "Please fill in all arguments");
+                show_item("#error-alert", true);
+            }
+
+            return false;
+        });
+
+        const populate_args = function (tags) {
+            $('div.row.mb-3').not(".item-block").remove()
+
+            const lastRow = $('div.row.mb-3:last');
+
+            tags.forEach(function (tag) {
+                const tagLabel = $('<span>')
+                    .addClass('col-sm-2 col-form-label badge rounded-pill bg-primary tag_name')
+                    .attr('for', 'id_' + tag)
+                    .text(tag)
+                    .css('line-height', '2.5');
+
+                const tagInput = $('<input>')
+                    .addClass('form-control tag_value')
+                    .attr({
+                        type: 'text',
+                        name: tag,
+                        id: 'id_' + tag
+                    });
+                const tagRow = $('<div>').addClass('row mb-3').append(tagLabel)
+                    .append($('<div>').addClass('col-sm-10').append(tagInput));
+                lastRow.after(tagRow);
+            });
+        }
+
+        $(function () {
+            $("#id_pipeline").on("change", function () {
+                show_item("#success-alert", false);
+                show_item("#error-alert", false);
+
+                const pipeline_id = $(this).val();
+                if (!pipeline_id) {
+                    return;
+                }
+
+                $.ajax({
+                    url: '/api/pipeline/args',
+                    type: 'GET',
+                    data: {
+                        pipeline_id: pipeline_id
+                    },
+                    headers: {
+                        'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val(),
+                        'Content-Type': 'application/json'
+                    },
+                    success: function (response) {
+                        const args = response.response;
+                        console.log("args:" + args)
+                        populate_args(args);
+                    },
+                    error: function (error) {
+                        output_msg("#error-alert", error.responseJSON["error"]);
+                        show_item("#error-alert", true);
+                    },
+                    beforeSend: function () {
+                        $('#spinner').removeClass('hidden');
+                    },
+                    complete: function () {
+                        $('#spinner').addClass('hidden');
+                    },
+                });
+            });
+        });
+    </script>
+{% endblock %}

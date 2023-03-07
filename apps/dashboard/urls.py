@@ -92,4 +92,9 @@ urlpatterns = [
         views.PipelineSourceDeleteView.as_view(),
         name="pipeline_delete",
     ),
+    path(
+        "pipelines/execute/",
+        views.PipelineSourceExecuteView.as_view(),
+        name="pipeline_execute",
+    ),
 ]
