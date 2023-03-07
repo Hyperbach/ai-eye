@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from core.models import IsActiveMixin, TimestampMixin
 from pipelines.builtins import get_builtin_function_names
 from pipelines.choices import TypesOfDAGNodes
+from pipelines.validators import FunctionNameValidator
 
 User = get_user_model()
 
@@ -16,7 +17,9 @@ class Prompt(TimestampMixin, IsActiveMixin):
     A user's defined prompt function
     """
 
-    name: models.CharField = models.CharField(max_length=100, unique=True)
+    name: models.CharField = models.CharField(
+        max_length=100, unique=True, validators=[FunctionNameValidator()]
+    )
     description: models.TextField = models.TextField(blank=True)
     body: models.TextField = models.TextField()
     owner: models.ForeignKey = models.ForeignKey(
@@ -42,7 +45,10 @@ class BuiltinFunction(TimestampMixin, IsActiveMixin):
     """
 
     name: models.CharField = models.CharField(
-        max_length=100, choices=get_builtin_function_names(), unique=True
+        max_length=100,
+        choices=get_builtin_function_names(),
+        unique=True,
+        validators=[FunctionNameValidator()],
     )
     description: models.TextField = models.TextField(blank=True)
 
