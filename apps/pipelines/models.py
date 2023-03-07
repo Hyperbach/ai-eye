@@ -36,14 +36,14 @@ class Prompt(TimestampMixin, IsActiveMixin):
 
 
 class BuiltinFunction(TimestampMixin, IsActiveMixin):
+    """
+    Pre-defined function residing on an FS
+    """
+
     name: models.CharField = models.CharField(
         max_length=100, choices=get_builtin_function_names(), unique=True
     )
     description: models.TextField = models.TextField(blank=True)
-
-    """
-    Pre-defined function residing on an FS
-    """
 
     class Meta:
         verbose_name = _("Builtin Function")
@@ -59,6 +59,10 @@ class BuiltinFunction(TimestampMixin, IsActiveMixin):
 
 
 class PipelineSource(TimestampMixin):
+    """
+    Represents a source of DAG nodes and edges
+    """
+
     body: models.TextField = models.TextField()
 
     class Meta:
@@ -83,6 +87,10 @@ class PipelineSource(TimestampMixin):
 
 
 class DAGNode(models.Model):
+    """
+    Represents a node in a DAG
+    """
+
     type = models.IntegerField(
         default=TypesOfDAGNodes.PROMPT, choices=TypesOfDAGNodes.choices
     )
@@ -108,6 +116,10 @@ class DAGNode(models.Model):
 
 
 class DAGEdge(models.Model):
+    """
+    Represents an edge in a DAG
+    """
+
     from_node = models.ForeignKey(
         DAGNode, related_name="from_edges", on_delete=models.CASCADE
     )
