@@ -19,8 +19,9 @@ class Prompt(TimestampMixin, IsActiveMixin):
     name: models.CharField = models.CharField(max_length=100, unique=True)
     description: models.TextField = models.TextField(blank=True)
     body: models.TextField = models.TextField()
-    # an author of a prompt
-    owner: models.ForeignKey = models.ForeignKey(User, on_delete=models.CASCADE)
+    owner: models.ForeignKey = models.ForeignKey(
+        User, on_delete=models.CASCADE, verbose_name=_("author of the prompt")
+    )
 
     class Meta:
         verbose_name = _("Prompt")
