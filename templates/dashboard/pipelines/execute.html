@@ -76,12 +76,15 @@
             $(item_id).find(".msg").text(msg);
         }
 
+        const get_error_str = function(error) {
+            return Array.isArray(error.responseJSON) ? error.responseJSON.join(" ") : error.responseJSON["error"];
+        }
+
         const $submit_form = $("#execute_pipeline_form");
         $submit_form.on('submit', function (event) {
             event.preventDefault();
             const $submit_button = $(this).find('#submit-btn');
             if ($submit_button.prop('disabled')) {
-                console.log("return");
                 return;
             }
 
@@ -122,7 +125,7 @@
                         show_item("#success-alert", true);
                     },
                     error: function (error) {
-                        output_msg("#error-alert", error.responseJSON["error"]);
+                        output_msg("#error-alert", get_error_str(error));
                         show_item("#error-alert", true);
                     },
                     beforeSend: function () {
@@ -147,7 +150,7 @@
         }
 
         const populate_args = function (tags) {
-            const lastRow = $('div.row.mb-3:last');
+            const $lastRow = $('div.row.mb-3:last');
 
             tags.forEach(function (tag) {
                 const tagLabel = $('<span>')
@@ -165,7 +168,7 @@
                     });
                 const tagRow = $('<div>').addClass('row mb-3').append(tagLabel)
                     .append($('<div>').addClass('col-sm-10').append(tagInput));
-                lastRow.after(tagRow);
+                $lastRow.after(tagRow);
             });
         }
 
@@ -191,11 +194,10 @@
                     },
                     success: function (response) {
                         const args = response.response;
-                        console.log("args:" + args)
                         populate_args(args);
                     },
                     error: function (error) {
-                        output_msg("#error-alert", error.responseJSON["error"]);
+                        output_msg("#error-alert", get_error_str(error));
                         show_item("#error-alert", true);
                     },
                     beforeSend: function () {
