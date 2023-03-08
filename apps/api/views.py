@@ -123,7 +123,7 @@ class PipelineCallViewSet(viewsets.ViewSet):
         else:
             return openaikey_instance.key
 
-    helper = {
+    authentication_settings = {
         AiEyeTokenAuthentication: {
             "serializer": PipelineCallSerializer,
             "retrieve_openaikey_fn": retrieve_openaikey_for_aieyetokenauthenticated_user,
@@ -134,22 +134,12 @@ class PipelineCallViewSet(viewsets.ViewSet):
         },
     }
 
-    @staticmethod
-    def retrieve_serializer_class(request):
-        authenticator = find_first(
-            lambda auth: auth.authenticate(request), request.authenticators
-        )
-        if isinstance(authenticator, AiEyeTokenAuthentication):
-            return PipelineCallSerializer
-        else:
-            return PipelineCallWithOpenaiKeyId
-
     def create(self, request):
         authenticator = find_first(
             lambda auth: auth.authenticate(request), request.authenticators
         )
 
-        helper_struct = self.helper[authenticator.__class__]
+        helper_struct = self.authentication_settings[authenticator.__class__]
         serializer_class = helper_struct["serializer"]
         serializer = serializer_class(data=request.data)
 
