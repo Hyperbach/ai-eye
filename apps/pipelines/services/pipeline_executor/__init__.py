@@ -1,3 +1,5 @@
+from typing import Dict
+
 import networkx as nx
 from pipelines.models import BuiltinFunction, DAGEdge, DAGNode, Prompt
 from pipelines.services.exceptions import NoDAGNodesError, UnableToDetermineRootError
@@ -31,10 +33,9 @@ class PipelineExecutor:
         builtins = list(BuiltinFunction.objects.filter(name__in=node_names))
 
         graph = nx.DiGraph()
-        for node in dag_nodes:
-            graph.add_node(node)
-        for edge in dag_edges:
-            graph.add_edge(edge.from_node, edge.to_node)
+        graph.add_nodes_from(dag_nodes)
+        edges = [(edge.from_node, edge.to_node) for edge in dag_edges]
+        graph.add_edges_from(edges)
 
         return graph, prompts, builtins
 
@@ -46,7 +47,7 @@ class PipelineExecutor:
             )
         return roots[0]
 
-    def exec(self, user_args, openaikey):
+    def exec(self, user_args: Dict[str, str], openaikey: str):
         """
         builtins:
         --
