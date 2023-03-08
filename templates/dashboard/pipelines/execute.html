@@ -142,9 +142,11 @@
             return false;
         });
 
-        const populate_args = function (tags) {
-            $('div.row.mb-3').not(".item-block").remove()
+        const clear_args = function () {
+            $('div.row.mb-3').not(".item-block").remove();
+        }
 
+        const populate_args = function (tags) {
             const lastRow = $('div.row.mb-3:last');
 
             tags.forEach(function (tag) {
@@ -198,6 +200,7 @@
                     },
                     beforeSend: function () {
                         $('#spinner').removeClass('hidden');
+                        clear_args();
                     },
                     complete: function () {
                         $('#spinner').addClass('hidden');
