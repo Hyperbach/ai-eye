@@ -107,9 +107,10 @@ class PipelineExecutorTestCase(TestCase):
         try:
             pipeline_executor = self._create_pipeline_executor(input_str=input_str)
             result = pipeline_executor.exec(user_args=user_args, openaikey="")
-            self.assertEqual(result, expected)
         except Exception as exc:
-            self.fail(f"test_positive_exec raised an exception : {exc}")
+            self.fail(f"test_positive_exec raised an exception: {exc}")
+
+        self.assertEqual(result, expected)
 
     @parameterized.expand(
         [
@@ -213,6 +214,10 @@ class PipelineExecutorTestCase(TestCase):
         input_str = test_data["input"]
         expected_user_args = test_data["expected_user_args"]
 
-        pipeline_executor = self._create_pipeline_executor(input_str=input_str)
-        result_user_args = pipeline_executor.get_arg_names()
+        try:
+            pipeline_executor = self._create_pipeline_executor(input_str=input_str)
+            result_user_args = pipeline_executor.get_arg_names()
+        except Exception as exc:
+            self.fail(f"test_exec_arg_names_only raised an exception: {exc}")
+
         self.assertCountEqual(expected_user_args, result_user_args)

@@ -10,19 +10,28 @@ class DAGBuilderTestCase(TestCase):
         self.builder = DAGBuilder()
 
     def test_single_node_creation(self):
-        root = self.builder.build("test")
+        try:
+            root = self.builder.build("test")
+        except Exception as exc:
+            self.fail(f"test_single_node_creation raised an exception: {exc}")
 
         self.assertEqual(root.name, "test")
         self.assertEqual(len(root.edges), 0)
 
     def test_single_function_invocation(self):
-        root = self.builder.build("foo()")
+        try:
+            root = self.builder.build("foo()")
+        except Exception as exc:
+            self.fail(f"test_single_function_invocation raised an exception: {exc}")
 
         self.assertEqual(root.name, "foo")
         self.assertEqual(len(root.edges), 0)
 
     def test_multiple_function_invocations(self):
-        root = self.builder.build("a(b(), c())")
+        try:
+            root = self.builder.build("a(b(), c())")
+        except Exception as exc:
+            self.fail(f"test_multiple_function_invocations raised an exception: {exc}")
 
         self.assertEqual(root.name, "a")
 
@@ -42,7 +51,12 @@ class DAGBuilderTestCase(TestCase):
         self.assertEqual(len(node_c.edges), 0)
 
     def test_function_invocations_with_named_arguments(self):
-        root = self.builder.build("foo(a=a1, b=b2)")
+        try:
+            root = self.builder.build("foo(a=a1, b=b2)")
+        except Exception as exc:
+            self.fail(
+                f"test_function_invocations_with_named_arguments raised an exception: {exc}"
+            )
 
         self.assertEqual(root.name, "foo")
 
@@ -72,7 +86,12 @@ class DAGBuilderTestCase(TestCase):
         self.assertEqual(len(node_b_edge.target.edges), 0)
 
     def test_function_invocations_with_unnamed_arguments(self):
-        root = self.builder.build("foo(a, b)")
+        try:
+            root = self.builder.build("foo(a, b)")
+        except Exception as exc:
+            self.fail(
+                f"test_function_invocations_with_unnamed_arguments raised an exception: {exc}"
+            )
 
         self.assertEqual(root.name, "foo")
 
@@ -106,7 +125,13 @@ class DAGBuilderTestCase(TestCase):
         self.assertEqual(node2.edges[0].source, node1)
 
     def test_nested_function_invocations_with_arguments(self):
-        root = self.builder.build("foo(a=bar(b=b1))")
+        try:
+            root = self.builder.build("foo(a=bar(b=b1))")
+        except Exception as exc:
+            self.fail(
+                f"test_nested_function_invocations_with_arguments raised an exception: {exc}"
+            )
+
         self.assertEqual(root.name, "foo")
 
         # Assert that there is 1 edge created for the root node
