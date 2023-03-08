@@ -8,11 +8,12 @@ from pipelines.builtins import (
     get_arg_name_by_index,
     get_arity_of_function,
 )
+from pipelines.models import BuiltinFunction, Prompt
 from pipelines.services.exceptions import CallBuiltinFunctionError, CallPromptError
 
 
 class CallBuiltinFunction:
-    def __init__(self, builtin_fn):
+    def __init__(self, builtin_fn: BuiltinFunction):
         self.builtin_fn = builtin_fn
 
     def __str__(self):
@@ -38,7 +39,7 @@ class CallPrompt:
     ENDPOINT = "v1/completions"
     MODEL = "text-davinci-003"
 
-    def __init__(self, prompt_fn):
+    def __init__(self, prompt_fn: Prompt):
         self.prompt_fn = prompt_fn
 
     def __str__(self):

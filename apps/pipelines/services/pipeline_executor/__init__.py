@@ -10,8 +10,6 @@ from pipelines.services.pipeline_executor.visitors import (
 class PipelineExecutor:
     def __init__(self, pipeline_source_id):
         self.pipeline_source_id = pipeline_source_id
-        self.user_args = {}
-
         self.graph, self.prompts, self.builtins = self._build_graph()
         self.root = self._get_root(self.graph)
 
