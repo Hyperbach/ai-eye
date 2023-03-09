@@ -1,6 +1,6 @@
-# API Overview
+# OpenAI API Overview
 
-This Django project contains two endpoints: openai and cache. They use HTTP Token based authorization.
+This Django project contains two endpoints for working with Open AI: openai and cache. They use HTTP Token based authentication.
 
 ## openai endpoint
 The openai endpoint allows users to send requests to the OpenAI API and receive responses. The endpoint accepts the following methods:
@@ -70,4 +70,54 @@ Example of usage:
 curl -X GET -G http://127.0.0.1:8000/api/cache/v1/completions/ --header 'Authorization: Bearer pubtokenpubtoken1pubtoken1pubtokenXXXXXX' --data-urlencode "prompt=is John a cool name??" --data-urlencode "model=text-davinci-003"
 
 [{"response":"Yes, John is a cool name.","cache_hit":true}]
+```
+
+
+# Pipeline API Overview
+In addition to the previously mentioned APIs, the project includes two API endpoints for working with pipelines.
+
+## pipeline_args
+### GET /api/pipeline/args?pipeline_id={param}
+Authenticated users can use this endpoint to send requests to the server for retrieving arguments of a specified pipeline and receive corresponding responses. The endpoint accepts the following methods:
+
+    GET: Sends a request to the Django server and returns a response.
+
+Example of usage:
+```shell
+curl --location 'http://127.0.0.1:8000/api/pipeline/args?pipeline_id=14' --header 'Cookie: csrftoken=g69kAjkZan6yAGqD5VOGCUjbUdR1qPka; sessionid=97wvcm0t0t1rgrpsy38ordgtmh7cw9iz' --header 'Content-Type: text/pl
+
+{"success":true,"response":["s"]}
+```
+
+## pipeline_call
+### POST /api/pipeline/call/
+This endpoint enables authenticated users to send requests to the server for executing a specified pipeline and receive responses in return. The endpoint accepts the following methods:
+
+    POST: Sends a request to the Django server and returns a response.
+This endpoint accepts either Session authentication or HTTP Token based authorization.
+
+Example of usage (with Session authentication):
+```shell
+curl --location 'http://127.0.0.1:8000/api/pipeline/call/' \
+--header 'Content-Type: application/json' \
+--header 'X-CSRFToken: g69kAjkZan6yAGqD5VOGCUjbUdR1qPka' \
+--header 'Cookie: csrftoken=g69kAjkZan6yAGqD5VOGCUjbUdR1qPka; sessionid=97wvcm0t0t1rgrpsy38ordgtmh7cw9iz' \
+--data '{
+    "pipeline_id": 14,
+    "args": {"s": "abc"},
+    "openaikey_id": 1
+}'
+{"success":true,"response":"abc"}
+```
+
+Example of usage (with HTTP Token based authentication):
+```shell
+curl --location 'http://127.0.0.1:8000/api/pipeline/call/' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer pubtokenpubtoken1pubtoken1pubtoken111111' \
+--data '{
+    "pipeline_id": 14,
+    "args": {"s": "abc"}
+}'
+{"success":true,"response":"abc"}
 ```
