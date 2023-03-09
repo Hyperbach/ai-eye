@@ -116,7 +116,9 @@ class PipelineCallViewSet(viewsets.ViewSet):
 
         try:
             openaikey_instance = OpenAIKey.objects.get(
-                Q(owner=request.user) | Q(users__in=[request.user]), pk=openaikey_id
+                Q(owner=request.user) | Q(users__in=[request.user]),
+                pk=openaikey_id,
+                is_active=True,
             )
         except OpenAIKey.DoesNotExist:
             raise ValidationError("OpenAIKey not found")
