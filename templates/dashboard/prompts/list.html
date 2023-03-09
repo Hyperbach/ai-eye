@@ -17,7 +17,6 @@
                     <th scope="col">Body</th>
                     <th scope="col">Date created</th>
                     <th scope="col">Date updated</th>
-                    <th scope="col">Is active</th>
                     <th scope="col"></th>
                     <th scope="col"></th>
                 </tr>
@@ -32,9 +31,8 @@
                             <td>{{ prompt.body }}</td>
                             <td>{{ prompt.date_created|date:'m-d-Y H:i:s' }}</td>
                             <td>{{ prompt.date_updated|date:'m-d-Y H:i:s' }}</td>
-                            <td>{{ prompt.is_active }}</td>
-                             <td><a href="{% url 'dashboard:prompt_update' prompt.pk %}">Update</a></td>
-                             <td><a href="{% url 'dashboard:prompt_delete' prompt.pk %}">Delete</a></td>
+                            <td><a href="{% url 'dashboard:prompt_update' prompt.pk %}">Update</a></td>
+                            <td><a href="{% url 'dashboard:prompt_delete' prompt.pk %}">Delete</a></td>
                         </tr>
                     {% endfor %}
                 {% endif %}

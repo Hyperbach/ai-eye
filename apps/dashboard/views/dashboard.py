@@ -160,7 +160,7 @@ class PromptDeleteView(PromptBaseView, generic.DeleteView):  # type: ignore[misc
 
 
 class PromptUpdateView(PromptBaseView, generic.UpdateView):
-    fields = ["name", "body", "description", "is_active"]
+    fields = ["name", "body", "description"]
     template_name = "dashboard/prompts/update.html"
 
 
@@ -191,7 +191,7 @@ class BuiltinFunctionDeleteView(BuiltinFunctionBaseView, generic.DeleteView):  #
 
 
 class BuiltinFunctionUpdateView(BuiltinFunctionBaseView, generic.UpdateView):
-    fields = ["name", "description", "is_active"]
+    fields = ["name", "description"]
     template_name = "dashboard/builtins/update.html"
 
 

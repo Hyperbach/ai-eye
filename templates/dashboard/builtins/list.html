@@ -16,7 +16,6 @@
                     <th scope="col">Description</th>
                     <th scope="col">Date created</th>
                     <th scope="col">Date updated</th>
-                    <th scope="col">Is active</th>
                     <th scope="col"></th>
                     <th scope="col"></th>
                 </tr>
@@ -30,7 +29,6 @@
                             <td>{{ builtin.description }}</td>
                             <td>{{ builtin.date_created|date:'m-d-Y H:i:s' }}</td>
                             <td>{{ builtin.date_updated|date:'m-d-Y H:i:s' }}</td>
-                            <td>{{ builtin.is_active }}</td>
                              <td><a href="{% url 'dashboard:builtin_update' builtin.pk %}">Update</a></td>
                              <td><a href="{% url 'dashboard:builtin_delete' builtin.pk %}">Delete</a></td>
                         </tr>

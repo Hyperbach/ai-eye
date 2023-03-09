@@ -4,7 +4,7 @@ from django.db import models, transaction
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
-from core.models import IsActiveMixin, TimestampMixin
+from core.models import TimestampMixin
 from pipelines.builtins import get_builtin_function_names
 from pipelines.choices import TypesOfDAGNodes
 from pipelines.validators import FunctionNameValidator
@@ -12,7 +12,7 @@ from pipelines.validators import FunctionNameValidator
 User = get_user_model()
 
 
-class Prompt(TimestampMixin, IsActiveMixin):
+class Prompt(TimestampMixin):
     """
     A user's defined prompt function
     """
@@ -39,7 +39,7 @@ class Prompt(TimestampMixin, IsActiveMixin):
             raise ValidationError("BuiltinFunction with this name already exists.")
 
 
-class BuiltinFunction(TimestampMixin, IsActiveMixin):
+class BuiltinFunction(TimestampMixin):
     """
     Pre-defined function residing on an FS
     """
