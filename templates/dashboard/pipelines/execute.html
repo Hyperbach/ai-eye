@@ -21,7 +21,7 @@
         <div class="row mb-3 item-block">
             <label class="col-sm-2 col-form-label" for="id_openaikey">OpenAI Key</label>
             <div class="col-sm-10">
-                <select name="pipeline" class="form-select" title="" required="" id="id_openaikey">
+                <select name="pipeline" class="form-select" title="" required id="id_openaikey">
                     <option value="">---------</option>
                     {% for openaikey in openaikeys %}
                         <option value="{{ openaikey.id }}">{{ openaikey.key }}</option>
@@ -33,7 +33,7 @@
         <div class="row mb-3 item-block">
             <label class="col-sm-2 col-form-label" for="id_pipeline">Pipeline</label>
             <div class="col-sm-10">
-                <select name="pipeline" class="form-select" title="" required="" id="id_pipeline">
+                <select name="pipeline" class="form-select" title="" required id="id_pipeline">
                     <option value="">---------</option>
                     {% for pipeline in pipelines %}
                         <option value="{{ pipeline.id }}">{{ pipeline.body }}</option>
