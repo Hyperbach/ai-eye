@@ -25,6 +25,7 @@ class PipelineExecutorTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         aieye_admin = AiEyeAdminFactory.create()
+        cls.aieye_admin = aieye_admin
         Prompt.objects.create(
             name="prompt_a", body="this is {a_arg}", owner=aieye_admin
         )
@@ -146,9 +147,8 @@ class PipelineExecutorTestCase(TestCase):
             pipeline_executor = self._create_pipeline_executor(input_str=input_str)
             _ = pipeline_executor.exec(user_args=user_args, openaikey="")
 
-    @staticmethod
-    def _create_pipeline_executor(input_str):
-        pipeline = PipelineSource.objects.create(body=input_str)
+    def _create_pipeline_executor(self, input_str):
+        pipeline = PipelineSource.objects.create(body=input_str, owner=self.aieye_admin)
         dag_root = DAGBuilder().build(input_str)
         dag_saver = DAGSaver(dag_root)
         dag_saver.save(pipeline)

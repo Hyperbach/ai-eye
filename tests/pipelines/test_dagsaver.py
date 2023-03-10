@@ -12,6 +12,7 @@ class DAGSaverTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         aieye_admin = AiEyeAdminFactory.create()
+        cls.aieye_admin = aieye_admin
         Prompt.objects.create(name="prompt_a", owner=aieye_admin)
         Prompt.objects.create(name="prompt_b", owner=aieye_admin)
 
@@ -19,7 +20,7 @@ class DAGSaverTestCase(TestCase):
 
         input_str = "builtin_a(prompt_a, prompt_b)"
         cls.input_str = input_str
-        pipeline = PipelineSource.objects.create(body=input_str)
+        pipeline = PipelineSource.objects.create(body=input_str, owner=aieye_admin)
         cls.pipeline = pipeline
 
         dag_root = DAGBuilder().build(input_str)

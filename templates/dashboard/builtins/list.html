@@ -29,17 +29,24 @@
                             <td>{{ builtin.description }}</td>
                             <td>{{ builtin.date_created|date:'m-d-Y H:i:s' }}</td>
                             <td>{{ builtin.date_updated|date:'m-d-Y H:i:s' }}</td>
-                             <td><a href="{% url 'dashboard:builtin_update' builtin.pk %}">Update</a></td>
-                             <td><a href="{% url 'dashboard:builtin_delete' builtin.pk %}">Delete</a></td>
+                            {% if user.is_aieye_admin %}
+                                <td><a href="{% url 'dashboard:builtin_update' builtin.pk %}">Update</a></td>
+                                <td><a href="{% url 'dashboard:builtin_delete' builtin.pk %}">Delete</a></td>
+                            {% else %}
+                                <td></td>
+                                <td></td>
+                            {% endif %}
                         </tr>
                     {% endfor %}
                 {% endif %}
                 </tbody>
             </table>
 
+            {% if user.is_aieye_admin %}
             <div class="d-flex ">
                 <a href="{% url 'dashboard:builtin_create' %}" class="d-block btn btn-primary  my-2">Add new</a>
             </div>
+            {% endif %}
         </div>
     </div>
 {% endblock dashboard_content %}

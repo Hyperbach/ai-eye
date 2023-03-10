@@ -1,13 +1,14 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.db.models import Q
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views import View, generic
 from django.views.generic import TemplateView
 
 from api.models import Log
 from core.forms import UserCreateForm
-from core.mixins import AiEyeAdminMixin
+from core.mixins import AiEyeAdminMixin, AiEyeAdminOrUserMixin
 from core.models import OpenAIKey, PublicToken
 from dashboard.forms import PublicTokenCreateForm, PublicTokenUpdateForm
 from pipelines.forms import PipelineCreateForm
@@ -133,11 +134,16 @@ class CachesDeleteAllView(AiEyeAdminMixin, generic.FormView):
         return super().form_valid(form)
 
 
-class PromptBaseView(AiEyeAdminMixin, View):
+class PromptBaseView(AiEyeAdminOrUserMixin, View):
     success_url = reverse_lazy("dashboard:prompts")
 
     def get_queryset(self):
-        return Prompt.objects.order_by("-date_created")
+        user = self.request.user
+        qs = Prompt.objects
+        if user.is_aieye_user:
+            qs = qs.filter(owner=user)
+
+        return qs.order_by("-date_created")
 
 
 class PromptListView(PromptBaseView, generic.ListView):
@@ -171,9 +177,12 @@ class BuiltinFunctionBaseView(AiEyeAdminMixin, View):
         return BuiltinFunction.objects.order_by("-date_created")
 
 
-class BuiltinFunctionListView(BuiltinFunctionBaseView, generic.ListView):
+class BuiltinFunctionListView(AiEyeAdminOrUserMixin, generic.ListView):
     fields = "__all__"
     template_name = "dashboard/builtins/list.html"
+
+    def get_queryset(self):
+        return BuiltinFunction.objects.order_by("-date_created")
 
 
 class BuiltinFunctionCreateView(BuiltinFunctionBaseView, generic.CreateView):
@@ -195,11 +204,16 @@ class BuiltinFunctionUpdateView(BuiltinFunctionBaseView, generic.UpdateView):
     template_name = "dashboard/builtins/update.html"
 
 
-class PipelineSourceBaseView(AiEyeAdminMixin, View):
+class PipelineSourceBaseView(AiEyeAdminOrUserMixin, View):
     success_url = reverse_lazy("dashboard:pipelines")
 
     def get_queryset(self):
-        return PipelineSource.objects.order_by("-date_created")
+        user = self.request.user
+        qs = PipelineSource.objects
+        if user.is_aieye_user:
+            qs = qs.filter(owner=user)
+
+        return qs.order_by("-date_created")
 
 
 class PipelineSourceListView(PipelineSourceBaseView, generic.ListView):
@@ -212,6 +226,11 @@ class PipelineSourceCreateView(PipelineSourceBaseView, generic.CreateView):
     form_class = PipelineCreateForm
     success_url = reverse_lazy("dashboard:pipelines")
 
+    def form_valid(self, form):
+        obj = form.save(commit=False)
+        obj.owner = self.request.user
+        return super().form_valid(form)
+
 
 class PipelineSourceUpdateView(PipelineSourceBaseView, generic.UpdateView):
     form_class = PipelineCreateForm
@@ -222,14 +241,18 @@ class PipelineSourceDeleteView(PipelineSourceBaseView, generic.DeleteView):  # t
     template_name = "dashboard/pipelines/delete.html"
 
 
-class PipelineSourceExecuteView(AiEyeAdminMixin, TemplateView):
+class PipelineSourceExecuteView(AiEyeAdminOrUserMixin, TemplateView):
     template_name = "dashboard/pipelines/execute.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        pipelines = PipelineSource.objects.order_by("-date_created").all()
+        qs = PipelineSource.objects
+        if user.is_aieye_user:
+            qs = qs.filter(owner=user)
+
+        pipelines = qs.order_by("-date_created").all()
         openaikeys = (
             OpenAIKey.objects.filter(
                 Q(owner=user) | Q(users__in=[user]), is_active=True
@@ -240,3 +263,13 @@ class PipelineSourceExecuteView(AiEyeAdminMixin, TemplateView):
 
         context.update({"pipelines": pipelines, "openaikeys": openaikeys})
         return context
+
+
+def index(request):
+    if request.user.is_authenticated:
+        if request.user.is_aieye_admin:
+            return redirect("dashboard:users")
+        else:
+            return redirect("dashboard:prompts")
+    else:
+        return redirect("access:login")

@@ -72,9 +72,8 @@ class PipelineExecutorAPITestCase(TestCase):
             email=self.aieye_admin.email, password=AIEYE_ADMIN_PASSWORD
         )
 
-    @staticmethod
-    def create_pipeline(input_str):
-        pipeline = PipelineSource.objects.create(body=input_str)
+    def create_pipeline(self, input_str):
+        pipeline = PipelineSource.objects.create(body=input_str, owner=self.aieye_admin)
         dag_root = DAGBuilder().build(input_str)
         dag_saver = DAGSaver(dag_root)
         dag_saver.save(pipeline)

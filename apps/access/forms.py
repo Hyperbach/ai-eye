@@ -7,7 +7,7 @@ class LoginForm(AuthenticationForm):
         cleaned_data = super().clean()
 
         user = self.get_user()
-        if user is None or not user.is_aieye_admin:
+        if user is None or not (user.is_aieye_admin or user.is_aieye_user):
             raise ValidationError(
                 "Insufficient privileges",
                 code="wrong_role",
