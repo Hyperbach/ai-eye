@@ -62,7 +62,21 @@
 
 {% block bootstrap5_extra_script %}
     <script type="text/javascript">
-        $('#spinner').addClass('hidden');
+        const perform_ajax_call = function (url, type, data, successCallback, errorCallback, beforeSendCallback, completeCallback) {
+            $.ajax({
+                url: url,
+                type: type,
+                data: data,
+                headers: {
+                    'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val(),
+                    'Content-Type': 'application/json'
+                },
+                success: successCallback,
+                error: errorCallback,
+                beforeSend: beforeSendCallback,
+                complete: completeCallback
+            });
+        }
 
         const show_item = function (item_id, show) {
             if (show) {
@@ -76,74 +90,12 @@
             $(item_id).find(".msg").text(msg);
         }
 
-        const get_error_str = function(error) {
-            return Array.isArray(error.responseJSON) ? error.responseJSON.join(" ") : error.responseJSON["error"];
+        const get_error_str = function (error) {
+            if (error.hasOwnProperty("responseJSON")) {
+                return Array.isArray(error.responseJSON) ? error.responseJSON.join(" ") : error.responseJSON["error"];
+            }
+            return "Unknown error";
         }
-
-        const $submit_form = $("#execute_pipeline_form");
-        $submit_form.on('submit', function (event) {
-            event.preventDefault();
-            const $submit_button = $(this).find('#submit-btn');
-            if ($submit_button.prop('disabled')) {
-                return;
-            }
-
-            show_item("#success-alert", false);
-            show_item("#error-alert", false);
-
-            const pipeline_id_selected = $("#id_pipeline").val();
-            const openaikey_id_selected = $("#id_openaikey").val();
-
-            const $tag_vals = $(".tag_value");
-
-            const should_submit = $tag_vals.length === 0 || $tag_vals.filter(function() {
-                return !this.value.trim();
-            }).length === 0;
-
-            if (should_submit) {
-                const args = $tag_vals.toArray().reduce((acc, el) => {
-                    const id = el.id.substring(3);
-                    acc[id] = el.value.trim();
-                    return acc;
-                }, {});
-
-                $.ajax({
-                    url: '/api/pipeline/call/',
-                    type: 'POST',
-                    data: JSON.stringify({
-                        pipeline_id: pipeline_id_selected,
-                        openaikey_id: openaikey_id_selected,
-                        args: args
-                    }),
-                    headers: {
-                        'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val(),
-                        'Content-Type': 'application/json'
-                    },
-                    success: function (response) {
-                        const response_text = response.response;
-                        output_msg("#success-alert", response_text);
-                        show_item("#success-alert", true);
-                    },
-                    error: function (error) {
-                        output_msg("#error-alert", get_error_str(error));
-                        show_item("#error-alert", true);
-                    },
-                    beforeSend: function () {
-                        $submit_button.prop('disabled', true);
-                        $('#spinner').removeClass('hidden');
-                    },
-                    complete: function () {
-                        $('#spinner').addClass('hidden');
-                        $submit_button.prop('disabled', false);
-                    },
-                });
-            } else {
-                output_msg("#error-alert", "Please fill in all arguments");
-                show_item("#error-alert", true);
-            }
-
-            return false;
-        });
 
         const clear_args = function () {
             $('div.row.mb-3').not(".item-block").remove();
@@ -173,6 +125,8 @@
         }
 
         $(function () {
+            $('#spinner').addClass('hidden');
+
             $("#id_pipeline").on("change", function () {
                 show_item("#success-alert", false);
                 show_item("#error-alert", false);
@@ -182,32 +136,88 @@
                     return;
                 }
 
-                $.ajax({
-                    url: '/api/pipeline/args',
-                    type: 'GET',
-                    data: {
+                perform_ajax_call(
+                    '/api/pipeline/args',
+                    'GET',
+                    {
                         pipeline_id: pipeline_id
                     },
-                    headers: {
-                        'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val(),
-                        'Content-Type': 'application/json'
-                    },
-                    success: function (response) {
+                    function (response) {
                         const args = response.response;
                         populate_args(args);
                     },
-                    error: function (error) {
+                    function (error) {
                         output_msg("#error-alert", get_error_str(error));
                         show_item("#error-alert", true);
                     },
-                    beforeSend: function () {
+                    function () {
                         $('#spinner').removeClass('hidden');
                         clear_args();
                     },
-                    complete: function () {
+                    function () {
                         $('#spinner').addClass('hidden');
-                    },
-                });
+                    }
+                );
+            });
+
+            $("#execute_pipeline_form").on('submit', function (event) {
+                event.preventDefault();
+                const $submit_button = $(this).find('#submit-btn');
+                if ($submit_button.prop('disabled')) {
+                    return;
+                }
+
+                show_item("#success-alert", false);
+                show_item("#error-alert", false);
+
+                const pipeline_id_selected = $("#id_pipeline").val();
+                const openaikey_id_selected = $("#id_openaikey").val();
+
+                const $tag_vals = $(".tag_value");
+
+                const should_submit = $tag_vals.length === 0 || $tag_vals.filter(function () {
+                    return !this.value.trim();
+                }).length === 0;
+
+                if (should_submit) {
+                    const args = $tag_vals.toArray().reduce((acc, el) => {
+                        const id = el.id.substring(3);
+                        acc[id] = el.value.trim();
+                        return acc;
+                    }, {});
+
+                    perform_ajax_call(
+                        '/api/pipeline/call/',
+                        'POST',
+                        JSON.stringify({
+                            pipeline_id: pipeline_id_selected,
+                            openaikey_id: openaikey_id_selected,
+                            args: args
+                        }),
+                        function (response) {
+                            const response_text = response.response;
+                            output_msg("#success-alert", response_text);
+                            show_item("#success-alert", true);
+                        },
+                        function (error) {
+                            output_msg("#error-alert", get_error_str(error));
+                            show_item("#error-alert", true);
+                        },
+                        function () {
+                            $submit_button.prop('disabled', true);
+                            $('#spinner').removeClass('hidden');
+                        },
+                        function () {
+                            $('#spinner').addClass('hidden');
+                            $submit_button.prop('disabled', false);
+                        }
+                    );
+                } else {
+                    output_msg("#error-alert", "Please fill in all arguments");
+                    show_item("#error-alert", true);
+                }
+
+                return false;
             });
         });
     </script>
