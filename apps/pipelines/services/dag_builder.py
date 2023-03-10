@@ -45,11 +45,15 @@ class Edge:
         self.source = source
         self.target = target
 
-    def __str__(self):
+    @property
+    def full_name(self):
         return f"{self.source} -> {self.target}"
 
+    def __str__(self):
+        return self.full_name
+
     def __repr__(self):
-        return f"{self.source} -> {self.target}"
+        return self.full_name
 
 
 class DAGBuilder(Transformer):
