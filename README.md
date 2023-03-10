@@ -64,7 +64,6 @@ Code coverage:
 Useful commands:
 ```
 (env) pre-commit run
-(env) python manage.py wait_for_db
 ```
 
 ## TO BE CONTINUED
