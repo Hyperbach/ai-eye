@@ -75,9 +75,9 @@ Here's an example of a prompt in action:
 ```
 
 ## Builtin Functions Overview
-Built-in functions are normal Python functions that can be called with arguments in the standard way, i.e. function_name(argument1, argument2, ...). Unlike prompts, built-in functions do not use curly braces to denote arguments. Built-in functions can take any number of arguments, but they do not accept *args or **kwargs.
-Built-in functions should return a string.
-In order to use built-in function you should implement it `builtins.py` and then register in the Dashboard/builtins section. Only a user having an AIEYE_ADMIN role can register built-in functions.
+Built-in functions in Python are like regular functions that can be invoked with arguments in the standard way, using the syntax function_name(argument1, argument2, ...). Unlike prompts, built-in functions don't use curly braces to denote arguments. They can accept any number of arguments, but they don't accept *args or **kwargs.
+
+It's important to note that built-in functions are expected to return a string. To use a built-in function, you should first implement it in builtins.py, create and apply a migration, and then register it in the Dashboard's "built-ins" section. Only users with the AIEYE_ADMIN role have the ability to register built-in functions.
 An example:
 ```shell
 def foo(bar, fred):
@@ -93,30 +93,32 @@ foo(bar(fred(1,2,3)))
 
 In this example, the fred function takes in arguments (1,2,3), which is then passed as input to the bar function. The output of the bar function is then passed as input to the foo function. Pipelines can be used to compose complex operations from simple building blocks.
 
-There are several ways of passing user provided arguments to built-in functions and prompts.
-Let's start from prompts.
-Having a prompt with a name prompt_buddy:
+There are multiple ways to pass user-provided arguments to built-in functions and prompts.
+Let's begin by discussing prompts.
+If you have a prompt named `prompt_buddy` that looks like this:
 ```shell
 Hey {buddy}
 ```
-one can invoke it in a pipeline with either of the following ways:
+You can use it in a pipeline using one of the following methods:
 ```shell
 prompt_buddy(buddy)
 prompt_buddy(buddy=buddy_arg)
 ```
-where `buddy_arg` is an arbitrary placeholder name being supplied through the Pipeline Execution Form.
-Let's move on to built-in functions.
-Having a built-in function named `builtin_hi`:
+Here, `buddy_arg` is a named placeholder that is supplied through the Pipeline Execution Form.
+
+Moving on to built-in functions, let's consider a function named `builtin_hi`:
 ```shell
 def builtin_hi(buddy):
     return f"Hi, {buddy}"
 ```
-one can invoke it in a pipeline with either of the following ways:
+You can use this function in a pipeline using any of the following ways:
 ```shell
 builtin_hi(buddy)
 builtin_hi(buddy=buddy_arg)
 builtin_hi(dude)
 ```
+Here, `dude` and `buddy` are arguments passed directly to the function in place of `buddy`.
+In contrast, `buddy_arg` is a named placeholder that are filled in through the Pipeline Execution Form.
 
 
 # OpenAI API Overview
