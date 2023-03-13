@@ -66,6 +66,59 @@ Useful commands:
 (env) pre-commit run
 ```
 
+## Prompts Overview
+Prompts are a way to dynamically generate text with placeholders that can be replaced with user input. The syntax for a prompt is a string with curly braces {} containing an arbitrary name for the argument. For example, {name} can be used as a prompt for the user to enter their name. Prompt arguments should start with a letter and can be used in any order within the string.
+
+Here's an example of a prompt in action:
+```shell
+    Hello, {name}! How are you today?
+```
+
+## Builtin Functions Overview
+Built-in functions are normal Python functions that can be called with arguments in the standard way, i.e. function_name(argument1, argument2, ...). Unlike prompts, built-in functions do not use curly braces to denote arguments. Built-in functions can take any number of arguments, but they do not accept *args or **kwargs.
+Built-in functions should return a string.
+In order to use built-in function you should implement it `builtins.py` and then register in the Dashboard/builtins section. Only a user having an AIEYE_ADMIN role can register built-in functions.
+An example:
+```shell
+def foo(bar, fred):
+    return f"{bar} and {fred}"
+```
+
+## Pipelines Overview
+Pipelines are nested calls of prompts and/or built-in functions, where the output of one function is passed as input to another. The syntax for pipelines is similar to functional composition, where the output of the inner function becomes the input to the outer function.
+An example of a pipeline is:
+```shell
+foo(bar(fred(1,2,3)))
+```
+
+In this example, the fred function takes in arguments (1,2,3), which is then passed as input to the bar function. The output of the bar function is then passed as input to the foo function. Pipelines can be used to compose complex operations from simple building blocks.
+
+There are several ways of passing user provided arguments to built-in functions and prompts.
+Let's start from prompts.
+Having a prompt with a name prompt_buddy:
+```shell
+Hey {buddy}
+```
+one can invoke it in a pipeline with either of the following ways:
+```shell
+prompt_buddy(buddy)
+prompt_buddy(buddy=buddy_arg)
+```
+where `buddy_arg` is an arbitrary placeholder name being supplied through the Pipeline Execution Form.
+Let's move on to built-in functions.
+Having a built-in function named `builtin_hi`:
+```shell
+def builtin_hi(buddy):
+    return f"Hi, {buddy}"
+```
+one can invoke it in a pipeline with either of the following ways:
+```shell
+builtin_hi(buddy)
+builtin_hi(buddy=buddy_arg)
+builtin_hi(dude)
+```
+
+
 # OpenAI API Overview
 
 This Django project contains two endpoints for working with Open AI: openai and cache. They use HTTP Token based authentication.
