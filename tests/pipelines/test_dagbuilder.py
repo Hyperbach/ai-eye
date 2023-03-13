@@ -9,15 +9,6 @@ class DAGBuilderTestCase(TestCase):
     def setUp(self) -> None:
         self.builder = DAGBuilder()
 
-    def test_single_node_creation(self):
-        try:
-            root = self.builder.build("test")
-        except Exception as exc:
-            self.fail(f"test_single_node_creation raised an exception: {exc}")
-
-        self.assertEqual(root.name, "test")
-        self.assertEqual(len(root.edges), 0)
-
     def test_single_function_invocation(self):
         try:
             root = self.builder.build("foo()")
@@ -174,6 +165,7 @@ class DAGBuilderTestCase(TestCase):
             param("x(y=123z)"),
             param("x(123y=z)"),
             param("x=123"),
+            param("x"),
         ]
     )
     def test_invalid_inputs(self, input_str):

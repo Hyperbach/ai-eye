@@ -3,7 +3,10 @@ from typing import Any, Dict, List
 
 import networkx as nx
 from pipelines.models import BuiltinFunction, Prompt
-from pipelines.services.exceptions import InvalidArgumentsError
+from pipelines.services.exceptions import (
+    InvalidArgumentsError,
+    UnableToDetermineFunctionError,
+)
 from pipelines.services.pipeline_executor.calls import CallBuiltinFunction, CallPrompt
 from pipelines.utils import find_first
 
@@ -30,6 +33,8 @@ class BaseVisitor(metaclass=abc.ABCMeta):
     def visit(self, node) -> Any:
         target_fn = self._create_call_func_by_name(node.name)
         if self.is_placeholder(target_fn):
+            if not list(self.graph.predecessors(node)):
+                raise UnableToDetermineFunctionError(name=node.name)
             return self.visit_leaf(node)
         return self.visit_fn(node, target_fn)
 

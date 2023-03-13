@@ -1,7 +1,7 @@
 from lark import Lark, Transformer, v_args
 
 GRAMMAR = """
-    start: expression
+    start: func_invocation
     expression: name | func_invocation
     name: /[a-zA-Z][a-zA-Z_0-9]*/
     func_invocation: name "(" func_args? ")"

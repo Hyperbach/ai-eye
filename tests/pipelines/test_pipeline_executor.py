@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from django.test import TestCase
 
+import lark.exceptions
 from parameterized import parameterized
 from pipelines.models import BuiltinFunction, PipelineSource, Prompt
 from pipelines.services.dag_builder import DAGBuilder
@@ -87,13 +88,6 @@ class PipelineExecutorTestCase(TestCase):
                     "result": "OpenAI reply for this is aaa",
                 }
             ],
-            [
-                {
-                    "input": "foo",
-                    "user_args": {"foo": "just placeholder"},
-                    "result": "just placeholder",
-                }
-            ],
         ]
     )
     @patch(
@@ -133,6 +127,13 @@ class PipelineExecutorTestCase(TestCase):
                     "user_args": {"a": "1", "b": "2", "c": "3"},
                 }
             ],
+            [
+                {
+                    "input": "foo",
+                    "user_args": {"foo": "just placeholder"},
+                    "exception": lark.exceptions.LarkError,
+                }
+            ],
         ]
     )
     @patch(
@@ -142,17 +143,11 @@ class PipelineExecutorTestCase(TestCase):
     def test_negative_exec(self, test_data, mock_openai_request):
         input_str = test_data["input"]
         user_args = test_data["user_args"]
+        expected_exception = test_data.get("exception", PipelineException)
 
-        with self.assertRaises(PipelineException):
+        with self.assertRaises(expected_exception):
             pipeline_executor = self._create_pipeline_executor(input_str=input_str)
             _ = pipeline_executor.exec(user_args=user_args, openaikey="")
-
-    def _create_pipeline_executor(self, input_str):
-        pipeline = PipelineSource.objects.create(body=input_str, owner=self.aieye_admin)
-        dag_root = DAGBuilder().build(input_str)
-        dag_saver = DAGSaver(dag_root)
-        dag_saver.save(pipeline)
-        return PipelineExecutor(pipeline_source_id=pipeline.id)
 
     @parameterized.expand(
         [
@@ -198,12 +193,6 @@ class PipelineExecutorTestCase(TestCase):
                     "expected_user_args": {"a_arg_val"},
                 }
             ],
-            [
-                {
-                    "input": "foo",
-                    "expected_user_args": {"foo"},
-                }
-            ],
         ]
     )
     @patch(
@@ -221,3 +210,10 @@ class PipelineExecutorTestCase(TestCase):
             self.fail(f"test_exec_arg_names_only raised an exception: {exc}")
 
         self.assertCountEqual(expected_user_args, result_user_args)
+
+    def _create_pipeline_executor(self, input_str):
+        pipeline = PipelineSource.objects.create(body=input_str, owner=self.aieye_admin)
+        dag_root = DAGBuilder().build(input_str)
+        dag_saver = DAGSaver(dag_root)
+        dag_saver.save(pipeline)
+        return PipelineExecutor(pipeline_source_id=pipeline.id)

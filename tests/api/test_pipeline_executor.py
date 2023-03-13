@@ -91,6 +91,48 @@ class PipelineExecutorAPITestCase(TestCase):
                     "result": "OpenAI reply for this is aaa OpenAI reply for this is bbb",
                 }
             ],
+            [
+                {
+                    "input": "builtin_concat(prompt_a(a_arg=a_arg_val), prompt_b(b_arg=b_arg_val))",
+                    "user_args": {"a_arg_val": "aaa", "b_arg_val": "bbb"},
+                    "result": "OpenAI reply for this is aaa OpenAI reply for this is bbb",
+                }
+            ],
+            [
+                {
+                    "input": "builtin_identity(s)",
+                    "user_args": {"s": "abc"},
+                    "result": "abc",
+                }
+            ],
+            [
+                {
+                    "input": "builtin_identity(s=x_arg)",
+                    "user_args": {"x_arg": "abc"},
+                    "result": "abc",
+                }
+            ],
+            [
+                {
+                    "input": "builtin_identity(whatever_named_arg)",
+                    "user_args": {"whatever_named_arg": "abc"},
+                    "result": "abc",
+                }
+            ],
+            [
+                {
+                    "input": "prompt_a(a_arg)",
+                    "user_args": {"a_arg": "aaa"},
+                    "result": "OpenAI reply for this is aaa",
+                }
+            ],
+            [
+                {
+                    "input": "prompt_a(a_arg=a_arg_val)",
+                    "user_args": {"a_arg_val": "aaa"},
+                    "result": "OpenAI reply for this is aaa",
+                }
+            ],
         ]
     )
     @patch(
@@ -123,6 +165,18 @@ class PipelineExecutorAPITestCase(TestCase):
                 {
                     "input": "prompt_a(whatever_named_arg)",
                     "user_args": {"whatever_named_arg": "a"},
+                }
+            ],
+            [{"input": "prompt_a()", "user_args": {}}],
+            [{"input": "prompt_a(x, y)", "user_args": {}}],
+            [{"input": "non_existing_prompt_or_builtin_fn()", "user_args": {}}],
+            [{"input": "prompt_a(a_arg=prompt_a)", "user_args": {"prompt_a": "ABC"}}],
+            [{"input": "prompt_a(prompt_a)", "user_args": {}}],
+            [{"input": "builtin_concat()", "user_args": {}}],
+            [
+                {
+                    "input": "builtin_concat(a, b, c)",
+                    "user_args": {"a": "1", "b": "2", "c": "3"},
                 }
             ],
         ]
