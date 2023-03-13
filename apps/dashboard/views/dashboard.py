@@ -262,6 +262,9 @@ class PipelineSourceExecuteView(AiEyeAdminOrUserMixin, TemplateView):
         )
 
         context.update({"pipelines": pipelines, "openaikeys": openaikeys})
+        if selected_pipeline := kwargs.get("id"):
+            context.update({"selected_pipeline": selected_pipeline})
+
         return context
 
 

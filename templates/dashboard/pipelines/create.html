@@ -6,6 +6,16 @@
 {% endblock dashboard_header %}
 
 {% block dashboard_content %}
+    <div class="alert alert-success mt-3" role="alert">
+        <span class="msg">Pipelines examples:
+            <ul>
+                <li>builtin_fn1(arg1)</li>
+                <li>prompt1(arg1, arg2)</li>
+                <li>builtin_fn1(prompt1(arg1, arg2))</li>
+            </ul>
+        </span>
+    </div>
+
     <form role="form" method="post" action="{% url 'dashboard:pipeline_create' %}">
         {% csrf_token %}
         {% bootstrap_form form form_group_class='row mb-3' label_class='col-sm-2 col-form-label' field_class='col-sm-10' %}

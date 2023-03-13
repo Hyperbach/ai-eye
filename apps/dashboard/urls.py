@@ -97,4 +97,9 @@ urlpatterns = [
         views.PipelineSourceExecuteView.as_view(),
         name="pipeline_execute",
     ),
+    path(
+        "pipelines/execute/<int:id>/",
+        views.PipelineSourceExecuteView.as_view(),
+        name="pipeline_execute",
+    ),
 ]

@@ -24,7 +24,9 @@
                 <select name="pipeline" class="form-select" title="" required id="id_openaikey">
                     <option value="">---------</option>
                     {% for openaikey in openaikeys %}
-                        <option value="{{ openaikey.id }}">{{ openaikey.key }}</option>
+                        <option value="{{ openaikey.id }}" {% if forloop.first %}selected{% endif %}>
+                            {{ openaikey.key }}
+                        </option>
                     {% endfor %}
                 </select>
             </div>
@@ -36,7 +38,9 @@
                 <select name="pipeline" class="form-select" title="" required id="id_pipeline">
                     <option value="">---------</option>
                     {% for pipeline in pipelines %}
-                        <option value="{{ pipeline.id }}">{{ pipeline.body }}</option>
+                        <option value="{{ pipeline.id }}" {% if selected_pipeline and pipeline.id == selected_pipeline %}selected{% endif %}>
+                            {{ pipeline.body }}
+                        </option>
                     {% endfor %}
                 </select>
             </div>
@@ -219,6 +223,12 @@
 
                 return false;
             });
+
+            const matches = window.location.href.match(/\/(\d+)\/?$/);
+            const pipeline_id = matches ? matches[1] : 0;
+            if (pipeline_id) {
+                $("#id_pipeline").trigger("change");
+            }
         });
     </script>
 {% endblock %}

@@ -1,5 +1,12 @@
 {% extends 'dashboard/index.html' %}
+{% load static %}
 {% load bootstrap5 %}
+
+{% block bootstrap5_extra_head %}
+    {{ block.super }}
+    <link href="{% static 'css/fontawesomefree/fontawesome.css' %}" rel="stylesheet" type="text/css">
+    <link href="{% static 'css/fontawesomefree/solid.css' %}" rel="stylesheet" type="text/css">
+{% endblock %}
 
 {% block dashboard_header %}
 <div class="header-container">
@@ -20,6 +27,7 @@
                     <th scope="col">Date updated</th>
                     <th scope="col"></th>
                     <th scope="col"></th>
+                    <th scope="col"></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -32,6 +40,11 @@
                         <td>{{ pipeline.date_updated|date:'m-d-Y H:i:s' }}</td>
                         <td><a href="{% url 'dashboard:pipeline_update' pipeline.pk %}">Update</a></td>
                         <td><a href="{% url 'dashboard:pipeline_delete' pipeline.pk %}">Delete</a></td>
+                        <td>
+                            <a href="{% url 'dashboard:pipeline_execute' pipeline.pk %}" title="Execute">
+                                <i class="fa-sharp fa-regular fa-play" style="color: green;"></i>
+                            </a>
+                        </td>
                     </tr>
                     {% endfor %}
                 {% endif %}
