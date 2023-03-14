@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "dashboard",
     "api",
     "pipelines",
+    "dblogs",
 ]
 
 MIDDLEWARE = [
@@ -164,3 +165,20 @@ LOGIN_URL = "access:login"
 LOGOUT_REDIRECT_URL = LOGIN_URL
 LOGIN_REDIRECT_URL = "dashboard:index"
 AUTH_USER_MODEL = "core.User"
+
+LOGGING = {
+    "version": 1,
+    "handlers": {
+        "db": {
+            "level": "DEBUG",
+            "class": "dblogs.handlers.DatabaseLogHandler",
+        },
+    },
+    "loggers": {
+        "db": {
+            "handlers": ["db"],
+            "level": "DEBUG",
+            "propagate": True,
+        },
+    },
+}
