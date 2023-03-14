@@ -1,6 +1,6 @@
 class PipelineException(Exception):
     def __init__(self, msg):
-        super().__init__("Pipeline Exception: " + msg)
+        super().__init__(f"Pipeline Exception: {msg}")
 
 
 class NoDAGNodesError(PipelineException):
@@ -24,7 +24,7 @@ class InvalidArgumentsError(PipelineException):
 
 
 class UnableToDetermineFunctionError(PipelineException):
-    def __init__(self, name):
+    def __init__(self, fn_name):
         super().__init__(
-            msg=f"Neither a built-in function nor a prompt with the name '{name}' could be determined."
+            msg=f"Neither a built-in function nor a prompt with the name '{fn_name}' could be determined."
         )
