@@ -23,25 +23,11 @@ class BaseVisitor(metaclass=abc.ABCMeta):
         self.builtins = builtins
 
     def _create_call_func_by_name(self, name):
-        logger.debug(
-            msg="BaseVisitor method _create_call_func_by_name called",
-            extra={"meta_info": f"name: {name}"},
-        )
-
         if prompt_fn := find_first(lambda p: p.name == name, self.prompts):
-            logger.debug(
-                msg="BaseVisitor method _create_call_func_by_name found a prompt"
-            )
             return CallPrompt(prompt_fn=prompt_fn)
         if builtin_fn := find_first(lambda b: b.name == name, self.builtins):
-            logger.debug(
-                msg="BaseVisitor method _create_call_func_by_name found a builtin_fn"
-            )
             return CallBuiltinFunction(builtin_fn=builtin_fn)
 
-        logger.debug(
-            msg="BaseVisitor method _create_call_func_by_name did not find neither a prompt nor a builtin_fn"
-        )
         return None
 
     @staticmethod
@@ -49,10 +35,6 @@ class BaseVisitor(metaclass=abc.ABCMeta):
         return target_fn is None
 
     def visit(self, node) -> Any:
-        logger.debug(
-            msg="BaseVisitor method visit called",
-            extra={"meta_info": f"node.name: {node.name}"},
-        )
         target_fn = self._create_call_func_by_name(node.name)
         if self.is_placeholder(target_fn):
             if not list(self.graph.predecessors(node)):
@@ -74,11 +56,6 @@ class ArgumentsGathererVisitor(BaseVisitor):
         return {node.name}
 
     def visit_fn(self, node, target_fn) -> Any:
-        logger.debug(
-            msg="ArgumentsGathererVisitor method visit_fn called",
-            extra={"meta_info": f"node.name: {node.name}, target_fn: {target_fn}"},
-        )
-
         arg_names = set()
 
         for index, child in enumerate(self.graph.successors(node)):
@@ -92,12 +69,6 @@ class ArgumentsGathererVisitor(BaseVisitor):
                     arg_names.update(self.visit_leaf(child))
             else:
                 arg_names.update(self.visit_fn(child, child_func))
-
-        arg_names_as_str = ", ".join(arg_names)
-        logger.debug(
-            msg="ArgumentsGathererVisitor method visit_fn call result",
-            extra={"meta_info": f"arg_names: {arg_names_as_str}"},
-        )
 
         return arg_names
 
@@ -119,10 +90,6 @@ class ExecutorVisitor(BaseVisitor):
         arg_value = self.user_args.get(arg_name, None)
         if arg_value is None:
             error_msg = f"details: Argument named `{arg_name}` is not supplied."
-            logger.error(
-                msg="ExecutorVisitor method _find_arg_value got an error",
-                extra={"meta_info": error_msg},
-            )
             raise InvalidArgumentsError(error_msg)
         return arg_value
 
@@ -130,11 +97,6 @@ class ExecutorVisitor(BaseVisitor):
         return self._find_arg_value(node.name)
 
     def visit_fn(self, node, target_fn) -> Any:
-        logger.debug(
-            msg="ExecutorVisitor method visit_fn called",
-            extra={"meta_info": f"node: {node.name}, target_fn: {target_fn}"},
-        )
-
         kwargs = {}
 
         for index, child in enumerate(self.graph.successors(node)):
@@ -156,11 +118,6 @@ class ExecutorVisitor(BaseVisitor):
                 try:
                     arg_name = target_fn.get_arg_name_by_index(index)
                 except IndexError as exc:
-                    logger.error(
-                        msg="ExecutorVisitor method visit_fn got an error. Invalid arguments.",
-                        extra={"meta_info": f"details: {exc}"},
-                    )
-
                     raise InvalidArgumentsError(f"Invalid arguments. Details {exc}")
 
             kwargs[arg_name] = arg_value
@@ -169,11 +126,6 @@ class ExecutorVisitor(BaseVisitor):
         fn_call_arity = len(kwargs)
         if fn_arity != fn_call_arity:
             error_msg = f"function expects: {fn_arity}, user provided {fn_call_arity}"
-            logger.error(
-                msg="ExecutorVisitor method visit_fn got an error.",
-                extra={"meta_info": error_msg},
-            )
-
             raise InvalidArgumentsError(
                 f"Invalid arguments amount specified. {error_msg}"
             )
@@ -181,8 +133,4 @@ class ExecutorVisitor(BaseVisitor):
         if isinstance(target_fn, CallPrompt):
             kwargs.update({"openaikey": self.openaikey})
 
-        logger.debug(
-            msg="ExecutorVisitor method visit_fn is about to invoke a target_fn",
-            extra={"meta_info": f"target_fn: {target_fn}"},
-        )
         return target_fn(**kwargs)

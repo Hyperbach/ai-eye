@@ -153,7 +153,7 @@ class PipelineCallViewSet(viewsets.ViewSet):
             pipeline_id = serializer.validated_data["pipeline_id"]
             args = serializer.validated_data["args"]
             try:
-                p = PipelineExecutor(pipeline_source_id=pipeline_id)
+                p = PipelineExecutor(pipeline_source_id=pipeline_id, user=request.user)
                 result = p.exec(user_args=args, openaikey=openaikey)
             except PipelineException as exc:
                 return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
@@ -175,7 +175,7 @@ class PipelineRetrieveArgumentsViewSet(viewsets.ViewSet):
         if serializer.is_valid():
             pipeline_id = serializer.validated_data["pipeline_id"]
             try:
-                p = PipelineExecutor(pipeline_source_id=pipeline_id)
+                p = PipelineExecutor(pipeline_source_id=pipeline_id, user=request.user)
                 arg_names = p.get_arg_names()
             except PipelineException as exc:
                 return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)

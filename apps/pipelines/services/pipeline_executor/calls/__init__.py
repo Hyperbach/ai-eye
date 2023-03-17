@@ -4,6 +4,7 @@ from typing import Any
 
 from api.exceptions import OpenAIRequestException
 from api.services import openai_request
+from dblogs.handlers import DatabaseLogHandler
 from pipelines.builtins import (
     call_builtin_function,
     get_arg_name_by_index,
@@ -26,21 +27,22 @@ class CallBuiltinFunction:
         return get_arity_of_function(self.builtin_fn.name)
 
     def __call__(self, *args, **kwargs) -> Any:
-        logger.debug(
-            msg="CallBuiltinFunction method __call__ called",
-            extra={"meta_info": f"builtin_fn.name: {self.builtin_fn.name}"},
-        )
-
         try:
             return call_builtin_function(self.builtin_fn.name, **kwargs)
         except Exception as exc:
-            error_msg = f"An error occurred while calling the function '{self.builtin_fn.name}'. Details: {exc}"
-            logger.error(
-                msg="CallBuiltinFunction method __call__ got an error",
-                extra={"meta_info": error_msg},
+            error = f"An error occurred while calling the function '{self.builtin_fn.name}'. Details: {exc}"
+            raise CallBuiltinFunctionError(error)
+        finally:
+            logger.info(
+                msg=DatabaseLogHandler.Event.FN_CALL,
+                extra={
+                    "meta_info": {
+                        "fn_name": self.builtin_fn.name,
+                        "fn_type": "builtin",
+                        "parameters": kwargs,
+                    }
+                },
             )
-
-            raise CallBuiltinFunctionError(error_msg)
 
     def get_arg_name_by_index(self, index):
         return get_arg_name_by_index(self.builtin_fn.name, index)
@@ -62,11 +64,6 @@ class CallPrompt:
         return len(set(arg_names))
 
     def __call__(self, *args, **kwargs) -> Any:
-        logger.debug(
-            msg="CallPrompt method __call__ called",
-            extra={"meta_info": f"prompt_fn.name: {self.prompt_fn.name}"},
-        )
-
         openaikey = kwargs.pop("openaikey")
         body = self.prompt_fn.body
 
@@ -79,9 +76,15 @@ class CallPrompt:
             )
         except (KeyError, OpenAIRequestException) as exc:
             error_msg = f"An error occurred while calling the function '{self.prompt_fn.name}'. Details: {exc}"
-            logger.error(
-                msg="CallPrompt method __call__ got an error",
-                extra={"meta_info": error_msg},
-            )
-
             raise CallPromptError(error_msg)
+        finally:
+            logger.info(
+                msg=DatabaseLogHandler.Event.FN_CALL,
+                extra={
+                    "meta_info": {
+                        "fn_name": self.prompt_fn.name,
+                        "fn_type": "prompt",
+                        "parameters": kwargs,
+                    }
+                },
+            )
