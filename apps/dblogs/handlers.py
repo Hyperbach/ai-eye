@@ -98,7 +98,6 @@ class DatabaseLogHandler(logging.Handler):
             msg=DatabaseLogHandler.Event.COMPLETED,
             extra={
                 "metainfo": {
-                    "event": DatabaseLogHandler.Event.COMPLETED,
                     "output": output,
                     "error": error,
                     "status": "success" if not error else "error",
