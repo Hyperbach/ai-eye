@@ -1,0 +1,57 @@
+{% extends 'dashboard/index.html' %}
+{% load bootstrap5 %}
+
+{% block dashboard_header %}
+    <h2 class="text-left mt-5">Public Tokens Management</h2>
+{% endblock dashboard_header %}
+
+{% block dashboard_content %}
+    <div class="p-5 bg-light rounded-3">
+        <div class="tab-pane fade show active ">
+            <table class="table table-striped table-hover">
+                <thead>
+                <tr>
+                    <th scope="col">Id</th>
+                    <th scope="col">Key</th>
+                    <th scope="col">User</th>
+                    <th scope="col">OpenAI Key</th>
+                    <th scope="col">Date created</th>
+                    <th scope="col">Date updated</th>
+                    <th scope="col">Is active</th>
+                    <th scope="col"></th>
+                    <th scope="col"></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% if object_list %}
+                    {% for obj in object_list %}
+                        <tr>
+                            <td>{{ obj.pk }}</td>
+                            <td>
+                                {{ obj.key|truncatechars:10 }}
+                            </td>
+                            <td>{{ obj.user }}</td>
+                            <td>
+                                {{ obj.openaikey.key|truncatechars:10 }}
+                            </td>
+                            <td>{{ obj.date_created|date:'m-d-Y H:i:s' }}</td>
+                            <td>{{ obj.date_updated|date:'m-d-Y H:i:s' }}</td>
+                            <td>{{ obj.is_active }}</td>
+                            <td>
+                                <a href="{% url 'dashboard:publictokens_update' obj.pk %}">Update</a>
+                            </td>
+                            <td>
+                                <a href="{% url 'dashboard:publictokens_delete' obj.pk %}">Delete</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+                </tbody>
+            </table>
+
+            <div class="d-flex ">
+                <a href="{% url 'dashboard:publictokens_create' %}" class="d-block btn btn-primary  my-2">Add new</a>
+            </div>
+        </div>
+    </div>
+{% endblock dashboard_content %}

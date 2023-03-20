@@ -1,0 +1,33 @@
+{% extends 'dashboard/index.html' %}
+{% load bootstrap5 %}
+
+{% block header_navbar %}{% endblock header_navbar %}
+
+{% block dashboard_header %}
+    <h1 class="text-center mt-5" style="font-size: 60px;color: yellow;">404 Error! Oh noez!</h1>
+{% endblock dashboard_header %}
+
+{% block dashboard_content %}
+    <div class="p-5 rounded-3">
+        <p class="text-center" id="nothing-good-here" style="font-size: 40px;">
+            Something evil happened.
+        </p>
+
+    </div>
+{% endblock dashboard_content %}
+
+{% block bootstrap5_extra_script %}
+    <script type="text/javascript">
+        $(function () {
+            const errorTexts = [
+                "Oops! Looks like you took a wrong turn. Don't worry, the page you're looking for isn't lost, just temporarily misplaced.",
+                "404 Error: Page not found. But hey, at least you found me!",
+                "The page you were looking for just vanished into the ether. Try using a different browser, maybe it'll materialize there.",
+                "Don't panic! Just because this page isn't here, doesn't mean everything in the world is wrong.",
+                "404 Error: Page not found. But don't worry, there's plenty of other pages to explore. Who needs this one anyway?",
+                "You may have reached a 404 error, but the journey is the destination. So why not take a detour and explore something new?",
+            ];
+            $("#nothing-good-here").text(errorTexts[Math.floor(Math.random() * errorTexts.length)]);
+        });
+    </script>
+{% endblock %}

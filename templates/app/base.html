@@ -1,0 +1,59 @@
+{% extends 'app/bootstrap.html' %}
+
+{% load bootstrap5 %}
+
+{% block bootstrap5_content %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a href="{% url 'dashboard:index' %}" class="navbar-brand">AI-Eye Dashboard</a>
+        <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        {% block header_navbar %}
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <div class="navbar-nav">
+                {% if user.is_authenticated %}
+                <a href="{% url 'dashboard:users' %}" class="nav-item nav-link {% if "dashboard/users" in request.path %}active{% endif %}">Users Management</a>
+                <a href="{% url 'dashboard:openaikeys' %}" class="nav-item nav-link {% if "dashboard/openaikeys" in request.path %}active{% endif %}">OpenAI Keys Management</a>
+                <a href="{% url 'dashboard:publictokens' %}" class="nav-item nav-link {% if "dashboard/publictokens" in request.path %}active{% endif %}">Public Tokens Management</a>
+                <a href="{% url 'dashboard:caches' %}" class="nav-item nav-link {% if "dashboard/caches" in request.path %}active{% endif %} ">Cache/Logs Management</a>
+                {% endif %}
+            </div>
+            <div class="navbar-nav ms-auto">
+                {% if user.is_authenticated %}
+                <span class="navbar-text text-warning">Howdy {{ user.first_name|default:user.email }}!</span>
+                <a href="{% url 'access:logout' %}" class="nav-item nav-link">Logout</a>
+                {% else %}
+                <a href="{% url 'access:login' %}" class="nav-item nav-link">Login</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endblock header_navbar %}
+    </div>
+</nav>
+
+<div class="container">
+    {% autoescape off %}{% bootstrap_messages %}{% endautoescape %}
+
+    {% block content %}{% endblock %}
+<hr>
+
+    {% block footer %}
+    <footer>
+        <div class="row">
+            <div class="col-md-6">
+                <p>Copyright &copy; <span id="copyright-year">{% now 'Y' %}</span> Hyperbach</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <a href="#" class="text-dark">Terms of Use</a>
+                <span class="text-muted mx-2">|</span>
+                <a href="#" class="text-dark">Privacy Policy</a>
+            </div>
+        </div>
+    </footer>
+    {% endblock footer %}
+</div>
+{% endblock %}
+
+{% block bootstrap5_extra_script %}{% endblock %}

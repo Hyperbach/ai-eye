@@ -1,0 +1,70 @@
+repos:
+  - repo: 'https://github.com/pre-commit/pre-commit-hooks'
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: debug-statements
+      - id: check-added-large-files
+      - id: requirements-txt-fixer
+      - id: end-of-file-fixer
+        exclude: ^(static/js/.+.js)|(.+\.html)$
+  - repo: local
+    hooks:
+      - id: django-check
+        name: Check django project for potential problems
+        entry: sh -c 'python manage.py check'
+        types:
+          - python
+        pass_filenames: false
+        language: system
+      - id: django-check-migrations
+        name: Check django project for missing migrations.
+        entry: sh -c 'python manage.py makemigrations --check --dry-run'
+        files: models.py
+        types:
+          - python
+        pass_filenames: false
+        language: system
+  - repo: 'https://github.com/python/black'
+    rev: 22.12.0
+    hooks:
+      - id: black
+        exclude: "[a-zA-Z]*/(migrations)/(.)*"
+  - repo: 'https://github.com/pycqa/flake8'
+    rev: 6.0.0
+    hooks:
+      - id: flake8
+        exclude: "[a-zA-Z]*/(migrations)/(.)*"
+  - repo: 'https://github.com/pycqa/isort'
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        args: ["--profile", "black"]
+        exclude: "[a-zA-Z]*/(migrations)/(.)*"
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.4
+    hooks:
+      - id: bandit
+        args: ['-iii', '-ll']
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: 'v0.991'
+    hooks:
+      - id: mypy
+        name: Check mypy static types match
+        types:
+          - python
+        args: ['--config-file', 'mypy.ini']
+        exclude: "[a-zA-Z]*/(migrations)/(.)*"
+        additional_dependencies: [
+          # mypy dependencies
+          'django-stubs',
+          'djangorestframework-stubs',
+          'django-bootstrap-v5',
+          'django-environ',
+          'djangorestframework',
+          'psycopg2-binary',
+          'django-debug-toolbar'
+          # runtime dependencies
+        ]
