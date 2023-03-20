@@ -7,7 +7,7 @@ from pipelines.models import PipelineSource
 User = get_user_model()
 
 
-class PipelineExecution(models.Model):
+class PipelineExecutionLog(models.Model):
     STATUS_CHOICES = (
         ("success", "Executed successfully"),
         ("error", "Errors"),
@@ -24,7 +24,7 @@ class PipelineExecution(models.Model):
     error = models.TextField()
 
 
-class LogEntry(models.Model):
+class CallEntryLog(models.Model):
     FN_TYPE_CHOICES = (
         ("builtin", "Built-in"),
         ("prompt", "Prompt"),
@@ -34,3 +34,4 @@ class LogEntry(models.Model):
     fn_type = models.CharField(max_length=10, choices=FN_TYPE_CHOICES)
     pipeline_execution_id = models.IntegerField()
     parameters = models.JSONField()
+    output = models.TextField()

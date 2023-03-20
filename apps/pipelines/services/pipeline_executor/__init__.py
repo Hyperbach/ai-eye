@@ -70,18 +70,9 @@ class PipelineExecutor:
         some_prompt_with_one_argument(testme) <-- won't work
         """
 
-        logger.info(
-            msg=DatabaseLogHandler.Event.STARTED,
-            extra={
-                "meta_info": {
-                    "user": self.user,
-                    "pipeline_id": self.pipeline_source_id,
-                    "openai_key": openaikey,
-                    "parameters": user_args,
-                }
-            },
+        DatabaseLogHandler.log_event_started(
+            logger, self.user, self.pipeline_source_id, openaikey, user_args
         )
-
         result = ""
         error = ""
         try:
@@ -96,17 +87,7 @@ class PipelineExecutor:
             error = str(exc)
             raise exc
         finally:
-            logger.info(
-                msg=DatabaseLogHandler.Event.COMPLETED,
-                extra={
-                    "meta_info": {
-                        "event": DatabaseLogHandler.Event.COMPLETED,
-                        "output": result,
-                        "error": error,
-                        "status": "success" if not error else "error",
-                    }
-                },
-            )
+            DatabaseLogHandler.log_event_completed(logger, result, error)
 
         return result
 

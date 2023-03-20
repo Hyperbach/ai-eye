@@ -27,22 +27,19 @@ class CallBuiltinFunction:
         return get_arity_of_function(self.builtin_fn.name)
 
     def __call__(self, *args, **kwargs) -> Any:
+        result = ""
+
         try:
-            return call_builtin_function(self.builtin_fn.name, **kwargs)
+            result = call_builtin_function(self.builtin_fn.name, **kwargs)
         except Exception as exc:
             error = f"An error occurred while calling the function '{self.builtin_fn.name}'. Details: {exc}"
             raise CallBuiltinFunctionError(error)
         finally:
-            logger.info(
-                msg=DatabaseLogHandler.Event.FN_CALL,
-                extra={
-                    "meta_info": {
-                        "fn_name": self.builtin_fn.name,
-                        "fn_type": "builtin",
-                        "parameters": kwargs,
-                    }
-                },
+            DatabaseLogHandler.log_fn_call(
+                logger, self.builtin_fn.name, "builtin", kwargs, result
             )
+
+        return result
 
     def get_arg_name_by_index(self, index):
         return get_arg_name_by_index(self.builtin_fn.name, index)
@@ -66,10 +63,11 @@ class CallPrompt:
     def __call__(self, *args, **kwargs) -> Any:
         openaikey = kwargs.pop("openaikey")
         body = self.prompt_fn.body
+        result = ""
 
         try:
             prompt = body.format(**kwargs)
-            return openai_request(
+            result = openai_request(
                 openaikey=openaikey,
                 endpoint=self.ENDPOINT,
                 parameters={"model": self.MODEL, "prompt": prompt},
@@ -78,13 +76,8 @@ class CallPrompt:
             error_msg = f"An error occurred while calling the function '{self.prompt_fn.name}'. Details: {exc}"
             raise CallPromptError(error_msg)
         finally:
-            logger.info(
-                msg=DatabaseLogHandler.Event.FN_CALL,
-                extra={
-                    "meta_info": {
-                        "fn_name": self.prompt_fn.name,
-                        "fn_type": "prompt",
-                        "parameters": kwargs,
-                    }
-                },
+            DatabaseLogHandler.log_fn_call(
+                logger, self.prompt_fn.name, "prompt", kwargs, result
             )
+
+        return result

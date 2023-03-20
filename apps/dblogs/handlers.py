@@ -16,59 +16,106 @@ class DatabaseLogHandler(logging.Handler):
         Event.COMPLETED: "completed_handler",
     }
 
-    def event_started_handler(self, meta_info):
+    def event_started_handler(self, metainfo):
         from core.models import OpenAIKey
-        from dblogs.models import PipelineExecution
+        from dblogs.models import PipelineExecutionLog
         from pipelines.models import PipelineSource
 
         kwargs = {
-            "user": meta_info["user"],
-            "pipeline": PipelineSource.objects.get(pk=meta_info["pipeline_id"]),
+            "user": metainfo["user"],
+            "pipeline": PipelineSource.objects.get(pk=metainfo["pipeline_id"]),
             "status": "error",
-            "openai_key": OpenAIKey.objects.get(key=meta_info["openai_key"]),
-            "parameters": self._preprocess_parameters(meta_info["parameters"]),
+            "openai_key": OpenAIKey.objects.get(key=metainfo["openai_key"]),
+            "parameters": self._prepare_parameters(metainfo["parameters"]),
         }
 
-        self.pipeline_execution_instance = PipelineExecution.objects.create(**kwargs)
-
-    def fn_call_handler(self, meta_info):
-        from dblogs.models import LogEntry
-
-        LogEntry.objects.create(
-            fn_name=meta_info["fn_name"],
-            fn_type=meta_info["fn_type"],
-            pipeline_execution_id=self.pipeline_execution_instance.pk,
-            parameters=self._preprocess_parameters(meta_info["parameters"]),
+        self.pipeline_execution_log_instance = PipelineExecutionLog.objects.create(
+            **kwargs
         )
 
-    def completed_handler(self, meta_info):
-        self.pipeline_execution_instance.status = meta_info["status"]
-        self.pipeline_execution_instance.output = (
-            self._preprocess_string_value(meta_info["output"]),
+    def fn_call_handler(self, metainfo):
+        from dblogs.models import CallEntryLog
+
+        CallEntryLog.objects.create(
+            fn_name=metainfo["fn_name"],
+            fn_type=metainfo["fn_type"],
+            output=metainfo["output"],
+            pipeline_execution_id=self.pipeline_execution_log_instance.pk,
+            parameters=self._prepare_parameters(metainfo["parameters"]),
         )
-        self.pipeline_execution_instance.error = meta_info["error"]
-        self.pipeline_execution_instance.end_date = timezone.now()
-        self.pipeline_execution_instance.save()
+
+    def completed_handler(self, metainfo):
+        self.pipeline_execution_log_instance.status = metainfo["status"]
+        self.pipeline_execution_log_instance.output = self._prepare_value(
+            metainfo["output"]
+        )
+        self.pipeline_execution_log_instance.error = metainfo["error"]
+        self.pipeline_execution_log_instance.end_date = timezone.now()
+        self.pipeline_execution_log_instance.save(
+            update_fields=["status", "output", "error", "end_date"]
+        )
+        self.pipeline_execution_log_instance = None
 
     def __init__(self):
         super().__init__()
-        self.pipeline_execution_instance = None
+        self.pipeline_execution_log_instance = None
 
     def emit(self, record):
-        meta_info = getattr(record, "meta_info", None)
+        metainfo = getattr(record, "metainfo", None)
         event = record.msg
 
         if not (handler := self.HANDLERS_MAP.get(event)):
-            raise NotImplementedError()
+            raise NotImplementedError("Unsupported event type.")
 
         handler = getattr(self, handler)
-        handler(meta_info)
+        handler(metainfo)
 
-    def _preprocess_parameters(self, params, max_length=250):
+    def _prepare_parameters(self, params, max_length=250):
         return {
-            key: self._preprocess_string_value(value, max_length)
-            for key, value in params.items()
+            key: self._prepare_value(value, max_length) for key, value in params.items()
         }
 
-    def _preprocess_string_value(self, param, max_length=250):
+    def _prepare_value(self, param, max_length=250):
         return param[: max_length - 3] + "..." if len(param) > max_length else param
+
+    @staticmethod
+    def log_event_started(logger, user, pipeline_id, openaikey, parameters):
+        logger.info(
+            msg=DatabaseLogHandler.Event.STARTED,
+            extra={
+                "metainfo": {
+                    "user": user,
+                    "pipeline_id": pipeline_id,
+                    "openai_key": openaikey,
+                    "parameters": parameters,
+                }
+            },
+        )
+
+    @staticmethod
+    def log_event_completed(logger, output, error):
+        logger.info(
+            msg=DatabaseLogHandler.Event.COMPLETED,
+            extra={
+                "metainfo": {
+                    "event": DatabaseLogHandler.Event.COMPLETED,
+                    "output": output,
+                    "error": error,
+                    "status": "success" if not error else "error",
+                }
+            },
+        )
+
+    @staticmethod
+    def log_fn_call(logger, fn_name, fn_type, parameters, output):
+        logger.info(
+            msg=DatabaseLogHandler.Event.FN_CALL,
+            extra={
+                "metainfo": {
+                    "fn_name": fn_name,
+                    "fn_type": fn_type,
+                    "parameters": parameters,
+                    "output": output,
+                }
+            },
+        )

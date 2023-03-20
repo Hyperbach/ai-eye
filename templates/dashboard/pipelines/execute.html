@@ -38,7 +38,8 @@
                 <select name="pipeline" class="form-select" title="" required id="id_pipeline">
                     <option value="">---------</option>
                     {% for pipeline in pipelines %}
-                        <option value="{{ pipeline.id }}" {% if selected_pipeline and pipeline.id == selected_pipeline %}selected{% endif %}>
+                        <option value="{{ pipeline.id }}"
+                                {% if selected_pipeline and pipeline.id == selected_pipeline %}selected{% endif %}>
                             {{ pipeline.body }}
                         </option>
                     {% endfor %}
@@ -62,6 +63,8 @@
     <div class="alert alert-success mt-3" role="alert" id="success-alert" style="display:none;">
         <span class="msg"></span>
     </div>
+
+    <div id="logs-section" class="mt-4"></div>
 {% endblock dashboard_content %}
 
 {% block bootstrap5_extra_script %}
@@ -105,6 +108,11 @@
             $('div.row.mb-3').not(".item-block").remove();
         }
 
+        const clear_logs = function () {
+            const $logs_section = $('#logs-section');
+            $logs_section.empty();
+        }
+
         const populate_args = function (tags) {
             const $lastRow = $('div.row.mb-3:last');
 
@@ -128,8 +136,103 @@
             });
         }
 
+        const show_logs_table = function (pipeline_execution, call_entries) {
+            const $pipeline_execution_div = $('<div>').addClass('log-entry pipeline-execution');
+            const $pipeline_execution_details = $('<div>').addClass('log-entry-details');
+
+            const output_or_error_val = pipeline_execution.status === "success" ?
+                `Output: "${pipeline_execution.output}"` :
+                'Error: ' + pipeline_execution.error;
+
+            const texts = [
+                'Pipeline Id: ' + pipeline_execution.pipeline,
+                'Start Date: ' + timestamp_to_locale_string(pipeline_execution.start_date),
+                'End Date: ' + timestamp_to_locale_string(pipeline_execution.end_date),
+                'Parameters: ' + JSON.stringify(pipeline_execution.parameters),
+                'Status: ' + pipeline_execution.status,
+                output_or_error_val
+            ]
+
+            texts.forEach(text => {
+                $pipeline_execution_details.append($('<p>').text(text));
+            });
+
+            $pipeline_execution_div.append($('<h4>').text("Summary"))
+            $pipeline_execution_div.append($pipeline_execution_details);
+
+            const $logs_section = $('#logs-section');
+            $logs_section.empty();
+            $logs_section.append($('<h3>').addClass('text-left').text('Execution logs'))
+            $logs_section.append($pipeline_execution_div);
+
+            if (call_entries.length > 0) {
+                const $log_list_div = $('<div>').addClass('log-list');
+                $log_list_div.append($('<h4>').text("Call log entries"))
+
+                call_entries.forEach(function (log_entry) {
+                    const $log_entry_div = $('<div>').addClass('log-entry');
+                    const log_entry_details = $('<div>').addClass('log-entry-details');
+                    const texts = [
+                        'Function name: ' + log_entry.fn_name,
+                        'Function type: ' + log_entry.fn_type,
+                        'Parameters: ' + JSON.stringify(log_entry.parameters),
+                        `Output: "${log_entry.output}"`
+                    ];
+                    texts.forEach(text => {
+                        log_entry_details.append($('<p>').text(text));
+                    });
+                    $log_entry_div.append(log_entry_details);
+                    $log_list_div.append($log_entry_div);
+                });
+
+                $logs_section.append($log_list_div);
+            }
+        }
+
+        const timestamp_to_locale_string = function (ts) {
+            const date_obj = new Date(ts);
+            const options = {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                second: 'numeric',
+                fractionalSecondDigits: 3,
+                timeZoneName: 'short'
+            };
+            return date_obj.toLocaleString(undefined, options);
+        }
+
+        const perform_retrieve_logs_ajax_call = function (pipeline_id) {
+            perform_ajax_call(
+                '/api/pipeline/logs/',
+                'POST',
+                JSON.stringify({
+                    pipeline_id: pipeline_id
+                }),
+                function (response) {
+                    const pipeline_execution = response.pipeline_execution;
+                    const call_entries = response.call_entries;
+                    show_logs_table(pipeline_execution, call_entries);
+                },
+                function (error) {
+                    output_msg("#error-alert", get_error_str(error));
+                    show_item("#error-alert", true);
+                },
+                function () {
+                    $('#spinner').removeClass('hidden');
+                },
+                function () {
+                    $('#spinner').addClass('hidden');
+                    $("#logs-section").removeClass('hidden');
+                }
+            );
+        }
+
         $(function () {
             $('#spinner').addClass('hidden');
+            $("#logs-section").addClass('hidden');
 
             $("#id_pipeline").on("change", function () {
                 show_item("#success-alert", false);
@@ -156,7 +259,9 @@
                     },
                     function () {
                         $('#spinner').removeClass('hidden');
+                        $("#logs-section").addClass('hidden');
                         clear_args();
+                        clear_logs();
                     },
                     function () {
                         $('#spinner').addClass('hidden');
@@ -210,10 +315,12 @@
                         function () {
                             $submit_button.prop('disabled', true);
                             $('#spinner').removeClass('hidden');
+                            clear_logs();
                         },
                         function () {
                             $('#spinner').addClass('hidden');
                             $submit_button.prop('disabled', false);
+                            perform_retrieve_logs_ajax_call(pipeline_id_selected);
                         }
                     );
                 } else {

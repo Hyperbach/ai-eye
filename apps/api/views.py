@@ -1,6 +1,7 @@
-from django.db.models import Q
+from django.db.models import Max, Q
 
 from core.models import OpenAIKey
+from dblogs.models import CallEntryLog, PipelineExecutionLog
 from pipelines.services.exceptions import PipelineException
 from pipelines.services.pipeline_executor import PipelineExecutor
 from pipelines.utils import find_first
@@ -16,9 +17,12 @@ from .models import Log
 from .permissions import AiEyeAdminPermission, AiEyeUserPermission
 from .serializers import (
     CacheHitResponseSerializer,
+    CallEntryLogSerializer,
     PipelineCallSerializer,
     PipelineCallWithOpenaiKeyId,
+    PipelineExecutionLogSerializer,
     PipelineRetrieveArgumentsCallSerializer,
+    PipelineRetrieveExecutionLogsSerializer,
 )
 from .services import openai_request
 
@@ -181,5 +185,52 @@ class PipelineRetrieveArgumentsViewSet(viewsets.ViewSet):
                 return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response({"success": True, "response": arg_names})
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PipelineRetrieveExecutionLogsViewSet(viewsets.ViewSet):
+    permission_classes = (
+        permissions.IsAuthenticated,
+        (AiEyeUserPermission | AiEyeAdminPermission),
+    )
+    authentication_classes = (SessionAuthentication,)
+
+    def create(self, request):
+        serializer = PipelineRetrieveExecutionLogsSerializer(data=request.data)
+        if serializer.is_valid():
+            pipeline_id = serializer.validated_data["pipeline_id"]
+
+            pipeline_execution_log_instance = (
+                PipelineExecutionLog.objects.filter(
+                    user=request.user,
+                    pipeline_id=pipeline_id,
+                )
+                .annotate(max_start_date=Max("start_date"))
+                .order_by("-max_start_date")
+                .first()
+            )
+
+            if pipeline_execution_log_instance:
+                call_entries_logs = CallEntryLog.objects.filter(
+                    pipeline_execution_id=pipeline_execution_log_instance.pk
+                ).order_by("id")
+            else:
+                call_entries_logs = []
+
+            pipeline_execution_log_serializer = PipelineExecutionLogSerializer(
+                instance=pipeline_execution_log_instance
+            )
+            call_entries_log_serializer = CallEntryLogSerializer(
+                instance=call_entries_logs, many=True
+            )
+
+            return Response(
+                data={
+                    "pipeline_execution": pipeline_execution_log_serializer.data,
+                    "call_entries": call_entries_log_serializer.data,
+                },
+                status=status.HTTP_200_OK,
+            )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

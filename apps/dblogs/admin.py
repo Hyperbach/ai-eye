@@ -1,15 +1,15 @@
 from django.contrib import admin
 
-from dblogs.models import LogEntry, PipelineExecution
+from dblogs.models import CallEntryLog, PipelineExecutionLog
 
 
-@admin.register(LogEntry)
-class LogMessageAdmin(admin.ModelAdmin):
+@admin.register(CallEntryLog)
+class CallEntryLogAdmin(admin.ModelAdmin):
     pass
 
 
-@admin.register(PipelineExecution)
-class LogPipelineExecutionAdmin(admin.ModelAdmin):
+@admin.register(PipelineExecutionLog)
+class PipelineExecutionLogAdmin(admin.ModelAdmin):
     list_display = [
         "user",
         "pipeline",
