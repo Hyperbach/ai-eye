@@ -29,15 +29,17 @@ class CallBuiltinFunction:
     def __call__(self, *args, **kwargs) -> Any:
         result = ""
 
+        DatabaseLogHandler.log_fn_call_started(
+            logger, self.builtin_fn.name, "builtin", kwargs
+        )
+
         try:
             result = call_builtin_function(self.builtin_fn.name, **kwargs)
         except Exception as exc:
             error = f"An error occurred while calling the function '{self.builtin_fn.name}'. Details: {exc}"
             raise CallBuiltinFunctionError(error)
         finally:
-            DatabaseLogHandler.log_fn_call(
-                logger, self.builtin_fn.name, "builtin", kwargs, result
-            )
+            DatabaseLogHandler.log_fn_call_completed(logger, result)
 
         return result
 
@@ -65,6 +67,10 @@ class CallPrompt:
         body = self.prompt_fn.body
         result = ""
 
+        DatabaseLogHandler.log_fn_call_started(
+            logger, self.prompt_fn.name, "prompt", kwargs
+        )
+
         try:
             prompt = body.format(**kwargs)
             result = openai_request(
@@ -76,8 +82,6 @@ class CallPrompt:
             error_msg = f"An error occurred while calling the function '{self.prompt_fn.name}'. Details: {exc}"
             raise CallPromptError(error_msg)
         finally:
-            DatabaseLogHandler.log_fn_call(
-                logger, self.prompt_fn.name, "prompt", kwargs, result
-            )
+            DatabaseLogHandler.log_fn_call_completed(logger, result)
 
         return result

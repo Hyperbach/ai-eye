@@ -35,3 +35,5 @@ class CallEntryLog(models.Model):
     pipeline_execution_id = models.IntegerField()
     parameters = models.JSONField()
     output = models.TextField()
+    start_date = models.DateTimeField(auto_now_add=True)
+    end_date = models.DateTimeField(auto_now_add=True)

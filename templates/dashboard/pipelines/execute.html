@@ -68,195 +68,161 @@
 {% endblock dashboard_content %}
 
 {% block bootstrap5_extra_script %}
-<script type="text/javascript">
-    const perform_ajax_call = function (url, type, data, successCallback, errorCallback,
-                                        beforeSendCallback, completeCallback) {
-        $.ajax({
-            url: url,
-            type: type,
-            data: data,
-            headers: {
-                'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val(),
-                'Content-Type': 'application/json'
-            },
-            success: successCallback,
-            error: errorCallback,
-            beforeSend: beforeSendCallback,
-            complete: completeCallback
-        });
-    }
-
-    const show_item = function (item_id, show) {
-        const $item = $(item_id);
-        if (show) {
-            $item.show();
-        } else {
-            $item.hide();
+    <script type="text/javascript">
+        const perform_ajax_call = function (url, type, data, successCallback, errorCallback,
+                                            beforeSendCallback, completeCallback) {
+            $.ajax({
+                url: url,
+                type: type,
+                data: data,
+                headers: {
+                    'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val(),
+                    'Content-Type': 'application/json'
+                },
+                success: successCallback,
+                error: errorCallback,
+                beforeSend: beforeSendCallback,
+                complete: completeCallback
+            });
         }
-    }
 
-    const output_msg = function (item_id, msg) {
-        $(item_id).find(".msg").text(msg);
-    }
-
-    const get_error_str = function (error) {
-        if (error.hasOwnProperty("responseJSON")) {
-            return Array.isArray(error.responseJSON) ? error.responseJSON.join(" ") : error.responseJSON["error"];
+        const show_item = function (item_id, show) {
+            const $item = $(item_id);
+            if (show) {
+                $item.show();
+            } else {
+                $item.hide();
+            }
         }
-        return "Unknown error";
-    }
 
-    const clear_args = function () {
-        $('div.row.mb-3').not(".item-block").remove();
-    }
+        const output_msg = function (item_id, msg) {
+            $(item_id).find(".msg").text(msg);
+        }
 
-    const clear_logs = function () {
-        const $logs_section = $('#logs-section');
-        $logs_section.empty();
-    }
+        const get_error_str = function (error) {
+            if (error.hasOwnProperty("responseJSON")) {
+                return Array.isArray(error.responseJSON) ? error.responseJSON.join(" ") : error.responseJSON["error"];
+            }
+            return "Unknown error";
+        }
 
-    const populate_args = function (tags) {
-        const $lastRow = $('div.row.mb-3:last');
+        const clear_args = function () {
+            $('div.row.mb-3').not(".item-block").remove();
+        }
 
-        tags.forEach(function (tag) {
-            const tagLabel = $('<span>')
-                .addClass('col-sm-2 col-form-label badge bg-primary tag_name')
-                .attr('for', 'id_' + tag)
-                .text(tag)
-                .css('line-height', '2.5');
+        const clear_logs = function () {
+            const $logs_section = $('#logs-section');
+            $logs_section.empty();
+        }
 
-            const tagInput = $('<input>')
-                .addClass('form-control tag_value')
-                .attr({
-                    type: 'text',
-                    name: tag,
-                    id: 'id_' + tag
-                });
-            const tagRow = $('<div>').addClass('row mb-3').append(tagLabel)
-                .append($('<div>').addClass('col-sm-10').append(tagInput));
-            $lastRow.after(tagRow);
-        });
-    }
+        const populate_args = function (tags) {
+            const $lastRow = $('div.row.mb-3:last');
 
-    const show_logs_table = function (pipeline_execution, call_entries) {
-        const $pipeline_execution_div = $('<div>').addClass('log-entry pipeline-execution');
-        const $pipeline_execution_details = $('<div>').addClass('log-entry-details');
+            tags.forEach(function (tag) {
+                const tagLabel = $('<span>')
+                    .addClass('col-sm-2 col-form-label badge bg-primary tag_name')
+                    .attr('for', 'id_' + tag)
+                    .text(tag)
+                    .css('line-height', '2.5');
 
-        const output_or_error_val = pipeline_execution.status === "success" ?
-            `Output: "${pipeline_execution.output}"` :
-            'Error: ' + pipeline_execution.error;
+                const tagInput = $('<input>')
+                    .addClass('form-control tag_value')
+                    .attr({
+                        type: 'text',
+                        name: tag,
+                        id: 'id_' + tag
+                    });
+                const tagRow = $('<div>').addClass('row mb-3').append(tagLabel)
+                    .append($('<div>').addClass('col-sm-10').append(tagInput));
+                $lastRow.after(tagRow);
+            });
+        }
 
-        const texts = [
-            'Pipeline Id: ' + pipeline_execution.pipeline,
-            'Start Date: ' + timestamp_to_locale_string(pipeline_execution.start_date),
-            'End Date: ' + timestamp_to_locale_string(pipeline_execution.end_date),
-            'Parameters: ' + JSON.stringify(pipeline_execution.parameters),
-            'Status: ' + pipeline_execution.status,
-            output_or_error_val
-        ]
+        const show_logs_table = function (pipeline_execution, call_entries) {
+            const $pipeline_execution_div = $('<div>').addClass('log-entry pipeline-execution');
+            const $pipeline_execution_details = $('<div>').addClass('log-entry-details');
 
-        texts.forEach(text => {
-            $pipeline_execution_details.append($('<p>').text(text));
-        });
+            const output_or_error_val = pipeline_execution.status === "success" ?
+                `Output: "${pipeline_execution.output}"` :
+                'Error: ' + pipeline_execution.error;
 
-        $pipeline_execution_div.append($pipeline_execution_details);
+            const texts = [
+                'Pipeline Id: ' + pipeline_execution.pipeline,
+                'Start Date: ' + timestamp_to_locale_string(pipeline_execution.start_date),
+                'End Date: ' + timestamp_to_locale_string(pipeline_execution.end_date),
+                'Parameters: ' + JSON.stringify(pipeline_execution.parameters),
+                'Status: ' + pipeline_execution.status,
+                output_or_error_val
+            ]
 
-        const $logs_section = $('#logs-section');
-        $logs_section.empty();
-        $logs_section.append($('<h3>').addClass('text-left').text('Execution logs'));
-        $logs_section.append($('<h4>').text("Summary"));
-        $logs_section.append($pipeline_execution_div);
-
-        if (call_entries.length > 0) {
-            const $log_list_div = $('<div>').addClass('log-list');
-            $log_list_div.append($('<h4>').text("Call log entries"))
-
-            call_entries.forEach(function (log_entry) {
-                const $log_entry_div = $('<div>').addClass('log-entry');
-                const log_entry_details = $('<div>').addClass('log-entry-details');
-                const texts = [
-                    'Function name: ' + log_entry.fn_name,
-                    'Function type: ' + log_entry.fn_type,
-                    'Parameters: ' + JSON.stringify(log_entry.parameters),
-                    `Output: "${log_entry.output}"`
-                ];
-                texts.forEach(text => {
-                    log_entry_details.append($('<p>').text(text));
-                });
-                $log_entry_div.append(log_entry_details);
-                $log_list_div.append($log_entry_div);
+            texts.forEach(text => {
+                $pipeline_execution_details.append($('<p>').text(text));
             });
 
-            $logs_section.append($log_list_div);
+            $pipeline_execution_div.append($pipeline_execution_details);
+
+            const $logs_section = $('#logs-section');
+            $logs_section.empty();
+            $logs_section.append($('<h3>').addClass('text-left').text('Execution logs'));
+            $logs_section.append($('<h4>').text("Summary"));
+            $logs_section.append($pipeline_execution_div);
+
+            if (call_entries.length > 0) {
+                const $log_list_div = $('<div>').addClass('log-list');
+                $log_list_div.append($('<h4>').text("Call log entries"))
+
+                call_entries.forEach(function (log_entry) {
+                    const $log_entry_div = $('<div>').addClass('log-entry');
+                    const log_entry_details = $('<div>').addClass('log-entry-details');
+                    const text = `${timestamp_to_locale_string(log_entry.start_date)} Calling ${log_entry.fn_type}
+                                  "<b>${log_entry.fn_name}</b>" with ${JSON.stringify(log_entry.parameters)},
+                                  result = "${log_entry.output}". Duration: ${calc_duration(log_entry.start_date, log_entry.end_date)} ms`;
+
+                    log_entry_details.append($('<p>').html(text));
+                    $log_entry_div.append(log_entry_details);
+                    $log_list_div.append($log_entry_div);
+                });
+
+                $logs_section.append($log_list_div);
+            }
         }
-    }
 
-    const timestamp_to_locale_string = function (ts) {
-        const date_obj = new Date(ts);
-        const options = {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: 'numeric',
-            second: 'numeric',
-            fractionalSecondDigits: 3,
-            timeZoneName: 'short'
-        };
+        const calc_duration = function (start_date, end_date) {
+            const start = new Date(start_date);
+            const end = new Date(end_date);
+            const duration = end - start;
+            //const durationInSeconds = duration / 1000;
+            //return durationInSeconds;
+            return duration;
+        }
 
-        return date_obj.toLocaleString(undefined, options);
-    }
+        const timestamp_to_locale_string = function (ts) {
+            const date_obj = new Date(ts);
+            const options = {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                second: 'numeric',
+                fractionalSecondDigits: 3,
+                timeZoneName: 'short'
+            };
 
-    const perform_retrieve_logs_ajax_call = function (pipeline_id) {
-        perform_ajax_call(
-            '/api/pipeline/logs/',
-            'POST',
-            JSON.stringify({
-                pipeline_id: pipeline_id
-            }),
-            function (response) {
-                const pipeline_execution = response.pipeline_execution;
-                const call_entries = response.call_entries;
-                show_logs_table(pipeline_execution, call_entries);
-            },
-            function (error) {
-                output_msg("#error-alert", get_error_str(error));
-                show_item("#error-alert", true);
-            },
-            function () {
-                $('#spinner').removeClass('hidden');
-            },
-            function () {
-                $('#spinner').addClass('hidden');
-                $("#logs-section").removeClass('hidden');
-            }
-        );
-    }
+            return date_obj.toLocaleString(undefined, options);
+        }
 
-    $(function () {
-        $('#spinner').addClass('hidden');
-        $("#logs-section").addClass('hidden');
-
-        const $pipeline_selector = $("#id_pipeline");
-
-        $pipeline_selector.on("change", function () {
-            show_item("#success-alert", false);
-            show_item("#error-alert", false);
-
-            const pipeline_id = $(this).val();
-            if (!pipeline_id) {
-                return;
-            }
-
+        const perform_retrieve_logs_ajax_call = function (pipeline_id) {
             perform_ajax_call(
-                '/api/pipeline/args',
-                'GET',
-                {
+                '/api/pipeline/logs/',
+                'POST',
+                JSON.stringify({
                     pipeline_id: pipeline_id
-                },
+                }),
                 function (response) {
-                    const args = response.response;
-                    populate_args(args);
+                    const pipeline_execution = response.pipeline_execution;
+                    const call_entries = response.call_entries;
+                    show_logs_table(pipeline_execution, call_entries);
                 },
                 function (error) {
                     output_msg("#error-alert", get_error_str(error));
@@ -264,84 +230,123 @@
                 },
                 function () {
                     $('#spinner').removeClass('hidden');
-                    $("#logs-section").addClass('hidden');
-                    clear_args();
-                    clear_logs();
                 },
                 function () {
                     $('#spinner').addClass('hidden');
+                    $("#logs-section").removeClass('hidden');
                 }
             );
-        });
+        }
 
-        $("#execute_pipeline_form").on('submit', function (event) {
-            event.preventDefault();
-            const $submit_button = $(this).find('#submit-btn');
-            if ($submit_button.prop('disabled')) {
-                return;
-            }
+        $(function () {
+            $('#spinner').addClass('hidden');
+            $("#logs-section").addClass('hidden');
 
-            show_item("#success-alert", false);
-            show_item("#error-alert", false);
+            const $pipeline_selector = $("#id_pipeline");
 
-            const pipeline_id_selected = $pipeline_selector.val();
-            const openaikey_id_selected = $("#id_openaikey").val();
+            $pipeline_selector.on("change", function () {
+                show_item("#success-alert", false);
+                show_item("#error-alert", false);
 
-            const $tag_vals = $(".tag_value");
-
-            const should_submit = $tag_vals.length === 0 || $tag_vals.filter(function () {
-                return !this.value.trim();
-            }).length === 0;
-
-            if (should_submit) {
-                const args = $tag_vals.toArray().reduce((acc, el) => {
-                    const id = el.id.substring(3);
-                    acc[id] = el.value.trim();
-                    return acc;
-                }, {});
+                const pipeline_id = $(this).val();
+                if (!pipeline_id) {
+                    return;
+                }
 
                 perform_ajax_call(
-                    '/api/pipeline/call/',
-                    'POST',
-                    JSON.stringify({
-                        pipeline_id: pipeline_id_selected,
-                        openaikey_id: openaikey_id_selected,
-                        args: args
-                    }),
+                    '/api/pipeline/args',
+                    'GET',
+                    {
+                        pipeline_id: pipeline_id
+                    },
                     function (response) {
-                        const response_text = response.response;
-                        output_msg("#success-alert", response_text);
-                        show_item("#success-alert", true);
+                        const args = response.response;
+                        populate_args(args);
                     },
                     function (error) {
                         output_msg("#error-alert", get_error_str(error));
                         show_item("#error-alert", true);
                     },
                     function () {
-                        $submit_button.prop('disabled', true);
                         $('#spinner').removeClass('hidden');
-                        clear_logs();
                         $("#logs-section").addClass('hidden');
+                        clear_args();
+                        clear_logs();
                     },
                     function () {
                         $('#spinner').addClass('hidden');
-                        $submit_button.prop('disabled', false);
-                        perform_retrieve_logs_ajax_call(pipeline_id_selected);
                     }
                 );
-            } else {
-                output_msg("#error-alert", "Please fill in all arguments");
-                show_item("#error-alert", true);
+            });
+
+            $("#execute_pipeline_form").on('submit', function (event) {
+                event.preventDefault();
+                const $submit_button = $(this).find('#submit-btn');
+                if ($submit_button.prop('disabled')) {
+                    return;
+                }
+
+                show_item("#success-alert", false);
+                show_item("#error-alert", false);
+
+                const pipeline_id_selected = $pipeline_selector.val();
+                const openaikey_id_selected = $("#id_openaikey").val();
+
+                const $tag_vals = $(".tag_value");
+
+                const should_submit = $tag_vals.length === 0 || $tag_vals.filter(function () {
+                    return !this.value.trim();
+                }).length === 0;
+
+                if (should_submit) {
+                    const args = $tag_vals.toArray().reduce((acc, el) => {
+                        const id = el.id.substring(3);
+                        acc[id] = el.value.trim();
+                        return acc;
+                    }, {});
+
+                    perform_ajax_call(
+                        '/api/pipeline/call/',
+                        'POST',
+                        JSON.stringify({
+                            pipeline_id: pipeline_id_selected,
+                            openaikey_id: openaikey_id_selected,
+                            args: args
+                        }),
+                        function (response) {
+                            const response_text = response.response;
+                            output_msg("#success-alert", response_text);
+                            show_item("#success-alert", true);
+                        },
+                        function (error) {
+                            output_msg("#error-alert", get_error_str(error));
+                            show_item("#error-alert", true);
+                        },
+                        function () {
+                            $submit_button.prop('disabled', true);
+                            $('#spinner').removeClass('hidden');
+                            clear_logs();
+                            $("#logs-section").addClass('hidden');
+                        },
+                        function () {
+                            $('#spinner').addClass('hidden');
+                            $submit_button.prop('disabled', false);
+                            perform_retrieve_logs_ajax_call(pipeline_id_selected);
+                        }
+                    );
+                } else {
+                    output_msg("#error-alert", "Please fill in all arguments");
+                    show_item("#error-alert", true);
+                }
+
+                return false;
+            });
+
+            const matches = window.location.href.match(/\/(\d+)\/?$/);
+            const pipeline_id = matches ? matches[1] : 0;
+            if (pipeline_id) {
+                $pipeline_selector.trigger("change");
             }
-
-            return false;
         });
-
-        const matches = window.location.href.match(/\/(\d+)\/?$/);
-        const pipeline_id = matches ? matches[1] : 0;
-        if (pipeline_id) {
-            $pipeline_selector.trigger("change");
-        }
-    });
-</script>
+    </script>
 {% endblock %}

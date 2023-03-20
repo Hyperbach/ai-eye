@@ -7,12 +7,14 @@ from django.utils import timezone
 class DatabaseLogHandler(logging.Handler):
     class Event(Enum):
         STARTED = 1
-        FN_CALL = 2
-        COMPLETED = 3
+        FN_CALL_STARTED = 2
+        FN_CALL_COMPLETED = 3
+        COMPLETED = 4
 
     HANDLERS_MAP = {
         Event.STARTED: "event_started_handler",
-        Event.FN_CALL: "fn_call_handler",
+        Event.FN_CALL_STARTED: "fn_call_started_handler",
+        Event.FN_CALL_COMPLETED: "fn_call_completed_handler",
         Event.COMPLETED: "completed_handler",
     }
 
@@ -33,16 +35,21 @@ class DatabaseLogHandler(logging.Handler):
             **kwargs
         )
 
-    def fn_call_handler(self, metainfo):
+    def fn_call_started_handler(self, metainfo):
         from dblogs.models import CallEntryLog
 
-        CallEntryLog.objects.create(
+        self.call_entry_log_instance = CallEntryLog.objects.create(
             fn_name=metainfo["fn_name"],
             fn_type=metainfo["fn_type"],
-            output=metainfo["output"],
             pipeline_execution_id=self.pipeline_execution_log_instance.pk,
             parameters=self._prepare_parameters(metainfo["parameters"]),
         )
+
+    def fn_call_completed_handler(self, metainfo):
+        self.call_entry_log_instance.output = metainfo["output"]
+        self.call_entry_log_instance.end_date = timezone.now()
+        self.call_entry_log_instance.save(update_fields=["output", "end_date"])
+        self.call_entry_log_instance = None
 
     def completed_handler(self, metainfo):
         self.pipeline_execution_log_instance.status = metainfo["status"]
@@ -59,6 +66,7 @@ class DatabaseLogHandler(logging.Handler):
     def __init__(self):
         super().__init__()
         self.pipeline_execution_log_instance = None
+        self.call_entry_log_instance = None
 
     def emit(self, record):
         metainfo = getattr(record, "metainfo", None)
@@ -106,14 +114,24 @@ class DatabaseLogHandler(logging.Handler):
         )
 
     @staticmethod
-    def log_fn_call(logger, fn_name, fn_type, parameters, output):
+    def log_fn_call_started(logger, fn_name, fn_type, parameters):
         logger.info(
-            msg=DatabaseLogHandler.Event.FN_CALL,
+            msg=DatabaseLogHandler.Event.FN_CALL_STARTED,
             extra={
                 "metainfo": {
                     "fn_name": fn_name,
                     "fn_type": fn_type,
                     "parameters": parameters,
+                }
+            },
+        )
+
+    @staticmethod
+    def log_fn_call_completed(logger, output):
+        logger.info(
+            msg=DatabaseLogHandler.Event.FN_CALL_COMPLETED,
+            extra={
+                "metainfo": {
                     "output": output,
                 }
             },
