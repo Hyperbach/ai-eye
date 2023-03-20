@@ -207,7 +207,7 @@ Authenticated users can use this endpoint to send requests to the server for ret
 
 Example of usage:
 ```shell
-curl --location 'http://127.0.0.1:8000/api/pipeline/args?pipeline_id=14' --header 'Cookie: csrftoken=g69kAjkZan6yAGqD5VOGCUjbUdR1qPka; sessionid=97wvcm0t0t1rgrpsy38ordgtmh7cw9iz' --header 'Content-Type: text/pl
+curl --location 'http://127.0.0.1:8000/api/pipeline/args?pipeline_id=14' --header 'Cookie: csrftoken=g69kAjkZan6yAGqD5VOGCUjbUdR1qPka; sessionid=97wvcm0t0t1rgrpsy38ordgtmh7cw9iz' --header 'Content-Type: text/plain'
 
 {"success":true,"response":["s"]}
 ```
