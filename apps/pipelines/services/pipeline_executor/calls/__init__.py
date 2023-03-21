@@ -49,8 +49,8 @@ class CallBuiltinFunction:
 
 class CallPrompt:
     ARGS_PATTERN_RX = re.compile(r"{[a-zA-Z][a-zA-Z_0-9]*}")
-    ENDPOINT = "v1/completions"
-    MODEL = "text-davinci-003"
+    ENDPOINT = "v1/chat/completions"
+    MODEL = "gpt-3.5-turbo"
 
     def __init__(self, prompt_fn: Prompt):
         self.prompt_fn = prompt_fn
@@ -76,7 +76,11 @@ class CallPrompt:
             result = openai_request(
                 openaikey=openaikey,
                 endpoint=self.ENDPOINT,
-                parameters={"model": self.MODEL, "prompt": prompt},
+                parameters={
+                    "model": self.MODEL,
+                    # "max_tokens": 4096,
+                    "messages": [{"role": "user", "content": prompt}],
+                },
             )
         except (KeyError, OpenAIRequestException) as exc:
             error_msg = f"An error occurred while calling the function '{self.prompt_fn.name}'. Details: {exc}"

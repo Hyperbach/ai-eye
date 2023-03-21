@@ -15,7 +15,7 @@ from tests.factories import AiEyeAdminFactory, OpenAIKeyFactory
 
 
 def mock_openai_request(openaikey: str, endpoint: str, parameters: dict[str, Any]):
-    return f"OpenAI reply for {parameters['prompt']}"
+    return f"OpenAI reply for {parameters['messages'][0]['content']}"
 
 
 @patch(

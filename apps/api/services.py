@@ -22,6 +22,6 @@ def openai_request(openaikey: str, endpoint: str, parameters: Dict[str, Any]):
         response_json = response.json()
 
         try:
-            return response_json["choices"][0]["text"].strip()
+            return response_json["choices"][0]["message"]["content"].strip()
         except (KeyError, ValueError) as exc:
             raise OpenAIRequestException(detail=str(exc))
