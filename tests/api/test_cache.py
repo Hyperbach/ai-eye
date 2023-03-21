@@ -105,12 +105,15 @@ class CacheTests(TestCase):
 
     @parameterized.expand(
         [
-            [{"model": "text-davinci-003", "prompt": "how do you do?"}],
-            [{"model": "text-davinci-003", "prompt": ""}],
-            [{"model": "text-davinci-003", "prompt": "&"}],
+            [{"prompt": "how do you do?"}],
+            [{"prompt": ""}],
+            [{"prompt": "&"}],
         ]
     )
-    @patch("api.views.openai_request", side_effect=mock_openai_request)
+    @patch(
+        "api.services.OpenAICacheService.openai_request",
+        side_effect=mock_openai_request,
+    )
     def test_cache_case(self, request_data, mock_openai_request):
-        endpoint = "v1/completions"
+        endpoint = "v1/chat/completions"
         self.exec(request_data, endpoint)

@@ -1,6 +1,8 @@
 import abc
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Type
+
+from django.contrib.auth.models import AbstractUser
 
 import networkx as nx
 from pipelines.models import BuiltinFunction, Prompt
@@ -81,10 +83,12 @@ class ExecutorVisitor(BaseVisitor):
         builtins: List[BuiltinFunction],
         openaikey: str,
         user_args: Dict[str, str],
+        user: Type[AbstractUser],
     ):
         super().__init__(graph=graph, prompts=prompts, builtins=builtins)
         self.openaikey = openaikey
         self.user_args = user_args
+        self.user = user
 
     def _find_arg_value(self, arg_name):
         arg_value = self.user_args.get(arg_name, None)
@@ -131,6 +135,6 @@ class ExecutorVisitor(BaseVisitor):
             )
 
         if isinstance(target_fn, CallPrompt):
-            kwargs.update({"openaikey": self.openaikey})
+            kwargs.update({"openaikey": self.openaikey, "user": self.user})
 
         return target_fn(**kwargs)

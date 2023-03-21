@@ -82,6 +82,7 @@ class PipelineExecutor:
                 builtins=self.builtins,
                 openaikey=openaikey,
                 user_args=user_args,
+                user=self.user,
             ).visit(node=self.root)
         except PipelineException as exc:
             error = str(exc)

@@ -11,8 +11,6 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from .authentication import AiEyeTokenAuthentication
-from .exceptions import OpenAIRequestException
-from .mixins import PrepareParametersMixin
 from .models import Log
 from .permissions import AiEyeAdminPermission, AiEyeUserPermission
 from .serializers import (
@@ -24,82 +22,50 @@ from .serializers import (
     PipelineRetrieveArgumentsCallSerializer,
     PipelineRetrieveExecutionLogsSerializer,
 )
-from .services import openai_request
+from .services import OpenAICacheService
 
 
-class RetrieveLogViewSet(
-    viewsets.GenericViewSet, mixins.ListModelMixin, PrepareParametersMixin
-):
+class RetrieveLogViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     permission_classes = (permissions.IsAuthenticated, AiEyeUserPermission)
     authentication_classes = (AiEyeTokenAuthentication,)
     serializer_class = CacheHitResponseSerializer
 
     def get_queryset(self):
         parameters = self.request.query_params
+
+        openai_cache_service = OpenAICacheService(
+            endpoint=self.kwargs["endpoint"], parameters=parameters
+        )
+        comparator = openai_cache_service.create_logs_comparator()
+
         return (
             Log.objects.filter(cache_hit=True)
-            .filter(
-                self.create_logs_comparator(self.prepare_parameters(parameters)),
-            )
+            .filter(comparator)
             .distinct("response")
             .order_by("response", "-timestamp")
         )
 
 
-class CreateLogViewSet(
-    mixins.CreateModelMixin, viewsets.GenericViewSet, PrepareParametersMixin
-):
+class CreateLogViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     permission_classes = (permissions.IsAuthenticated, AiEyeUserPermission)
     authentication_classes = (AiEyeTokenAuthentication,)
 
     def create(self, request, *args, **kwargs):
         endpoint = kwargs["endpoint"]
         parameters = self.request.data
-        prepared_parameters = self.prepare_parameters(parameters)
 
         public_token = request.auth
         openaikey = public_token.openaikey
 
-        log_instance = self.get_log_instance(prepared_parameters)
-
-        if log_instance is not None:
-            response = log_instance.response
-            cache_hit = True
-        else:
-            response = self.get_openai_response(openaikey, endpoint, parameters)
-            cache_hit = False
-
-        new_log_instance = self.create_log_instance(
-            endpoint=endpoint,
-            parameters=prepared_parameters,
-            user=self.request.user,
-            api_key=openaikey,
-            response=response,
-            cache_hit=cache_hit,
+        openai_cache_service = OpenAICacheService(
+            endpoint=endpoint, parameters=parameters
+        )
+        new_log_instance = openai_cache_service.run(
+            openaikey=openaikey, user=self.request.user
         )
 
         response_serializer = CacheHitResponseSerializer(instance=new_log_instance)
         return Response(data=response_serializer.data, status=status.HTTP_200_OK)
-
-    def get_log_instance(self, prepared_parameters):
-        return Log.objects.filter(
-            self.create_logs_comparator(prepared_parameters),
-        ).first()
-
-    @staticmethod
-    def create_log_instance(**kwargs):
-        return Log.objects.create(**kwargs)
-
-    @staticmethod
-    def get_openai_response(openaikey, endpoint, parameters):
-        try:
-            openai_response = openai_request(
-                openaikey=openaikey, endpoint=endpoint, parameters=parameters
-            )
-        except OpenAIRequestException as exc:
-            raise exc
-        else:
-            return openai_response
 
 
 class PipelineCallViewSet(viewsets.ViewSet):

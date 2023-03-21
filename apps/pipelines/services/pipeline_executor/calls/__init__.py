@@ -3,7 +3,7 @@ import re
 from typing import Any
 
 from api.exceptions import OpenAIRequestException
-from api.services import openai_request
+from api.services import OpenAICacheService
 from dblogs.handlers import DatabaseLogHandler
 from pipelines.builtins import (
     call_builtin_function,
@@ -64,6 +64,8 @@ class CallPrompt:
 
     def __call__(self, *args, **kwargs) -> Any:
         openaikey = kwargs.pop("openaikey")
+        user = kwargs.pop("user")
+
         body = self.prompt_fn.body
         result = ""
 
@@ -73,15 +75,16 @@ class CallPrompt:
 
         try:
             prompt = body.format(**kwargs)
-            result = openai_request(
-                openaikey=openaikey,
+            openai_cache_service = OpenAICacheService(
                 endpoint=self.ENDPOINT,
                 parameters={
                     "model": self.MODEL,
-                    # "max_tokens": 4096,
                     "messages": [{"role": "user", "content": prompt}],
                 },
             )
+            log_instance = openai_cache_service.run(openaikey=openaikey, user=user)
+            result = log_instance.response
+
         except (KeyError, OpenAIRequestException) as exc:
             error_msg = f"An error occurred while calling the function '{self.prompt_fn.name}'. Details: {exc}"
             raise CallPromptError(error_msg)

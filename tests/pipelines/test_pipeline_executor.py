@@ -37,8 +37,7 @@ class PipelineExecutorTestCase(TestCase):
         BuiltinFunction.objects.create(name="builtin_concat")
         BuiltinFunction.objects.create(name="builtin_identity")
 
-        openaikey = OpenAIKeyFactory.create(owner=aieye_admin)
-        cls.openaikey = openaikey
+        cls.openaikey = OpenAIKeyFactory.create(owner=aieye_admin)
 
     @parameterized.expand(
         [
@@ -94,7 +93,7 @@ class PipelineExecutorTestCase(TestCase):
         ]
     )
     @patch(
-        "pipelines.services.pipeline_executor.calls.openai_request",
+        "api.services.OpenAICacheService.openai_request",
         side_effect=mock_openai_request,
     )
     def test_positive_exec(self, test_data, mock_openai_request):
@@ -142,7 +141,7 @@ class PipelineExecutorTestCase(TestCase):
         ]
     )
     @patch(
-        "pipelines.services.pipeline_executor.calls.openai_request",
+        "api.services.OpenAICacheService.openai_request",
         side_effect=mock_openai_request,
     )
     def test_negative_exec(self, test_data, mock_openai_request):
@@ -203,7 +202,7 @@ class PipelineExecutorTestCase(TestCase):
         ]
     )
     @patch(
-        "pipelines.services.pipeline_executor.calls.openai_request",
+        "api.services.OpenAICacheService.openai_request",
         side_effect=mock_openai_request,
     )
     def test_exec_arg_names_only(self, test_data, mock_openai_request):
