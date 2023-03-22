@@ -41,8 +41,8 @@ class CacheTests(TestCase):
         return self.client.post(openai_api_url, data=request_data)
 
     def invoke_cache_api(self, request_data, endpoint):
-        cache_api_url = reverse("api:cache-list", kwargs={"endpoint": endpoint})
-        return self.client.get(cache_api_url, data=request_data)
+        cache_api_url = reverse("api:cache", kwargs={"endpoint": endpoint})
+        return self.client.post(cache_api_url, data=request_data)
 
     def exec(self, request_data, endpoint):
         filter_kwargs = dict(

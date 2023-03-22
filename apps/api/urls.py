@@ -25,5 +25,5 @@ router.register(
 
 urlpatterns = [
     path("", include(router.urls)),
-    re_path(r"^cache/(?P<endpoint>.+)/$", RetrieveLogAPIView.as_view()),
+    re_path(r"^cache/(?P<endpoint>.+)/$", RetrieveLogAPIView.as_view(), name="cache"),
 ]
