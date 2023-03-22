@@ -253,9 +253,13 @@ class PipelineSourceExecuteView(AiEyeAdminOrUserMixin, TemplateView):
             qs = qs.filter(owner=user)
 
         pipelines = qs.order_by("-date_created")
-        openaikeys = OpenAIKey.objects.filter(
-            Q(owner=user) | Q(users__in=[user]), is_active=True
-        ).order_by("-date_created")
+        openaikeys = (
+            OpenAIKey.objects.filter(
+                Q(owner=user) | Q(users__in=[user]), is_active=True
+            )
+            .distinct()
+            .order_by("-date_created")
+        )
 
         context.update({"pipelines": pipelines, "openaikeys": openaikeys})
         if selected_pipeline := kwargs.get("id"):
