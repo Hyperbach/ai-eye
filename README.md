@@ -133,7 +133,7 @@ The openai endpoint allows users to send requests to the OpenAI API and receive 
 ## cache endpoint
 The cache endpoint allows users to retrieve previously-cached responses to requests made to the OpenAI API. The endpoint accepts the following methods:
 
-    GET: Retrieves a previously-cached response to a request made to the OpenAI API.
+    POST: Retrieves a previously-cached response to a request made to the OpenAI API.
 
 ## API Endpoints
 ### openai
@@ -162,16 +162,21 @@ Response
 
 Example of usage:
 ```shell
-curl -X POST 'http://127.0.0.1:8000/api/openai/v1/chat/completions/' --header 'Authorization: Bearer pubtokenpubtoken1pubtoken1pubtokenXXXXXX' --header 'Content-Type: application/json' --data-raw '{
-    "prompt":"is John a cool name??"
+curl --location 'http://127.0.0.1:8000/api/openai/v1/chat/completions/' \
+--header 'Authorization: Bearer pubtokenpubtoken1pubtoken1pubtokenXXXXXX' \
+--header 'Content-Type: application/json' \
+--data '{
+    "model": "gpt-3.5-turbo",
+    "messages": [{"role": "user", "content": "Is blue a color for blind?"}]
 }'
 
-{"response":"Yes, John is a cool name.","cache_hit":true}
+{"response":"As an AI language model, I cannot experience color since I don't have senses. However, people who are visually impaired may perceive colors differently based on their degree of blindness. Many individuals with low vision or partial sight can distinguish some colors, including blue, while others with complete blindness perceive no colors at all.","cache_hit":true}
+
 ```
 
 ### cache
 
-GET /api/cache/{endpoint}/
+POST /api/cache/{endpoint}/
 
 This endpoint retrieves a previously-cached responses to a request made to the OpenAI API with a provided endpoint and query parameters.
 The endpoint uses Token Based HTTP Authentication with Bearer key. When called, it responds with a JSON object having the following format:
@@ -189,9 +194,15 @@ Response
 
 Example of usage:
 ```shell
-curl -X GET -G http://127.0.0.1:8000/api/cache/v1/chat/completions/ --header 'Authorization: Bearer pubtokenpubtoken1pubtoken1pubtokenXXXXXX' --data-urlencode "prompt=is John a cool name??" --data-urlencode "model=text-davinci-003"
+curl --location 'http://127.0.0.1:8000/api/cache/v1/chat/completions/' \
+--header 'Authorization: Bearer pubtokenpubtoken1pubtoken1pubtokenXXXXXX' \
+--header 'Content-Type: application/json' \
+--data '{
+    "model": "gpt-3.5-turbo",
+    "messages": [{"role": "user", "content": "Is blue a color for blind?"}]
+}'
 
-[{"response":"Yes, John is a cool name.","cache_hit":true}]
+[{"response":"As an AI language model, I cannot experience color since I don't have senses. However, people who are visually impaired may perceive colors differently based on their degree of blindness. Many individuals with low vision or partial sight can distinguish some colors, including blue, while others with complete blindness perceive no colors at all.","cache_hit":true}]
 ```
 
 

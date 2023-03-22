@@ -9,6 +9,7 @@ from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .authentication import AiEyeTokenAuthentication
 from .models import Log
@@ -25,25 +26,28 @@ from .serializers import (
 from .services import OpenAICacheService
 
 
-class RetrieveLogViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
+class RetrieveLogAPIView(APIView):
     permission_classes = (permissions.IsAuthenticated, AiEyeUserPermission)
     authentication_classes = (AiEyeTokenAuthentication,)
     serializer_class = CacheHitResponseSerializer
 
-    def get_queryset(self):
-        parameters = self.request.query_params
+    def post(self, request, *args, **kwargs):
+        parameters = request.data
 
         openai_cache_service = OpenAICacheService(
-            endpoint=self.kwargs["endpoint"], parameters=parameters
+            endpoint=kwargs["endpoint"], parameters=parameters
         )
         comparator = openai_cache_service.create_logs_comparator()
 
-        return (
+        queryset = (
             Log.objects.filter(cache_hit=True)
             .filter(comparator)
             .distinct("response")
             .order_by("response", "-timestamp")
         )
+
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class CreateLogViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
