@@ -84,13 +84,13 @@ class PipelineCallViewSet(viewsets.ViewSet):
     def retrieve_openaikey_for_session_authenticated_user(request, validated_data):
         openaikey_id = validated_data["openaikey_id"]
 
-        try:
-            openaikey_instance = OpenAIKey.objects.get(
-                Q(owner=request.user) | Q(users__in=[request.user]),
-                pk=openaikey_id,
-                is_active=True,
-            )
-        except OpenAIKey.DoesNotExist:
+        openaikey_instance = OpenAIKey.objects.filter(
+            Q(owner=request.user) | Q(users__in=[request.user]),
+            pk=openaikey_id,
+            is_active=True,
+        ).first()
+
+        if not openaikey_instance:
             raise ValidationError("OpenAIKey not found")
         else:
             return openaikey_instance.key
