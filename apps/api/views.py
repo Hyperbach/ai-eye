@@ -177,12 +177,12 @@ class PipelineRetrieveExecutionLogsViewSet(viewsets.ViewSet):
                 .first()
             )
 
-            if pipeline_execution_log_instance:
-                call_entries_logs = CallEntryLog.objects.filter(
-                    pipeline_execution_id=pipeline_execution_log_instance.pk
-                ).order_by("id")
-            else:
-                call_entries_logs = []
+            if not pipeline_execution_log_instance:
+                raise ValidationError("PipelineExecutionLog was not found")
+
+            call_entries_logs = CallEntryLog.objects.filter(
+                pipeline_execution_id=pipeline_execution_log_instance.pk
+            ).order_by("id")
 
             pipeline_execution_log_serializer = PipelineExecutionLogSerializer(
                 instance=pipeline_execution_log_instance
