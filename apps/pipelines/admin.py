@@ -6,4 +6,8 @@ admin.site.register(Prompt)
 admin.site.register(DAGNode)
 admin.site.register(BuiltinFunction)
 admin.site.register(DAGEdge)
-admin.site.register(PipelineSource)
+
+
+@admin.register(PipelineSource)
+class PipelineSourceAdmin(admin.ModelAdmin):
+    list_display = ["id", "name", "body", "owner", "date_created", "date_updated"]
