@@ -2,6 +2,7 @@ from django.db.models import Max, Q
 
 from core.models import OpenAIKey
 from dblogs.models import CallEntryLog, PipelineExecutionLog
+from pipelines.models import PipelineSource
 from pipelines.services.exceptions import PipelineException
 from pipelines.services.pipeline_executor import PipelineExecutor
 from pipelines.utils import find_first
@@ -147,11 +148,16 @@ class PipelineRetrieveArgumentsViewSet(viewsets.ViewSet):
     def list(self, request):
         serializer = PipelineRetrieveArgumentsCallSerializer(data=request.query_params)
         if serializer.is_valid():
-            pipeline_id = serializer.validated_data["pipeline_id"]
+            pipeline_name = serializer.validated_data["pipeline_name"]
             try:
-                p = PipelineExecutor(pipeline_source_id=pipeline_id, user=request.user)
+                pipeline_source_instance = PipelineSource.objects.get(
+                    name=pipeline_name
+                )
+                p = PipelineExecutor(
+                    pipeline_source_id=pipeline_source_instance.pk, user=request.user
+                )
                 arg_names = p.get_arg_names()
-            except PipelineException as exc:
+            except (PipelineSource.DoesNotExist, PipelineException) as exc:
                 return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 return Response({"success": True, "response": arg_names})

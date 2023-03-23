@@ -210,14 +210,14 @@ curl --location 'http://127.0.0.1:8000/api/cache/v1/chat/completions/' \
 In addition to the previously mentioned APIs, the project includes two API endpoints for working with pipelines.
 
 ## pipeline_args
-### GET /api/pipeline/args?pipeline_id={param}
+### GET /api/pipeline/args?pipeline_name={param}
 Authenticated users can use this endpoint to send requests to the server for retrieving arguments of a specified pipeline and receive corresponding responses. The endpoint accepts the following methods:
 
     GET: Sends a request to the Django server and returns a response.
 
 Example of usage:
 ```shell
-curl --location 'http://127.0.0.1:8000/api/pipeline/args?pipeline_id=14' --header 'Cookie: csrftoken=g69kAjkZan6yAGqD5VOGCUjbUdR1qPka; sessionid=97wvcm0t0t1rgrpsy38ordgtmh7cw9iz' --header 'Content-Type: text/plain'
+curl --location 'http://127.0.0.1:8000/api/pipeline/args?pipeline_name=my_pipeline' --header 'Cookie: csrftoken=g69kAjkZan6yAGqD5VOGCUjbUdR1qPka; sessionid=97wvcm0t0t1rgrpsy38ordgtmh7cw9iz' --header 'Content-Type: text/plain'
 
 {"success":true,"response":["s"]}
 ```

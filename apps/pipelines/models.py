@@ -74,6 +74,7 @@ class PipelineSource(TimestampMixin):
     owner: models.ForeignKey = models.ForeignKey(
         User, on_delete=models.CASCADE, verbose_name=_("Author of the Pipeline")
     )
+    name: models.CharField = models.CharField(max_length=100, unique=True)
 
     class Meta:
         verbose_name = _("PipelineSource")

@@ -38,7 +38,7 @@
                 <select name="pipeline" class="form-select" title="" required id="id_pipeline">
                     <option value="">---------</option>
                     {% for pipeline in pipelines %}
-                        <option value="{{ pipeline.id }}"
+                        <option value="{{ pipeline.name }}" data-id="{{ pipeline.id }}"
                                 {% if selected_pipeline and pipeline.id == selected_pipeline %}selected{% endif %}>
                             {{ pipeline.body }}
                         </option>
@@ -248,8 +248,8 @@
                 show_item("#success-alert", false);
                 show_item("#error-alert", false);
 
-                const pipeline_id = $(this).val();
-                if (!pipeline_id) {
+                const pipeline_name = $(this).val();
+                if (!pipeline_name) {
                     return;
                 }
 
@@ -257,7 +257,7 @@
                     '/api/pipeline/args',
                     'GET',
                     {
-                        pipeline_id: pipeline_id
+                        pipeline_name: pipeline_name
                     },
                     function (response) {
                         const args = response.response;
@@ -289,7 +289,8 @@
                 show_item("#success-alert", false);
                 show_item("#error-alert", false);
 
-                const pipeline_id_selected = $pipeline_selector.val();
+                //const pipeline_name_selected = $pipeline_selector.val();
+                const pipeline_id_selected = $pipeline_selector.find("option:selected").data("id");
                 const openaikey_id_selected = $("#id_openaikey").val();
 
                 const $tag_vals = $(".tag_value");

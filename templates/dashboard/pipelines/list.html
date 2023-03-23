@@ -22,6 +22,7 @@
                 <thead>
                 <tr>
                     <th scope="col">Id</th>
+                    <th scope="col">Name</th>
                     <th scope="col">Body</th>
                     <th scope="col">Date created</th>
                     <th scope="col">Date updated</th>
@@ -35,6 +36,7 @@
                     {% for pipeline in object_list %}
                     <tr>
                         <td>{{ pipeline.id }}</td>
+                        <td>{{ pipeline.name }}</td>
                         <td>{{ pipeline.body }}</td>
                         <td>{{ pipeline.date_created|date:'m-d-Y H:i:s' }}</td>
                         <td>{{ pipeline.date_updated|date:'m-d-Y H:i:s' }}</td>

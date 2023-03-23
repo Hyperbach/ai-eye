@@ -20,7 +20,9 @@ class DAGSaverTestCase(TestCase):
 
         input_str = "builtin_a(prompt_a, prompt_b)"
         cls.input_str = input_str
-        pipeline = PipelineSource.objects.create(body=input_str, owner=aieye_admin)
+        pipeline = PipelineSource.objects.create(
+            name="test_pipeline", body=input_str, owner=aieye_admin
+        )
         cls.pipeline = pipeline
 
         dag_root = DAGBuilder().build(input_str)

@@ -11,7 +11,10 @@ from pipelines.services.dag_saver import DAGSaver
 class PipelineCreateForm(forms.ModelForm):
     class Meta:
         model = PipelineSource
-        fields = ("body",)
+        fields = (
+            "name",
+            "body",
+        )
 
     def clean(self):
         cleaned_data = super().clean()

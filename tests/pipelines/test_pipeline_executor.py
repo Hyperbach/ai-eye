@@ -218,7 +218,9 @@ class PipelineExecutorTestCase(TestCase):
         self.assertCountEqual(expected_user_args, result_user_args)
 
     def _create_pipeline_executor(self, input_str):
-        pipeline = PipelineSource.objects.create(body=input_str, owner=self.aieye_admin)
+        pipeline = PipelineSource.objects.create(
+            name="test_pipeline", body=input_str, owner=self.aieye_admin
+        )
         dag_root = DAGBuilder().build(input_str)
         dag_saver = DAGSaver(dag_root)
         dag_saver.save(pipeline)

@@ -73,7 +73,9 @@ class PipelineExecutorAPITestCase(TestCase):
         )
 
     def create_pipeline(self, input_str):
-        pipeline = PipelineSource.objects.create(body=input_str, owner=self.aieye_admin)
+        pipeline = PipelineSource.objects.create(
+            name="test_pipeline", body=input_str, owner=self.aieye_admin
+        )
         dag_root = DAGBuilder().build(input_str)
         dag_saver = DAGSaver(dag_root)
         dag_saver.save(pipeline)
@@ -222,7 +224,7 @@ class PipelineExecutorAPITestCase(TestCase):
         expected_user_args = test_data["expected_user_args"]
 
         pipeline = self.create_pipeline(input_str=input_str)
-        request_data = {"pipeline_id": pipeline.id}
+        request_data = {"pipeline_name": pipeline.name}
 
         response = self.session_auth_client.get(
             self.pipeline_retrieve_args_api_url, data=request_data, format="json"

@@ -20,7 +20,7 @@ class PipelineCallWithOpenaiKeyId(PipelineCallSerializer):
 
 
 class PipelineRetrieveArgumentsCallSerializer(serializers.Serializer):
-    pipeline_id = serializers.IntegerField(min_value=0, required=True)
+    pipeline_name = serializers.CharField(required=True)
 
 
 class PipelineRetrieveExecutionLogsSerializer(serializers.Serializer):
