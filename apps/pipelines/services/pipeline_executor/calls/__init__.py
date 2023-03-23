@@ -48,19 +48,30 @@ class CallBuiltinFunction:
 
 
 class CallPrompt:
-    ARGS_PATTERN_RX = re.compile(r"{[a-zA-Z][a-zA-Z_0-9]*}")
+    ARGS_PATTERN_RX = re.compile(r"{([a-zA-Z][a-zA-Z_0-9]*)}")
     ENDPOINT = "v1/chat/completions"
     MODEL = "gpt-3.5-turbo"
 
     def __init__(self, prompt_fn: Prompt):
         self.prompt_fn = prompt_fn
+        self.arg_names = None
 
     def __str__(self):
         return self.prompt_fn.name
 
     def get_arity_of_function(self):
-        arg_names = self.ARGS_PATTERN_RX.findall(self.prompt_fn.body)
-        return len(set(arg_names))
+        self._prepare_arg_names()
+        return len(self.arg_names)
+
+    def get_arg_names(self):
+        self._prepare_arg_names()
+        return self.arg_names
+
+    def _prepare_arg_names(self):
+        if self.arg_names is None:
+            self.arg_names = list(
+                set(self.ARGS_PATTERN_RX.findall(self.prompt_fn.body))
+            )
 
     def __call__(self, *args, **kwargs) -> Any:
         openaikey = kwargs.pop("openaikey")

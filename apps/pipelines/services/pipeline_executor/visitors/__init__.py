@@ -135,6 +135,15 @@ class ExecutorVisitor(BaseVisitor):
             )
 
         if isinstance(target_fn, CallPrompt):
+            fn_arg_names = target_fn.get_arg_names()
+            if len(fn_arg_names) == 1 and len(kwargs) == 1:
+                fn_arg_name = fn_arg_names[0]
+                if fn_arg_name not in kwargs:
+                    kwargs_values = list(kwargs.values())
+                    kwargs = {
+                        fn_arg_name: kwargs_values[0],
+                    }
+
             kwargs.update({"openaikey": self.openaikey, "user": self.user})
 
         return target_fn(**kwargs)

@@ -67,7 +67,7 @@ class PipelineExecutor:
         --
         some_prompt_with_one_argument(xyz)
         some_prompt_with_one_argument(xyz=r)
-        some_prompt_with_one_argument(testme) <-- won't work
+        some_prompt_with_one_argument(testme) <-- works also
         """
 
         DatabaseLogHandler.log_event_started(

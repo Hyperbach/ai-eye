@@ -135,6 +135,13 @@ class PipelineExecutorAPITestCase(TestCase):
                     "result": "OpenAI reply for this is aaa",
                 }
             ],
+            [
+                {
+                    "input": "prompt_a(whatever_named_arg)",
+                    "user_args": {"whatever_named_arg": "a"},
+                    "result": "OpenAI reply for this is a",
+                }
+            ],
         ]
     )
     @patch(
@@ -163,12 +170,6 @@ class PipelineExecutorAPITestCase(TestCase):
 
     @parameterized.expand(
         [
-            [
-                {
-                    "input": "prompt_a(whatever_named_arg)",
-                    "user_args": {"whatever_named_arg": "a"},
-                }
-            ],
             [{"input": "prompt_a()", "user_args": {}}],
             [{"input": "prompt_a(x, y)", "user_args": {}}],
             [{"input": "non_existing_prompt_or_builtin_fn()", "user_args": {}}],

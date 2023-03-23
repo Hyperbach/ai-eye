@@ -103,8 +103,21 @@ You can use it in a pipeline using one of the following methods:
 ```shell
 prompt_buddy(buddy)
 prompt_buddy(buddy=buddy_arg)
+prompt_buddy(dude)
 ```
 Here, `buddy_arg` is a named placeholder that is supplied through the Pipeline Execution Form.
+
+The last example works for prompts having 1 argument only, i.e. currently it is not feasible to provide arbitrary
+named arguments for a prompt that requires multiple arguments.
+Let’s say prompt `p1` has one argument `a1`. The following is allowed:
+```shell
+p1(p1(p1(arg)))
+```
+
+The following is permissible, although it is excessively verbose:
+```shell
+`p1(a1=p1(a1=p1(a1=arg)))`
+```
 
 Moving on to built-in functions, let's consider a function named `builtin_hi`:
 ```shell
@@ -118,7 +131,7 @@ builtin_hi(buddy=buddy_arg)
 builtin_hi(dude)
 ```
 Here, `dude` and `buddy` are arguments passed directly to the function in place of `buddy`.
-In contrast, `buddy_arg` is a named placeholder that are filled in through the Pipeline Execution Form.
+In contrast, `buddy_arg` is a named placeholder which is filled in through the Pipeline Execution Form.
 
 
 # OpenAI API Overview
