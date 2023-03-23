@@ -190,10 +190,7 @@
         const calc_duration = function (start_date, end_date) {
             const start = new Date(start_date);
             const end = new Date(end_date);
-            const duration = end - start;
-            //const durationInSeconds = duration / 1000;
-            //return durationInSeconds;
-            return duration;
+            return end - start;
         }
 
         const timestamp_to_locale_string = function (ts) {
