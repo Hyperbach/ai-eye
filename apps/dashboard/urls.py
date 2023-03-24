@@ -64,17 +64,14 @@ urlpatterns = [
     ),
     path("builtins", views.BuiltinFunctionListView.as_view(), name="builtins"),
     path(
-        "builtins/add", views.BuiltinFunctionCreateView.as_view(), name="builtin_create"
+        "builtins/sync",
+        views.SyncBuiltinFunctionsAPIView.as_view(),
+        name="builtin_sync",
     ),
     path(
         "builtins/<int:pk>/update/",
         views.BuiltinFunctionUpdateView.as_view(),
         name="builtin_update",
-    ),
-    path(
-        "builtins/<int:pk>/delete/",
-        views.BuiltinFunctionDeleteView.as_view(),
-        name="builtin_delete",
     ),
     path("pipelines", views.PipelineSourceListView.as_view(), name="pipelines"),
     path(

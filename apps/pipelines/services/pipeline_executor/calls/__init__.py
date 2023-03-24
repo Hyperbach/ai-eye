@@ -5,13 +5,9 @@ from typing import Any
 from api.exceptions import OpenAIRequestException
 from api.services import OpenAICacheService
 from dblogs.handlers import DatabaseLogHandler
-from pipelines.builtins import (
-    call_builtin_function,
-    get_arg_name_by_index,
-    get_arity_of_function,
-)
 from pipelines.models import BuiltinFunction, Prompt
 from pipelines.services.exceptions import CallBuiltinFunctionError, CallPromptError
+from pipelines.services.functions_manager import FUNCTIONS_MANAGER
 
 logger = logging.getLogger("db")
 
@@ -24,7 +20,11 @@ class CallBuiltinFunction:
         return self.builtin_fn.name
 
     def get_arity_of_function(self):
-        return get_arity_of_function(self.builtin_fn.name)
+        try:
+            return FUNCTIONS_MANAGER.get_arity_of_function(self.builtin_fn.name)
+        except Exception as exc:
+            error = f"An error occurred while calling the function '{self.builtin_fn.name}'. Details: {exc}"
+            raise CallBuiltinFunctionError(error)
 
     def __call__(self, *args, **kwargs) -> Any:
         result = ""
@@ -34,7 +34,9 @@ class CallBuiltinFunction:
         )
 
         try:
-            result = call_builtin_function(self.builtin_fn.name, **kwargs)
+            result = FUNCTIONS_MANAGER.call_builtin_function(
+                self.builtin_fn.name, **kwargs
+            )
         except Exception as exc:
             error = f"An error occurred while calling the function '{self.builtin_fn.name}'. Details: {exc}"
             raise CallBuiltinFunctionError(error)
@@ -44,7 +46,7 @@ class CallBuiltinFunction:
         return result
 
     def get_arg_name_by_index(self, index):
-        return get_arg_name_by_index(self.builtin_fn.name, index)
+        return FUNCTIONS_MANAGER.get_arg_name_by_index(self.builtin_fn.name, index)
 
 
 class CallPrompt:

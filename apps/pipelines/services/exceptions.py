@@ -28,3 +28,16 @@ class UnableToDetermineFunctionError(PipelineException):
         super().__init__(
             msg=f"Neither a built-in function nor a prompt with the name '{fn_name}' could be determined."
         )
+
+
+class FunctionsManagerException(Exception):
+    def __init__(self, msg):
+        super().__init__(f"FunctionsManagerException: {msg}")
+
+
+class LoadModuleError(FunctionsManagerException):
+    pass
+
+
+class UserDefinedFunctionsError(FunctionsManagerException):
+    pass

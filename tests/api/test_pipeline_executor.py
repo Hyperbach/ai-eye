@@ -27,7 +27,7 @@ def mock_openai_request(openaikey: str, endpoint: str, parameters: Dict[str, Any
 
 
 @patch(
-    "pipelines.builtins.BUILTIN_FUNCTIONS_DICT",
+    "pipelines.services.functions_manager.FUNCTIONS_MANAGER.funcs",
     new={"builtin_concat": lambda x, y: f"{x} {y}", "builtin_identity": lambda s: s},
 )
 class PipelineExecutorAPITestCase(TestCase):

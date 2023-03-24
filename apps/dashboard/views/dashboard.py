@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
@@ -7,12 +8,19 @@ from django.views import View, generic
 from django.views.generic import TemplateView
 
 from api.models import Log
+from api.permissions import AiEyeAdminPermission
 from core.forms import UserCreateForm
 from core.mixins import AiEyeAdminMixin, AiEyeAdminOrUserMixin
 from core.models import OpenAIKey, PublicToken
 from dashboard.forms import PublicTokenCreateForm, PublicTokenUpdateForm
+from dashboard.serializers import BuiltinFunctionsSyncSerializer
 from pipelines.forms import PipelineCreateForm
 from pipelines.models import BuiltinFunction, PipelineSource, Prompt
+from pipelines.services.functions_manager import FUNCTIONS_MANAGER
+from rest_framework import permissions, status
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 User = get_user_model()
 
@@ -185,22 +193,45 @@ class BuiltinFunctionListView(AiEyeAdminOrUserMixin, generic.ListView):
         return BuiltinFunction.objects.order_by("-date_created")
 
 
-class BuiltinFunctionCreateView(BuiltinFunctionBaseView, generic.CreateView):
-    fields = ["name", "description"]
-    template_name = "dashboard/builtins/create.html"
+class SyncBuiltinFunctionsAPIView(APIView):
+    permission_classes = (permissions.IsAuthenticated, AiEyeAdminPermission)
+    authentication_classes = (SessionAuthentication,)
 
-    def form_valid(self, form):
-        obj = form.save(commit=False)
-        obj.owner = self.request.user
-        return super().form_valid(form)
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        FUNCTIONS_MANAGER.force_reload()
+        funcs = FUNCTIONS_MANAGER.funcs
+        funcs_names = funcs.keys()
 
+        funcs_to_delete_qs = BuiltinFunction.objects.exclude(name__in=funcs_names)
+        deleted_function_names = list(funcs_to_delete_qs.values_list("name", flat=True))
+        funcs_to_delete_qs.delete()
 
-class BuiltinFunctionDeleteView(BuiltinFunctionBaseView, generic.DeleteView):  # type: ignore[misc]
-    template_name = "dashboard/builtins/delete.html"
+        existing_func_names = BuiltinFunction.objects.values_list("name", flat=True)
+        missed_funcs = [
+            BuiltinFunction(name=name, description="")
+            for name in funcs_names
+            if name not in existing_func_names
+        ]
+        if missed_funcs:
+            BuiltinFunction.objects.bulk_create(missed_funcs)
+
+        created_func_names = [func.name for func in missed_funcs]
+
+        serializer = BuiltinFunctionsSyncSerializer(
+            data={
+                "success": True,
+                "deleted": deleted_function_names,
+                "created": created_func_names,
+            }
+        )
+
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class BuiltinFunctionUpdateView(BuiltinFunctionBaseView, generic.UpdateView):
-    fields = ["name", "description"]
+    fields = ["description"]
     template_name = "dashboard/builtins/update.html"
 
 

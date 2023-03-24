@@ -5,8 +5,8 @@ from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from core.models import TimestampMixin
-from pipelines.builtins import get_builtin_function_names
 from pipelines.choices import TypesOfDAGNodes
+from pipelines.services.functions_manager import FUNCTIONS_MANAGER
 from pipelines.validators import FunctionNameValidator
 
 User = get_user_model()
@@ -46,7 +46,6 @@ class BuiltinFunction(TimestampMixin):
 
     name: models.CharField = models.CharField(
         max_length=100,
-        choices=get_builtin_function_names(),
         unique=True,
         validators=[FunctionNameValidator()],
     )
@@ -63,6 +62,10 @@ class BuiltinFunction(TimestampMixin):
         name = self.name
         if Prompt.objects.filter(name=name).exists():
             raise ValidationError("Prompt with this name already exists.")
+
+    def get_fn_type(self):
+        is_builtin_fn = FUNCTIONS_MANAGER.is_builtin_function(self.name)
+        return "built-in" if is_builtin_fn else "user-defined"
 
 
 class PipelineSource(TimestampMixin):

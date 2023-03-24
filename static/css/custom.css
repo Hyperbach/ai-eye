@@ -6,6 +6,15 @@
   display: none !important;
 }
 
+#success-alert.hidden {
+  display: none !important;
+}
+
+#error-alert.hidden {
+  display: none !important;
+}
+
+
 /* Styling for the logs section */
 #logs-section {
   background-color: #f8f9fa;
