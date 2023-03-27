@@ -65,7 +65,7 @@ class BuiltinFunction(TimestampMixin):
 
     def get_fn_type(self):
         is_builtin_fn = FUNCTIONS_MANAGER.is_builtin_function(self.name)
-        return "built-in" if is_builtin_fn else "user-defined"
+        return "Built-in" if is_builtin_fn else "User-defined"
 
 
 class PipelineSource(TimestampMixin):
