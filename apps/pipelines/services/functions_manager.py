@@ -1,7 +1,7 @@
-import copy
 import glob
 import importlib
 import inspect
+import os
 from typing import Any
 
 from pipelines.services.exceptions import LoadModuleError, UserDefinedFunctionsError
@@ -15,11 +15,12 @@ class FunctionsManager:
     def __new__(cls, *args, **kwargs):
         if cls.__instance is None:
             cls.__instance = super().__new__(cls)
-            cls.__instance.funcs = {}
-            cls.__instance.builtin_funcs = {}
-            cls.__instance.force_reload()
-
         return cls.__instance
+
+    def __init__(self):
+        self.funcs = {}
+        self.builtin_func_names = []
+        self.force_reload()
 
     def force_reload(self):
         self._load_functions()
@@ -40,22 +41,22 @@ class FunctionsManager:
         return len(inspect.getfullargspec(func).args)
 
     def is_builtin_function(self, name):
-        return name in self.builtin_funcs
+        return name in self.builtin_func_names
 
     def _load_functions(self):
         # load builtin functions which should be kept in git
         builtins_module = self._import_module(f"{self.FUNCS_PACKAGE_NAME}.builtins")
-        self.builtin_funcs = self._dict_functions(builtins_module)
-        self.funcs = copy.copy(self.builtin_funcs)
+        self.funcs = self._get_module_functions(builtins_module)
+        self.builtin_func_names = list(self.funcs.keys())
 
         # load user-defined functions which should not be kept in git and are optional
-        custom_module_names = glob.glob(
+        user_module_files = glob.glob(
             f"{self.FUNCS_PACKAGE_NAME}/{self.USER_DEFINED_MODULES_NAME_PATTERN}"
         )
-        for module_filename in custom_module_names:
-            module_name = module_filename.split(".")[0].replace("/", ".")
+        for user_module in user_module_files:
+            module_name = self._get_module_name(user_module)
             custom_module = self._import_module(module_name)
-            custom_funcs = self._dict_functions(custom_module)
+            custom_funcs = self._get_module_functions(custom_module)
             intersecting_keys = self.funcs.keys() & custom_funcs.keys()
             if intersecting_keys:
                 raise UserDefinedFunctionsError(
@@ -64,26 +65,26 @@ class FunctionsManager:
                 )
             self.funcs.update(custom_funcs)
 
+    def _get_module_name(self, file_path):
+        return os.path.splitext(file_path)[0].replace("/", ".")
+
     def _import_module(self, module_name):
         try:
             module = importlib.import_module(module_name)
-        except ModuleNotFoundError:
-            raise LoadModuleError(f"Module {module_name} not found")
-        except ImportError:
-            raise LoadModuleError(f"Unable to import module {module_name}")
-        except Exception as e:
-            raise LoadModuleError(f"Error: {e}")
+        except (ModuleNotFoundError, ImportError) as e:
+            raise LoadModuleError(f"Unable to import module {module_name}: {e}")
         else:
             return module
 
-    def _dict_functions(self, mod):
-        return {func.__name__: func for func in self._list_functions(mod)}
-
-    def _list_functions(self, mod):
+    def _get_module_functions(self, mod):
         def is_module_function(mod, func):
             return inspect.isfunction(func) and inspect.getmodule(func) == mod
 
-        return [func for func in mod.__dict__.values() if is_module_function(mod, func)]
+        return {
+            func.__name__: func
+            for func in mod.__dict__.values()
+            if is_module_function(mod, func)
+        }
 
 
 FUNCTIONS_MANAGER = FunctionsManager()
