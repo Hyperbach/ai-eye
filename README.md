@@ -75,14 +75,14 @@ Here's an example of a prompt in action:
 ```
 
 ## Builtin Functions Overview
-Built-in functions in Python are like regular functions that can be invoked with arguments in the standard way, using the syntax function_name(argument1, argument2, ...). Unlike prompts, built-in functions don't use curly braces to denote arguments. They can accept any number of arguments, but they don't accept *args or **kwargs.
+Built-in functions are like regular functions that can be invoked with arguments in the standard way, using the syntax function_name(argument1, argument2, ...). Unlike prompts, built-in functions don't use curly braces to denote arguments. They can accept any number of arguments, but they don't accept *args or **kwargs.
 Built-in functions reside in the `funcs` package within the `builtins.py` Python script.
 
-In addition to built-in functions, one can create user-defined functions and place them in the `funcs` package within Python scripts named `custom_*.py`, such as `custom_funcs.py` or `custom_addons.py`. These user-defined functions will be dynamically linked on demand.
+In addition to built-in functions, users can create their own functions and store them in the `funcs` package within Python scripts with names starting with `custom_`, such as `custom_funcs.py` or `custom_addons.py`, among others. These user-defined functions will be dynamically linked on demand.
 
 To make built-in or user-defined functions visible to the codebase, an admin must register them in the Dashboard's built-ins section. Only users with the `AIEYE_ADMIN` role have the ability to register built-in functions. This dashboard section also allows for the synchronization of the currently available built-ins and user-defined functions, in case any have been added, removed, or introduced in a standalone Python script file following the procedure outlined above.
 
-After a synchronization, a success message is displayed with information on the number of functions created or deleted. In addition, if any functions were created or deleted, a dynamic link with the text "Refresh page" is provided to refresh the current page.
+After a synchronization, a success message is displayed with information on the number of functions added or deleted. In addition, if any functions were created or deleted, a dynamic link with the text "Refresh page" is provided to refresh the current page.
 
 In order for built-in functions or user-defined ones be visible to the codebase, an admin needs to register them in the Dashboard's "built-ins" section. Only users with the AIEYE_ADMIN role have the ability to register built-in functions.
 That dashboard sections allows to sync the currently available built-ins/user-defined functions in case some of them were added or removed, or if some new user-defined functions were introduced in a standalone python script file following the procedure outlined above.
