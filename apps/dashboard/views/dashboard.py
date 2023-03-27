@@ -200,17 +200,16 @@ class SyncBuiltinFunctionsAPIView(APIView):
     @transaction.atomic
     def post(self, request, *args, **kwargs):
         FUNCTIONS_MANAGER.force_reload()
-        funcs = FUNCTIONS_MANAGER.funcs
-        funcs_names = funcs.keys()
+        func_names = FUNCTIONS_MANAGER.get_func_names()
 
-        funcs_to_delete_qs = BuiltinFunction.objects.exclude(name__in=funcs_names)
+        funcs_to_delete_qs = BuiltinFunction.objects.exclude(name__in=func_names)
         deleted_function_names = list(funcs_to_delete_qs.values_list("name", flat=True))
         funcs_to_delete_qs.delete()
 
         existing_func_names = BuiltinFunction.objects.values_list("name", flat=True)
         missed_funcs = [
             BuiltinFunction(name=name, description="")
-            for name in funcs_names
+            for name in func_names
             if name not in existing_func_names
         ]
         if missed_funcs:

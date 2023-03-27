@@ -12,18 +12,20 @@ class FunctionsManager:
     USER_DEFINED_MODULES_NAME_PATTERN = "custom_*.py"
     __instance = None
 
-    def __new__(cls):
+    def __new__(cls, *args, **kwargs):
         if cls.__instance is None:
             cls.__instance = super().__new__(cls)
-        return cls.__instance
+            cls.__instance.funcs = {}
+            cls.__instance.builtin_funcs = {}
+            cls.__instance.force_reload()
 
-    def __init__(self):
-        self.funcs = {}
-        self.builtin_funcs = {}
-        self.force_reload()
+        return cls.__instance
 
     def force_reload(self):
         self._load_functions()
+
+    def get_func_names(self):
+        return self.funcs.keys()
 
     def call_builtin_function(self, name, **kwargs) -> Any:
         return self.funcs[name](**kwargs)
@@ -51,7 +53,7 @@ class FunctionsManager:
             f"{self.FUNCS_PACKAGE_NAME}/{self.USER_DEFINED_MODULES_NAME_PATTERN}"
         )
         for module_filename in custom_module_names:
-            module_name = module_filename[:-3].replace("/", ".")
+            module_name = module_filename.split(".")[0].replace("/", ".")
             custom_module = self._import_module(module_name)
             custom_funcs = self._dict_functions(custom_module)
             intersecting_keys = self.funcs.keys() & custom_funcs.keys()
