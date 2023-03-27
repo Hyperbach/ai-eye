@@ -69,23 +69,6 @@
 
 {% block bootstrap5_extra_script %}
     <script type="text/javascript">
-        const perform_ajax_call = function (url, type, data, successCallback, errorCallback,
-                                            beforeSendCallback, completeCallback) {
-            $.ajax({
-                url: url,
-                type: type,
-                data: data,
-                headers: {
-                    'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val(),
-                    'Content-Type': 'application/json'
-                },
-                success: successCallback,
-                error: errorCallback,
-                beforeSend: beforeSendCallback,
-                complete: completeCallback
-            });
-        }
-
         const show_item = function (item_id, show) {
             const $item = $(item_id);
             if (show) {
@@ -231,7 +214,8 @@
                 function () {
                     $('#spinner').addClass('hidden');
                     $("#logs-section").removeClass('hidden');
-                }
+                },
+                $('input[name="csrfmiddlewaretoken"]').val()
             );
         }
 
@@ -272,7 +256,8 @@
                     },
                     function () {
                         $('#spinner').addClass('hidden');
-                    }
+                    },
+                    $('input[name="csrfmiddlewaretoken"]').val()
                 );
             });
 
@@ -329,7 +314,8 @@
                             $('#spinner').addClass('hidden');
                             $submit_button.prop('disabled', false);
                             perform_retrieve_logs_ajax_call(pipeline_id_selected);
-                        }
+                        },
+                        $('input[name="csrfmiddlewaretoken"]').val()
                     );
                 } else {
                     output_msg("#error-alert", "Please fill in all arguments");

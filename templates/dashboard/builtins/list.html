@@ -66,23 +66,6 @@
 
 {% block bootstrap5_extra_script %}
     <script type="text/javascript">
-        const perform_ajax_call = function (url, type, data, successCallback, errorCallback,
-                                            beforeSendCallback, completeCallback) {
-            $.ajax({
-                url: url,
-                type: type,
-                data: data,
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                    'Content-Type': 'application/json'
-                },
-                success: successCallback,
-                error: errorCallback,
-                beforeSend: beforeSendCallback,
-                complete: completeCallback
-            });
-        }
-
         $(function () {
             $('#spinner').addClass('hidden');
 
@@ -94,7 +77,7 @@
                         $('#error-alert').addClass('hidden');
 
                         $('#success-alert').removeClass('hidden');
-                        $('#success-alert').text(`Functions synced successfully! Created: ${response.created.length}, deleted: ${response.deleted.length}.`);
+                        $('#success-alert').text(`Functions synced successfully! Added: ${response.created.length}, deleted: ${response.deleted.length}.`);
 
                         if (response.created.length) {
                             $('#success-alert').append('<br> Added functions: ' + response.created.join(', '));
@@ -119,7 +102,9 @@
                     },
                     function () {
                         $('#spinner').addClass('hidden');
-                    })
+                    },
+                    '{{ csrf_token }}'
+                )
             });
         });
     </script>
