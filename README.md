@@ -84,8 +84,6 @@ To make built-in or user-defined functions visible to the codebase, an admin mus
 
 After a synchronization, a success message is displayed with information on the number of functions added or deleted. In addition, if any functions were created or deleted, a dynamic link with the text "Refresh page" is provided to refresh the current page.
 
-In order for built-in functions or user-defined ones be visible to the codebase, an admin needs to register them in the Dashboard's "built-ins" section. Only users with the AIEYE_ADMIN role have the ability to register built-in functions.
-That dashboard sections allows to sync the currently available built-ins/user-defined functions in case some of them were added or removed, or if some new user-defined functions were introduced in a standalone python script file following the procedure outlined above.
 An example of built-in function:
 ```shell
 def foo(bar, fred):
