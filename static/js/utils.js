@@ -1,11 +1,11 @@
 const perform_ajax_call = function (url, type, data, successCallback, errorCallback, beforeSendCallback,
-                                    completeCallback, xcsrftokenval) {
+                                    completeCallback, xcsrftoken) {
     $.ajax({
         url: url,
         type: type,
         data: data,
         headers: {
-            'X-CSRFToken': xcsrftokenval,
+            'X-CSRFToken': xcsrftoken,
             'Content-Type': 'application/json'
         },
         success: successCallback,
