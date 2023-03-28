@@ -12,7 +12,7 @@ class CacheHitResponseSerializer(serializers.ModelSerializer):
 
 class PipelineCallSerializer(serializers.Serializer):
     pipeline_id = serializers.IntegerField(min_value=0, required=True)
-    args = serializers.DictField(child=serializers.CharField())
+    args = serializers.DictField(child=serializers.CharField(), required=True)
 
 
 class PipelineCallWithOpenaiKeyId(PipelineCallSerializer):
