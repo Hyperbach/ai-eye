@@ -1,4 +1,3 @@
-from typing import Any
 from unittest.mock import patch
 
 from django.test import TestCase
@@ -12,10 +11,7 @@ from pipelines.services.exceptions import PipelineException
 from pipelines.services.pipeline_executor import PipelineExecutor
 
 from tests.factories import AiEyeAdminFactory, OpenAIKeyFactory
-
-
-def mock_openai_request(openaikey: str, endpoint: str, parameters: dict[str, Any]):
-    return f"OpenAI reply for {parameters['messages'][0]['content']}"
+from tests.mocks import mock_openai_request
 
 
 @patch(

@@ -1,5 +1,4 @@
 from http import HTTPStatus
-from typing import Any, Dict
 from unittest.mock import patch
 
 from django.test import TestCase
@@ -20,10 +19,7 @@ from tests.factories import (
     OpenAIKeyFactory,
     PublicTokenFactory,
 )
-
-
-def mock_openai_request(openaikey: str, endpoint: str, parameters: Dict[str, Any]):
-    return f"OpenAI reply for {parameters['messages'][0]['content']}"
+from tests.mocks import mock_openai_request
 
 
 @patch(
