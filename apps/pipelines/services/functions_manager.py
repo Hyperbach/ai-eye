@@ -26,7 +26,7 @@ class FunctionsManager:
         self._load_functions()
 
     def get_func_names(self):
-        return self.funcs.keys()
+        return list(self.funcs.keys())
 
     def call_builtin_function(self, name, **kwargs) -> Any:
         return self.funcs[name](**kwargs)
@@ -47,7 +47,7 @@ class FunctionsManager:
         # load builtin functions which should be kept in git
         builtins_module = self._import_module(f"{self.FUNCS_PACKAGE_NAME}.builtins")
         self.funcs = self._get_module_functions(builtins_module)
-        self.builtin_func_names = list(self.funcs.keys())
+        self.builtin_func_names = self.get_func_names()
 
         # load user-defined functions which should not be kept in git and are optional
         user_module_files = glob.glob(
@@ -61,7 +61,7 @@ class FunctionsManager:
             if intersecting_keys:
                 raise UserDefinedFunctionsError(
                     f"Unable to load user-defined functions from module {module_name}. "
-                    f"The following function names are already defined by built-ins or user-defined modules: {intersecting_keys}"
+                    f"The following function names are already defined by the built-in module or user-defined ones: {intersecting_keys}"
                 )
             self.funcs.update(custom_funcs)
 
