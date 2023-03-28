@@ -10,14 +10,19 @@ from pipelines.services.exceptions import LoadModuleError, UserDefinedFunctionsE
 class FunctionsManager:
     FUNCS_PACKAGE_NAME = "funcs"
     USER_DEFINED_MODULES_NAME_PATTERN = "custom_*.py"
-    __instance = None
+    _instance = None
 
     def __new__(cls, *args, **kwargs):
-        if cls.__instance is None:
-            cls.__instance = super().__new__(cls)
-        return cls.__instance
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
 
     def __init__(self):
+        if self._initialized:
+            return
+
+        self._initialized = True
         self.funcs = {}
         self.builtin_func_names = []
         self.force_reload()
@@ -51,7 +56,10 @@ class FunctionsManager:
 
         # load user-defined functions which should not be kept in git and are optional
         user_module_files = glob.glob(
-            f"{self.FUNCS_PACKAGE_NAME}/{self.USER_DEFINED_MODULES_NAME_PATTERN}"
+            os.path.join(
+                self.FUNCS_PACKAGE_NAME.replace(".", os.path.sep),
+                self.USER_DEFINED_MODULES_NAME_PATTERN,
+            )
         )
         for user_module in user_module_files:
             module_name = self._get_module_name(user_module)
