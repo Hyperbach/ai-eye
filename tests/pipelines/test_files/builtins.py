@@ -1,5 +1,5 @@
-def builtin_foo():
-    return "builtin_foo"
+def builtin_foo(x, y):
+    return f"builtin_foo {x} {y}"
 
 
 def builtin_bar():
