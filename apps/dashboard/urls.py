@@ -74,6 +74,7 @@ urlpatterns = [
         name="builtin_update",
     ),
     path("pipelines", views.PipelineSourceListView.as_view(), name="pipelines"),
+    path("pipelines/executions", views.PipelineExecutionHistoryView.as_view(), name="pipeline_executions"),
     path(
         "pipelines/add",
         views.PipelineSourceCreateView.as_view(),

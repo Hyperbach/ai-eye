@@ -21,6 +21,7 @@ from rest_framework import permissions, status
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from dblogs.models import PipelineExecutionLog
 
 User = get_user_model()
 
@@ -249,6 +250,14 @@ class PipelineSourceBaseView(AiEyeAdminOrUserMixin, View):
 class PipelineSourceListView(PipelineSourceBaseView, generic.ListView):
     fields = "__all__"
     template_name = "dashboard/pipelines/list.html"
+
+
+class PipelineExecutionHistoryView(AiEyeAdminOrUserMixin, generic.ListView):  # TODO
+    fields = "__all__"
+    template_name = "dashboard/pipelines/execution_history.html"
+
+    def get_queryset(self):
+        return PipelineExecutionLog.objects.filter(user=self.request.user).order_by('-start_date')
 
 
 class PipelineSourceCreateView(PipelineSourceBaseView, generic.CreateView):
