@@ -8,14 +8,16 @@
     <link href="{% static 'css/fontawesomefree/solid.css' %}" rel="stylesheet" type="text/css">
 
     <style>
-        .extra-row > td >div {
+        .extra-row > td > div {
             overflow: hidden;
             max-height: 0;
             transition: all 0.5s ease-in-out;
+            max-width: 200px;
+            overflow-x: scroll;
         }
 
-        .show > td> div {
-            max-height: 300px;
+        .show > td > div {
+            max-height: 500px;
         }
 
         .main-row {
@@ -56,8 +58,16 @@
                     <tr class="extra-row" id="extra-{{ execution.id }}">
                         <td>
                             <div>
-                                <b>Pipeline body</b>: {{ execution.pipeline.body }} <br>
-                                <b>Output</b>: {{ execution.output }} <br>
+                                <b>Pipeline body</b>: {{ execution.pipeline.body }}
+                            </div>
+                        </td>
+                        <td>
+                            <div>
+                                <b>Output</b>: {{ execution.output }}
+                            </div>
+                        </td>
+                        <td>
+                            <div>
                                 <b>Error</b>: {{ execution.error }}
                             </div>
                         </td>
