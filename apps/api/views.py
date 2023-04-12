@@ -121,7 +121,7 @@ class PipelineCallViewSet(viewsets.ViewSet):
         serializer = serializer_class(data=request.data)
 
         if serializer.is_valid():
-            openaikey = helper_struct["retrieve_openaikey_fn"](
+            openaikey = helper_struct["retrieve_openaikey_fn"].__func__(
                 request, serializer.validated_data
             )
 
