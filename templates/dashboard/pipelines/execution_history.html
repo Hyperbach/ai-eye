@@ -90,29 +90,11 @@
 
 {% block bootstrap5_extra_script %}
     <script>
-        var createClickHandler = function(row) {
-          return function() {
-              var id = row.getAttribute('data-id');
-              if (id === null) {
-                  return;
-              }
-              var extra_row = document.getElementById('extra-' + id);
-
-              var open_extra_rows = document.querySelectorAll('.extra-row.show');
-              for (var i = 0; i < open_extra_rows.length; i++) {
-                  if (extra_row.getAttribute('id') !== open_extra_rows[i].getAttribute('id')) {
-                      open_extra_rows[i].classList.remove('show');
-                  }
-              }
-              extra_row.classList.toggle('show');
-          };
-        };
-
-        var table = document.getElementById("execution-history");
-        var rows = table.getElementsByTagName("tr");
-        for (var i = 0; i < rows.length; i++) {
-            var currentRow = rows[i];
-            currentRow.onclick = createClickHandler(currentRow);
-        }
+        $('tr.main-row').on('click', function() {
+            var id = $(this).data('id');
+            var extra_row = $('#extra-' + id);
+            $('tr.extra-row.show').not(extra_row).removeClass('show');
+            extra_row.toggleClass('show');
+        })
     </script>
 {% endblock %}
