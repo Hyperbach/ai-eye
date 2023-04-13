@@ -14,6 +14,7 @@ from core.mixins import AiEyeAdminMixin, AiEyeAdminOrUserMixin
 from core.models import OpenAIKey, PublicToken
 from dashboard.forms import PublicTokenCreateForm, PublicTokenUpdateForm
 from dashboard.serializers import BuiltinFunctionsSyncSerializer
+from dblogs.models import PipelineExecutionLog
 from pipelines.forms import PipelineCreateForm
 from pipelines.models import BuiltinFunction, PipelineSource, Prompt
 from pipelines.services.functions_manager import FUNCTIONS_MANAGER
@@ -21,7 +22,6 @@ from rest_framework import permissions, status
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from dblogs.models import PipelineExecutionLog
 
 User = get_user_model()
 
@@ -258,20 +258,22 @@ class PipelineExecutionHistoryView(AiEyeAdminOrUserMixin, generic.ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return PipelineExecutionLog.objects.filter(
-            user=self.request.user
-        ).select_related('pipeline').order_by('-start_date')
+        return (
+            PipelineExecutionLog.objects.filter(user=self.request.user)
+            .select_related("pipeline")
+            .order_by("-start_date")
+        )
 
     def get_context_data(self, *args, **kwargs):
         data = super().get_context_data(*args, **kwargs)
-        paginator = data['paginator']
-        page_obj = data['page_obj']
+        paginator = data["paginator"]
+        page_obj = data["page_obj"]
 
         current_index = paginator.page_range.index(page_obj.number)
         max_index = len(paginator.page_range)
         start_index = current_index - 2 if current_index >= 2 else 0
         end_index = current_index + 3 if current_index <= max_index - 3 else max_index
-        data['page_range'] = paginator.page_range[start_index:end_index]
+        data["page_range"] = paginator.page_range[start_index:end_index]
 
         return data
 
