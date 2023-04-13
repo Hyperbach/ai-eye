@@ -6,34 +6,7 @@
     {{ block.super }}
     <link href="{% static 'css/fontawesomefree/fontawesome.css' %}" rel="stylesheet" type="text/css">
     <link href="{% static 'css/fontawesomefree/solid.css' %}" rel="stylesheet" type="text/css">
-
-    <style>
-        .extra-row > td > div {
-            overflow: hidden;
-            max-height: 0;
-            transition: all 0.3s ease-in-out;
-            max-width: 200px;
-            overflow-x: scroll;
-        }
-
-        .extra-row  {
-            visibility: collapse;
-            transition: all 0.3s ease-in-out;
-        }
-
-        .show {
-            visibility: visible;
-            transition: all 0.3s ease-in-out;
-        }
-
-        .show > td > div {
-            max-height: 500px;
-        }
-
-        .main-row {
-            cursor: pointer;
-        }
-    </style>
+    <link href="{% static 'css/pipeline_exec_history.css' %}" rel="stylesheet" type="text/css">
 {% endblock %}
 
 {% block dashboard_header %}
