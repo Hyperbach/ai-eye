@@ -11,7 +11,7 @@
         .extra-row > td > div {
             overflow: hidden;
             max-height: 0;
-            transition: all 0.5s ease-in-out;
+            transition: all 0.3s ease-in-out;
             max-width: 200px;
             overflow-x: scroll;
         }
@@ -72,7 +72,9 @@
                         </td>
                         <td>
                             <div>
-                                <b>Error</b>: <div>{{ execution.error }}</div>
+                                {% if execution.error %}
+                                    <b>Error</b>: <div>{{ execution.error }}</div>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>
@@ -105,29 +107,29 @@
 
 {% block bootstrap5_extra_script %}
     <script>
-          var table = document.getElementById("execution-history");
-          var rows = table.getElementsByTagName("tr");
-          for (var i = 0; i < rows.length; i++) {
-            var currentRow = table.rows[i];
+        var createClickHandler = function(row) {
+          return function() {
+              var id = row.getAttribute('data-id');
+              if (id === null) {
+                  return;
+              }
+              var extra_row = document.getElementById('extra-' + id);
 
-            var createClickHandler = function(row) {
-              return function() {
-                  var id = row.getAttribute('data-id');
-                  if (id === null) {
-                      return;
+              var open_extra_rows = document.querySelectorAll('.extra-row.show');
+              for (var i = 0; i < open_extra_rows.length; i++) {
+                  if (extra_row.getAttribute('id') !== open_extra_rows[i].getAttribute('id')) {
+                      open_extra_rows[i].classList.remove('show');
                   }
-                  var extra_row = document.getElementById('extra-' + id);
+              }
+              extra_row.classList.toggle('show');
+          };
+        };
 
-                  var all_extra_rows = document.getElementsByClassName('extra-row');
-                  for (var i = 0; i < all_extra_rows.length; i++) {
-                      if (extra_row.getAttribute('id') !== all_extra_rows[i].getAttribute('id')) {
-                          all_extra_rows[i].classList.remove('show');
-                      }
-                  }
-                  extra_row.classList.toggle('show');
-              };
-            };
+        var table = document.getElementById("execution-history");
+        var rows = table.getElementsByTagName("tr");
+        for (var i = 0; i < rows.length; i++) {
+            var currentRow = rows[i];
             currentRow.onclick = createClickHandler(currentRow);
-          }
+        }
     </script>
 {% endblock %}
