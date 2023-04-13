@@ -269,7 +269,7 @@ class PipelineExecutionHistoryView(AiEyeAdminOrUserMixin, generic.ListView):
 
         current_index = paginator.page_range.index(page_obj.number)
         max_index = len(paginator.page_range)
-        start_index = current_index - 3 if current_index >= 3 else 0
+        start_index = current_index - 2 if current_index >= 2 else 0
         end_index = current_index + 3 if current_index <= max_index - 3 else max_index
         data['page_range'] = paginator.page_range[start_index:end_index]
         return data
