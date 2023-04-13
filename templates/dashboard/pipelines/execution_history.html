@@ -46,29 +46,33 @@
                 </tr>
                 </thead>
                 <tbody>
-                {% if object_list %}
-                    {% for execution in object_list %}
+                {% if page_obj %}
+                    {% for execution in page_obj %}
                     <tr class="main-row" data-id="{{ execution.id }}">
                         <td>{{ execution.pipeline.name }}</td>
                         <td>{{ execution.start_date|date:'m-d-Y H:i:s' }}</td>
                         <td>{{ execution.end_date|date:'m-d-Y H:i:s' }}</td>
                         <td>{{ execution.id }}</td>
-                        <td>{{ execution.get_status_display }}</td>
+                        <td>
+                            <span class="{% if execution.status == 'success' %}text-success{% else %}text-danger{% endif %}">
+                                {{ execution.get_status_display }}
+                            </span>
+                        </td>
                     </tr>
                     <tr class="extra-row" id="extra-{{ execution.id }}">
                         <td>
                             <div>
-                                <b>Pipeline body</b>: {{ execution.pipeline.body }}
+                                <b>Pipeline body</b>: <div>{{ execution.pipeline.body }}</div>
                             </div>
                         </td>
                         <td>
                             <div>
-                                <b>Output</b>: {{ execution.output }}
+                                <b>Output</b>: <div>{{ execution.output }}</div>
                             </div>
                         </td>
                         <td>
                             <div>
-                                <b>Error</b>: {{ execution.error }}
+                                <b>Error</b>: <div>{{ execution.error }}</div>
                             </div>
                         </td>
                     </tr>
@@ -76,6 +80,25 @@
                 {% endif %}
                 </tbody>
             </table>
+
+            <div class="pagination">
+                <span class="step-links">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1">&laquo; first</a>
+                        <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+                    {% endif %}
+
+                    <span class="current">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                    </span>
+
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}">next</a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+                    {% endif %}
+                </span>
+            </div>
+
         </div>
     </div>
 {% endblock dashboard_content %}

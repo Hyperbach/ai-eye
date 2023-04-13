@@ -252,12 +252,15 @@ class PipelineSourceListView(PipelineSourceBaseView, generic.ListView):
     template_name = "dashboard/pipelines/list.html"
 
 
-class PipelineExecutionHistoryView(AiEyeAdminOrUserMixin, generic.ListView):  # TODO
+class PipelineExecutionHistoryView(AiEyeAdminOrUserMixin, generic.ListView):
     fields = "__all__"
     template_name = "dashboard/pipelines/execution_history.html"
+    paginate_by = 5
 
     def get_queryset(self):
-        return PipelineExecutionLog.objects.filter(user=self.request.user).order_by('-start_date')
+        return PipelineExecutionLog.objects.filter(
+            user=self.request.user
+        ).select_related('pipeline').order_by('-start_date')
 
 
 class PipelineSourceCreateView(PipelineSourceBaseView, generic.CreateView):
