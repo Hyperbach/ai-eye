@@ -262,6 +262,18 @@ class PipelineExecutionHistoryView(AiEyeAdminOrUserMixin, generic.ListView):
             user=self.request.user
         ).select_related('pipeline').order_by('-start_date')
 
+    def get_context_data(self, *args, **kwargs):
+        data = super().get_context_data(*args, **kwargs)
+        paginator = data['paginator']
+        page_obj = data['page_obj']
+
+        current_index = paginator.page_range.index(page_obj.number)
+        max_index = len(paginator.page_range)
+        start_index = current_index - 3 if current_index >= 3 else 0
+        end_index = current_index + 3 if current_index <= max_index - 3 else max_index
+        data['page_range'] = paginator.page_range[start_index:end_index]
+        return data
+
 
 class PipelineSourceCreateView(PipelineSourceBaseView, generic.CreateView):
     template_name = "dashboard/pipelines/create.html"
