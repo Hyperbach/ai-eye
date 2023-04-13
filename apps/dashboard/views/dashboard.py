@@ -255,7 +255,7 @@ class PipelineSourceListView(PipelineSourceBaseView, generic.ListView):
 class PipelineExecutionHistoryView(AiEyeAdminOrUserMixin, generic.ListView):
     fields = "__all__"
     template_name = "dashboard/pipelines/execution_history.html"
-    paginate_by = 5
+    paginate_by = 10
 
     def get_queryset(self):
         return PipelineExecutionLog.objects.filter(
