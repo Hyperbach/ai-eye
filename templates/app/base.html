@@ -23,7 +23,7 @@
                         <a href="{% url 'dashboard:prompts' %}" class="nav-item nav-link {% if "dashboard/prompts" in request.path %}active{% endif %} ">Prompts</a>
                         <a href="{% url 'dashboard:builtins' %}" class="nav-item nav-link {% if "dashboard/builtins" in request.path %}active{% endif %} ">Builtins</a>
                         <a href="{% url 'dashboard:pipelines' %}" class="nav-item nav-link {% if "dashboard/pipelines" in request.path %}active{% endif %} ">Pipelines</a>
-                        <a href="{% url 'dashboard:pipeline_executions' %}" class="nav-item nav-link {% if "dashboard/pipeline/executions" in request.path %}active{% endif %} ">Pipeline Executions</a>
+                        <a href="{% url 'dashboard:pipeline_executions' %}" class="nav-item nav-link {% if "dashboard/pipeline/executions" in request.path %}active{% endif %} ">Pipelines Execution History</a>
                 {% endif %}
             </div>
             <div class="navbar-nav ms-auto">
