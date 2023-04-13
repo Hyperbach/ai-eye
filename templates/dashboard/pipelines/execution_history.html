@@ -113,6 +113,9 @@
             var createClickHandler = function(row) {
               return function() {
                   var id = row.getAttribute('data-id');
+                  if (id === null) {
+                      return;
+                  }
                   var extra_row = document.getElementById('extra-' + id);
 
                   var all_extra_rows = document.getElementsByClassName('extra-row');
