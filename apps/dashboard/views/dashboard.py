@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Q
-from django.shortcuts import redirect, get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views import View, generic
 from django.views.generic import TemplateView
@@ -280,12 +280,12 @@ class PipelineExecutionHistoryView(AiEyeAdminOrUserMixin, generic.ListView):
 
 class PipelineDetailExecHistoryView(PipelineExecutionHistoryView):
     def get_queryset(self):
-        return super().get_queryset().filter(pipeline_id=self.kwargs['pk'])
+        return super().get_queryset().filter(pipeline_id=self.kwargs["pk"])
 
     def get_context_data(self, *args, **kwargs):
         data = super().get_context_data(*args, **kwargs)
-        pipeline = get_object_or_404(PipelineSource, pk=self.kwargs['pk'])
-        data['pipeline'] = pipeline
+        pipeline = get_object_or_404(PipelineSource, pk=self.kwargs["pk"])
+        data["pipeline"] = pipeline
 
         return data
 
