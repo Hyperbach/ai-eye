@@ -84,7 +84,6 @@ urlpatterns = [
         views.PipelineDetailExecHistoryView.as_view(),
         name="pipeline_detail_exec_history",
     ),
-
     path(
         "pipelines/add",
         views.PipelineSourceCreateView.as_view(),

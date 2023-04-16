@@ -278,13 +278,9 @@ class PipelineExecutionHistoryView(AiEyeAdminOrUserMixin, generic.ListView):
         return data
 
 
-class PipelineDetailExecHistoryView(PipelineExecutionHistoryView):  # TODO
+class PipelineDetailExecHistoryView(PipelineExecutionHistoryView):
     def get_queryset(self):
-        return (
-            PipelineExecutionLog.objects.filter(user=self.request.user, pipeline_id=self.kwargs['pk'])
-            .select_related("pipeline")
-            .order_by("-start_date")
-        )
+        return super().get_queryset().filter(pipeline_id=self.kwargs['pk'])
 
     def get_context_data(self, *args, **kwargs):
         data = super().get_context_data(*args, **kwargs)
