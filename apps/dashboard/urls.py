@@ -77,8 +77,14 @@ urlpatterns = [
     path(
         "pipeline/executions",
         views.PipelineExecutionHistoryView.as_view(),
-        name="pipeline_executions",
+        name="pipelines_executions",
     ),
+    path(
+        "pipelines/<int:pk>/executions",
+        views.PipelineDetailExecHistoryView.as_view(),
+        name="pipeline_detail_exec_history",
+    ),
+
     path(
         "pipelines/add",
         views.PipelineSourceCreateView.as_view(),

@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Q
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views import View, generic
 from django.views.generic import TemplateView
@@ -274,6 +274,22 @@ class PipelineExecutionHistoryView(AiEyeAdminOrUserMixin, generic.ListView):
         start_index = current_index - 2 if current_index >= 2 else 0
         end_index = current_index + 3 if current_index <= max_index - 3 else max_index
         data["page_range"] = paginator.page_range[start_index:end_index]
+
+        return data
+
+
+class PipelineDetailExecHistoryView(PipelineExecutionHistoryView):  # TODO
+    def get_queryset(self):
+        return (
+            PipelineExecutionLog.objects.filter(user=self.request.user, pipeline_id=self.kwargs['pk'])
+            .select_related("pipeline")
+            .order_by("-start_date")
+        )
+
+    def get_context_data(self, *args, **kwargs):
+        data = super().get_context_data(*args, **kwargs)
+        pipeline = get_object_or_404(PipelineSource, pk=self.kwargs['pk'])
+        data['pipeline'] = pipeline
 
         return data
 
