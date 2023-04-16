@@ -44,30 +44,22 @@
                     </tr>
                     <tr class="extra-row" id="extra-{{ execution.id }}">
                         <td>
-                            <div>
-                                <b>Pipeline body</b>:
-                                <div>{{ execution.pipeline.body }}</div>
-                            </div>
+                            <b>Pipeline body</b>:
+                            <div>{{ execution.pipeline.body }}</div>
                         </td>
                         <td>
-                            <div>
-                                <b>Parameters</b>:
-                                <div>{{ execution.parameters }}</div>
-                            </div>
+                            <b>Parameters</b>:
+                            <div>{{ execution.parameters }}</div>
                         </td>
                         <td>
-                            <div>
-                                <b>Output</b>:
-                                <div>{{ execution.output }}</div>
-                            </div>
+                            <b>Output</b>:
+                            <div>{{ execution.output }}</div>
                         </td>
                         <td>
-                            <div>
-                                {% if execution.error %}
-                                    <b>Error</b>:
-                                    <div>{{ execution.error }}</div>
-                                {% endif %}
-                            </div>
+                            {% if execution.error %}
+                                <b>Error</b>:
+                                <div>{{ execution.error }}</div>
+                            {% endif %}
                         </td>
                         <td></td>
                     </tr>

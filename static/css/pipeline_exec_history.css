@@ -3,7 +3,7 @@
     max-height: 0;
     transition: all 0.3s ease-in-out;
     max-width: 200px;
-    overflow-x: scroll;
+    overflow-wrap: break-word;
 }
 
 .extra-row  {
