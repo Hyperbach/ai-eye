@@ -43,7 +43,9 @@
                         <td>{{ execution.id }}</td>
                         {% if not pipeline %}
                             <td>
-                                <a href="{% url 'dashboard:pipeline_detail_exec_history' execution.pipeline.id %}">{{ execution.pipeline.name }}</a>
+                                <a class="pipeline-detail-link" href="{% url 'dashboard:pipeline_detail_exec_history' execution.pipeline.id %}">
+                                    {{ execution.pipeline.name }}
+                                </a>
                             </td>
                         {% endif %}
                         <td>{{ execution.start_date|date:'m-d-Y H:i:s' }}</td>
@@ -110,11 +112,17 @@
 
 {% block bootstrap5_extra_script %}
     <script>
-        $('tr.main-row').on('click', function() {
-            var id = $(this).data('id');
-            var extra_row = $('#extra-' + id);
-            $('tr.extra-row.show').not(extra_row).removeClass('show');
-            extra_row.toggleClass('show');
+        $(document).ready(function() {
+            $('tr.main-row').on('click', function() {
+                var id = $(this).data('id');
+                var extra_row = $('#extra-' + id);
+                $('tr.extra-row.show').not(extra_row).removeClass('show');
+                extra_row.toggleClass('show');
+            });
+
+            $('a.pipeline-detail-link').on('click', function(e) {
+                e.stopPropagation();
+            });
         })
     </script>
 {% endblock %}
