@@ -284,7 +284,9 @@ class PipelineDetailExecHistoryView(PipelineExecutionHistoryView):
 
     def get_context_data(self, *args, **kwargs):
         data = super().get_context_data(*args, **kwargs)
-        pipeline = get_object_or_404(PipelineSource, pk=self.kwargs["pk"])
+        pipeline = get_object_or_404(
+            PipelineSource, owner=self.request.user, pk=self.kwargs["pk"]
+        )
         data["pipeline"] = pipeline
 
         return data
