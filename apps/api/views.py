@@ -73,7 +73,7 @@ class CreateLogViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         return Response(data=response_serializer.data, status=status.HTTP_200_OK)
 
 
-class PipelineCallViewSet(viewsets.ViewSet):
+class PipelineCallAPIView(APIView):
     permission_classes = (
         permissions.IsAuthenticated,
         (AiEyeUserPermission | AiEyeAdminPermission),
@@ -81,7 +81,7 @@ class PipelineCallViewSet(viewsets.ViewSet):
     authentication_classes = (AiEyeTokenAuthentication, SessionAuthentication)
 
     @staticmethod
-    def retrieve_openaikey_for_aieyetokenauthenticated_user(request, _):
+    def retrieve_openaikey_for_aieyetokenauthenticated_user(request):
         public_token = request.auth
         return public_token.openaikey
 
@@ -100,29 +100,29 @@ class PipelineCallViewSet(viewsets.ViewSet):
         else:
             return openaikey_instance.key
 
-    authentication_settings = {
-        AiEyeTokenAuthentication: {
-            "serializer": PipelineCallSerializer,
-            "retrieve_openaikey_fn": retrieve_openaikey_for_aieyetokenauthenticated_user,
-        },
-        SessionAuthentication: {
-            "serializer": PipelineCallWithOpenaiKeyId,
-            "retrieve_openaikey_fn": retrieve_openaikey_for_session_authenticated_user,
-        },
-    }
+    def get_openaikey(self, request, authenticator, validated_data):
+        if isinstance(authenticator, AiEyeTokenAuthentication):
+            return self.retrieve_openaikey_for_aieyetokenauthenticated_user(request)
+        else:
+            return self.retrieve_openaikey_for_session_authenticated_user(
+                request, validated_data
+            )
 
-    def create(self, request):
+    def post(self, request, format=None):
         authenticator = find_first(
             lambda auth: auth.authenticate(request), request.authenticators
         )
 
-        helper_struct = self.authentication_settings[authenticator.__class__]
-        serializer_class = helper_struct["serializer"]
+        if isinstance(authenticator, AiEyeTokenAuthentication):
+            serializer_class = PipelineCallSerializer
+        else:
+            serializer_class = PipelineCallWithOpenaiKeyId
+
         serializer = serializer_class(data=request.data)
 
         if serializer.is_valid():
-            openaikey = helper_struct["retrieve_openaikey_fn"].__func__(
-                request, serializer.validated_data
+            openaikey = self.get_openaikey(
+                request, authenticator, serializer.validated_data
             )
 
             pipeline_id = serializer.validated_data["pipeline_id"]
