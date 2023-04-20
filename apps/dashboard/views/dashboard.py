@@ -284,9 +284,13 @@ class PipelineDetailExecHistoryView(PipelineExecutionHistoryView):
 
     def get_context_data(self, *args, **kwargs):
         data = super().get_context_data(*args, **kwargs)
-        pipeline = get_object_or_404(
-            PipelineSource, owner=self.request.user, pk=self.kwargs["pk"]
-        )
+        filter_kwargs = {
+            "pk": self.kwargs["pk"],
+        }
+        if not self.request.user.is_aieye_admin:
+            filter_kwargs.update(owner=self.request.user)
+
+        pipeline = get_object_or_404(PipelineSource, **filter_kwargs)
         data["pipeline"] = pipeline
 
         return data
