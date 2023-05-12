@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Q
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views import View, generic
 from django.views.generic import TemplateView
@@ -14,6 +14,7 @@ from core.mixins import AiEyeAdminMixin, AiEyeAdminOrUserMixin
 from core.models import OpenAIKey, PublicToken
 from dashboard.forms import PublicTokenCreateForm, PublicTokenUpdateForm
 from dashboard.serializers import BuiltinFunctionsSyncSerializer
+from dblogs.models import PipelineExecutionLog
 from pipelines.forms import PipelineCreateForm
 from pipelines.models import BuiltinFunction, PipelineSource, Prompt
 from pipelines.services.functions_manager import FUNCTIONS_MANAGER
@@ -249,6 +250,50 @@ class PipelineSourceBaseView(AiEyeAdminOrUserMixin, View):
 class PipelineSourceListView(PipelineSourceBaseView, generic.ListView):
     fields = "__all__"
     template_name = "dashboard/pipelines/list.html"
+
+
+class PipelineExecutionHistoryView(AiEyeAdminOrUserMixin, generic.ListView):
+    fields = "__all__"
+    template_name = "dashboard/pipelines/execution_history.html"
+    paginate_by = 10
+
+    def get_queryset(self):
+        return (
+            PipelineExecutionLog.objects.filter(user=self.request.user)
+            .select_related("pipeline")
+            .order_by("-start_date")
+        )
+
+    def get_context_data(self, *args, **kwargs):
+        data = super().get_context_data(*args, **kwargs)
+        paginator = data["paginator"]
+        page_obj = data["page_obj"]
+
+        current_index = paginator.page_range.index(page_obj.number)
+        max_index = len(paginator.page_range)
+        start_index = current_index - 2 if current_index >= 2 else 0
+        end_index = current_index + 3 if current_index <= max_index - 3 else max_index
+        data["page_range"] = paginator.page_range[start_index:end_index]
+
+        return data
+
+
+class PipelineDetailExecHistoryView(PipelineExecutionHistoryView):
+    def get_queryset(self):
+        return super().get_queryset().filter(pipeline_id=self.kwargs["pk"])
+
+    def get_context_data(self, *args, **kwargs):
+        data = super().get_context_data(*args, **kwargs)
+        filter_kwargs = {
+            "pk": self.kwargs["pk"],
+        }
+        if not self.request.user.is_aieye_admin:
+            filter_kwargs.update(owner=self.request.user)
+
+        pipeline = get_object_or_404(PipelineSource, **filter_kwargs)
+        data["pipeline"] = pipeline
+
+        return data
 
 
 class PipelineSourceCreateView(PipelineSourceBaseView, generic.CreateView):
