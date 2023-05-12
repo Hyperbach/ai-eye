@@ -1,5 +1,4 @@
 from http import HTTPStatus
-from typing import Any, Dict
 from unittest.mock import patch
 
 from django.test import TestCase
@@ -15,34 +14,29 @@ from tests.factories import (
     OpenAIKeyFactory,
     PublicTokenFactory,
 )
-
-
-def openai_request_mock(openaikey: str, endpoint: str, parameters: Dict[str, Any]):
-    # actually we don't care what textual response it returns because we test data caching only
-
-    return "some response from OpenAI API"
+from tests.mocks import mock_openai_request
 
 
 class CacheTests(TestCase):
     def setUp(self) -> None:
-        self.aieye_admin = AiEyeAdminFactory.create()
-        self.openaikey = OpenAIKeyFactory.create(owner=self.aieye_admin)
+        aieye_admin = AiEyeAdminFactory.create()
+        openaikey = OpenAIKeyFactory.create(owner=aieye_admin)
         self.aieye_user = AiEyeUserFactory.create()
-        self.publictoken = PublicTokenFactory.create(
-            user=self.aieye_user, openaikey=self.openaikey
+        publictoken = PublicTokenFactory.create(
+            user=self.aieye_user, openaikey=openaikey
         )
 
         self.client = APIClient()
-        public_token = self.publictoken.key
+        public_token = publictoken.key
         self.client.credentials(HTTP_AUTHORIZATION="Bearer " + public_token)
 
     def invoke_openai_api(self, request_data, endpoint):
         openai_api_url = reverse("api:openai-list", kwargs={"endpoint": endpoint})
-        return self.client.post(openai_api_url, data=request_data)
+        return self.client.post(openai_api_url, data=request_data, format="json")
 
     def invoke_cache_api(self, request_data, endpoint):
-        cache_api_url = reverse("api:cache-list", kwargs={"endpoint": endpoint})
-        return self.client.get(cache_api_url, data=request_data)
+        cache_api_url = reverse("api:cache", kwargs={"endpoint": endpoint})
+        return self.client.post(cache_api_url, data=request_data, format="json")
 
     def exec(self, request_data, endpoint):
         filter_kwargs = dict(
@@ -105,12 +99,25 @@ class CacheTests(TestCase):
 
     @parameterized.expand(
         [
-            [{"model": "text-davinci-003", "prompt": "how do you do?"}],
-            [{"model": "text-davinci-003", "prompt": ""}],
-            [{"model": "text-davinci-003", "prompt": "&"}],
+            [
+                {
+                    "model": "gpt-3.5-turbo",
+                    "messages": [{"role": "user", "content": "how do you do?"}],
+                }
+            ],
+            [{"model": "gpt-3.5-turbo", "messages": [{"role": "user", "content": ""}]}],
+            [
+                {
+                    "model": "gpt-3.5-turbo",
+                    "messages": [{"role": "user", "content": "&"}],
+                }
+            ],
         ]
     )
-    @patch("api.views.openai_request", side_effect=openai_request_mock)
+    @patch(
+        "api.services.OpenAICacheService.openai_request",
+        side_effect=mock_openai_request,
+    )
     def test_cache_case(self, request_data, mock_openai_request):
-        endpoint = "v1/completions"
+        endpoint = "v1/chat/completions"
         self.exec(request_data, endpoint)

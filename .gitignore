@@ -163,3 +163,8 @@ fabric.properties
 dev.db
 .env
 .mypy_cache
+
+# ignore custom user-defined functions
+funcs/*
+!funcs/builtins.py
+!funcs/__init__.py

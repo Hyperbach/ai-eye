@@ -3,6 +3,7 @@ from typing import List
 from django.contrib.auth import get_user_model
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import Group, PermissionsMixin
+from django.core.cache import cache
 from django.core.validators import MaxLengthValidator, MinLengthValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -87,7 +88,12 @@ class User(AbstractBaseUser, PermissionsMixin, TimestampMixin, IsActiveMixin):  
         return str(self.email)
 
     def _is_in_group(self, user_group_type: UserGroupType):
-        return self.groups.filter(name=user_group_type.name).exists()
+        cache_key = f"user_{self.pk}_is_in_group_{user_group_type}"
+        result = cache.get(cache_key)
+        if result is None:
+            result = self.groups.filter(name=user_group_type.name).exists()
+            cache.set(cache_key, result, 300)  # cache for 5 minutes
+        return result
 
     @property
     def is_aieye_admin(self):

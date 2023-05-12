@@ -1,0 +1,54 @@
+#spinner.hidden {
+  display: none !important;
+}
+
+#logs-section.hidden {
+  display: none !important;
+}
+
+#success-alert.hidden {
+  display: none !important;
+}
+
+#error-alert.hidden {
+  display: none !important;
+}
+
+
+/* Styling for the logs section */
+#logs-section {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+/* Styling for pipeline execution log entry */
+.log-entry.pipeline-execution {
+  background-color: white;
+  color: black;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.log-entry.pipeline-execution .log-entry-details p {
+  margin: 5px 0;
+}
+
+/* Styling for log entries list */
+.log-list {
+
+}
+
+/* Styling for log entry */
+.log-entry {
+  background-color: white;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.log-entry .log-entry-details p {
+  margin: 5px 0;
+}

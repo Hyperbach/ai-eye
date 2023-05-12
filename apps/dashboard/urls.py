@@ -1,12 +1,12 @@
 from django.urls import path
-from django.views.generic import RedirectView
 
 from . import views
+from .views import index
 
 app_name = "dashboard"
 
 urlpatterns = [
-    path("", RedirectView.as_view(pattern_name="dashboard:users"), name="index"),
+    path("", index, name="index"),
     path("users", views.UserListView.as_view(), name="users"),
     path("users/add", views.UserCreateView.as_view(), name="users_create"),
     path("openaikeys", views.OpenAIKeysListView.as_view(), name="openaikeys"),
@@ -49,5 +49,64 @@ urlpatterns = [
         "caches/delete/",
         views.CachesDeleteAllView.as_view(),
         name="caches_delete_all",
+    ),
+    path("prompts", views.PromptListView.as_view(), name="prompts"),
+    path("prompts/add", views.PromptCreateView.as_view(), name="prompt_create"),
+    path(
+        "prompts/<int:pk>/update/",
+        views.PromptUpdateView.as_view(),
+        name="prompt_update",
+    ),
+    path(
+        "prompts/<int:pk>/delete/",
+        views.PromptDeleteView.as_view(),
+        name="prompt_delete",
+    ),
+    path("builtins", views.BuiltinFunctionListView.as_view(), name="builtins"),
+    path(
+        "builtins/sync",
+        views.SyncBuiltinFunctionsAPIView.as_view(),
+        name="builtin_sync",
+    ),
+    path(
+        "builtins/<int:pk>/update/",
+        views.BuiltinFunctionUpdateView.as_view(),
+        name="builtin_update",
+    ),
+    path("pipelines", views.PipelineSourceListView.as_view(), name="pipelines"),
+    path(
+        "pipeline/executions",
+        views.PipelineExecutionHistoryView.as_view(),
+        name="pipelines_executions",
+    ),
+    path(
+        "pipelines/<int:pk>/executions",
+        views.PipelineDetailExecHistoryView.as_view(),
+        name="pipeline_detail_exec_history",
+    ),
+    path(
+        "pipelines/add",
+        views.PipelineSourceCreateView.as_view(),
+        name="pipeline_create",
+    ),
+    path(
+        "pipelines/<int:pk>/update/",
+        views.PipelineSourceUpdateView.as_view(),
+        name="pipeline_update",
+    ),
+    path(
+        "pipelines/<int:pk>/delete/",
+        views.PipelineSourceDeleteView.as_view(),
+        name="pipeline_delete",
+    ),
+    path(
+        "pipelines/execute/",
+        views.PipelineSourceExecuteView.as_view(),
+        name="pipeline_execute",
+    ),
+    path(
+        "pipelines/execute/<int:id>/",
+        views.PipelineSourceExecuteView.as_view(),
+        name="pipeline_execute",
     ),
 ]
