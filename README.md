@@ -250,7 +250,7 @@ This endpoint accepts either Session authentication or HTTP Token based authoriz
 
 Example of usage (with Session authentication):
 ```shell
-curl --location 'http://127.0.0.1:8000/api/pipeline/call/' \
+curl --location 'http://127.0.0.1:8000/api/pipeline/call' \
 --header 'Content-Type: application/json' \
 --header 'X-CSRFToken: g69kAjkZan6yAGqD5VOGCUjbUdR1qPka' \
 --header 'Cookie: csrftoken=g69kAjkZan6yAGqD5VOGCUjbUdR1qPka; sessionid=97wvcm0t0t1rgrpsy38ordgtmh7cw9iz' \
@@ -264,7 +264,7 @@ curl --location 'http://127.0.0.1:8000/api/pipeline/call/' \
 
 Example of usage (with HTTP Token based authentication):
 ```shell
-curl --location 'http://127.0.0.1:8000/api/pipeline/call/' \
+curl --location 'http://127.0.0.1:8000/api/pipeline/call' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Bearer pubtokenpubtoken1pubtoken1pubtoken111111' \
 --data '{
