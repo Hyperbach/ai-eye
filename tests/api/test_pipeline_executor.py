@@ -54,7 +54,7 @@ class PipelineExecutorAPITestCase(TestCase):
         BuiltinFunction.objects.create(name="builtin_concat")
         BuiltinFunction.objects.create(name="builtin_identity")
 
-        cls.pipeline_api_url = reverse("api:pipeline-list")
+        cls.pipeline_api_url = reverse("api:pipeline_call")
         cls.pipeline_retrieve_args_api_url = reverse("api:pipeline_args-list")
 
     def setUp(self) -> None:
