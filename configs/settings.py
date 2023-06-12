@@ -173,10 +173,13 @@ LOGGING = {
             "level": "DEBUG",
             "class": "dblogs.handlers.DatabaseLogHandler",
         },
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
     },
     "loggers": {
         "db": {
-            "handlers": ["db"],
+            "handlers": ["db", "console"],
             "level": "DEBUG",
             "propagate": True,
         },
