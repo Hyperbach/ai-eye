@@ -1,4 +1,4 @@
-.PHONY: build rebuild up down restart migrate create-admin test coverage web/shell db/shell logs backup restore
+.PHONY: build rebuild up down restart migrate create-admin test coverage web/shell db/shell logs backup restore create-app-user
 
 include .env
 export $(shell sed 's/=.*//' .env)
@@ -47,3 +47,14 @@ backup:
 
 restore:
 	bash restore-db.sh $(DB_USER) $(DB_NAME) $(file)
+
+EMAIL := $(shell bash -c 'read -p "Enter Email: " email; echo $$email')
+PASSWORD := $(shell bash -c 'read -s -p "Enter Password: " password; echo $$password')
+FIRST_NAME := $(shell bash -c 'read -p "Enter First Name: " firstName; echo $$firstName')
+LAST_NAME := $(shell bash -c 'read -p "Enter Last Name: " lastName; echo $$lastName')
+
+create-app-user:
+	docker-compose run --rm web python manage.py create_app_user $(EMAIL) $(PASSWORD) $(FIRST_NAME) $(LAST_NAME)
+
+create-app-admin:
+	docker-compose run --rm web python manage.py create_app_admin $(EMAIL) $(PASSWORD) $(FIRST_NAME) $(LAST_NAME)
