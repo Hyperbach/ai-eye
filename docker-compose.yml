@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  db:
+    container_name: aieye-db
+    image: postgres:12
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    env_file:
+      - ./.env
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    networks:
+      - aieye_network
+
+  web:
+    container_name: aieye-web
+    build: .
+    command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/ai-eye
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+    links:
+      - db:db
+    networks:
+      - aieye_network
+
+volumes:
+  db_data: { }
+
+networks:
+  aieye_network:
+    driver: bridge
