@@ -1,6 +1,105 @@
+# Table of Contents
+
+- [AI-Eye application](#ai-eye-application)
+    - [Setting up with docker](#setting-up-with-docker)
+        - [Prerequisites](#prerequisites)
+        - [Starting the Project](#starting-the-project)
+        - [Stopping the Project](#stopping-the-project)
+        - [Creating a Database Backup](#creating-a-database-backup)
+        - [Restoring the Database from a Backup](#restoring-the-database-from-a-backup)
+        - [Creating a Superuser](#creating-a-superuser)
+    - [Setting up without docker (for development purposes only, deprecated and not supported)](#setting-up-without-docker-for-development-purposes-only-deprecated-and-not-supported)
+    - [Setting up users](#setting-up-users)
+    - [Useful commands](#useful-commands)
+    - [Prompts Overview](#prompts-overview)
+    - [Builtin Functions Overview](#builtin-functions-overview)
+    - [Pipelines Overview](#pipelines-overview)
+    - [OpenAI API Overview](#openai-api-overview)
+        - [openai endpoint](#openai-endpoint)
+        - [cache endpoint](#cache-endpoint)
+        - [API Endpoints](#api-endpoints)
+            - [openai](#openai)
+            - [cache](#cache)
+    - [Pipeline API Overview](#pipeline-api-overview)
+        - [pipeline_args](#pipeline_args)
+        - [pipeline_call](#pipeline_call)
+
 # AI-Eye application
 
-## Setup
+## Setting up with docker
+
+This guide explains how to manage the AI Eye application using Docker Compose and Makefile.
+
+### Prerequisites
+
+Before you start, you should have the following installed on your system:
+
+- Docker
+- Docker Compose
+- Make (optional, for using the Makefile)
+
+### Starting the Project
+
+You can start the project using Docker Compose:
+
+```bash
+docker-compose up
+```
+
+Alternatively, you can use the Makefile:
+
+```bash
+make up
+```
+
+This will start the services in detached mode.
+
+### Stopping the Project
+
+You can stop the project using Docker Compose:
+
+```bash
+docker-compose down
+```
+
+Or with the Makefile:
+
+```bash
+make down
+```
+
+### Creating a Database Backup
+
+Use the Makefile command:
+
+```bash
+make backup
+```
+
+This will create a backup of your PostgreSQL database in a file within the `backups` directory.
+
+### Restoring the Database from a Backup
+
+To restore the database from a backup file, use:
+
+```bash
+make restore file=<path-to-your-backup-file>
+```
+
+Replace `<path-to-your-backup-file>` with the actual path to your backup file.
+
+### Creating a Superuser
+
+You can create a Django superuser with the following command:
+
+```bash
+make create-admin
+```
+
+This will prompt you to enter the username, email (optional), and password for the superuser.
+
+
+## Setting up without docker (for development purposes only, deprecated and not supported)
 
 Create a virtual environment to install dependencies in and activate it:
 
@@ -38,6 +137,9 @@ Once `pip` has finished downloading the dependencies:
 (env) python manage.py runserver
 ```
 
+## Setting up users
+
+
 From now on, to grant the `AIEYE_ADMINS` role to some users, follow these steps:
 1. Go to Django Admin, i.e. http://127.0.0.1:8000/admin
 2. Log in as a superuser
@@ -49,19 +151,7 @@ From now on, to grant the `AIEYE_ADMINS` role to some users, follow these steps:
 
 Open http://127.0.0.1:8000, it is where your `AIEYE_ADMINS` dashboard resides
 
-Run tests:
-```shell
-(env) python manage.py test
-```
-
-Code coverage:
-```shell
-(env) coverage run --source='.' manage.py test
-(env) coverage report
-(env) coverage html
-```
-
-Useful commands:
+## Useful commands:
 ```
 (env) pre-commit run
 ```
