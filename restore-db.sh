@@ -61,7 +61,7 @@ if [[ "$response" =~ ^[Yy]$ ]]; then
 
   # Stop the web container
   log_message "Stopping the web container..."
-  docker-compose stop web
+  docker compose stop web
 
   # Drop the existing database if it exists
   log_message "Dropping the existing database if it exists..."
@@ -87,7 +87,7 @@ if [[ "$response" =~ ^[Yy]$ ]]; then
 
   # Start the web container
   log_message "Starting the web container..."
-  docker-compose start web
+  docker compose start web
 
 else
   echo "Restore cancelled."

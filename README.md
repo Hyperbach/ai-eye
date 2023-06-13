@@ -43,7 +43,7 @@ Before you start, you should have the following installed on your system:
 You can start the project using Docker Compose:
 
 ```bash
-docker-compose up
+docker compose up
 ```
 
 Alternatively, you can use the Makefile:
@@ -59,7 +59,7 @@ This will start the services in detached mode.
 You can stop the project using Docker Compose:
 
 ```bash
-docker-compose down
+docker compose down
 ```
 
 Or with the Makefile:
