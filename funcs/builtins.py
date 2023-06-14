@@ -1,6 +1,6 @@
-import datetime
-import json
 import functools
+import inspect
+import json
 from datetime import datetime
 
 
@@ -13,6 +13,8 @@ def exception_handler(func):
         except Exception as e:
             return output_wrapper(error=str(e))
 
+    wrapper.__signature__ = inspect.signature(func)
+
     return wrapper
 
 
@@ -20,9 +22,9 @@ def exception_handler(func):
 def output_wrapper(value=None, error=None):
     output = {}
     if value is not None:
-        output['result'] = value
+        output["result"] = value
     if error is not None:
-        output['error'] = error
+        output["error"] = error
     return json.dumps(output)
 
 
