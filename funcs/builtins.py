@@ -1,4 +1,3 @@
-import datetime
 import functools
 import inspect
 import json
@@ -6,25 +5,36 @@ from datetime import datetime
 
 
 def type_inference_decorator(func):
+    def process_arg(arg):
+        try:
+            # Try to interpret argument as JSON
+            new_arg = json.loads(arg)
+        except json.JSONDecodeError:
+            try:
+                # Try to interpret argument as a float
+                new_arg = float(arg)
+            except ValueError:
+                # If all else fails, assume it's a plain string
+                new_arg = arg
+
+        return new_arg
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         # Attempt to infer the type of the input arguments
         new_args = []
         for arg in args:
-            try:
-                # Try to interpret argument as JSON
-                new_arg = json.loads(arg)
-            except json.JSONDecodeError:
-                try:
-                    # Try to interpret argument as a float
-                    new_arg = float(arg)
-                except ValueError:
-                    # If all else fails, assume it's a plain string
-                    new_arg = arg
+            new_arg = process_arg(arg)
             new_args.append(new_arg)
 
+        # Attempt to infer the type of the keyword arguments
+        new_kwargs = {}
+        for key, value in kwargs.items():
+            new_value = process_arg(value)
+            new_kwargs[key] = new_value
+
         # Call the function
-        result = func(*new_args, **kwargs)
+        result = func(*new_args, **new_kwargs)
 
         # Check if result is a dict or list (i.e., JSON-serializable), if so, convert it to a JSON string
         if isinstance(result, (list, dict)):
