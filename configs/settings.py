@@ -43,6 +43,7 @@ SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
 
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
+CSRF_TRUSTED_ORIGINS = ["https://aieye.1gency.ee", "http://localhost"]
 
 # Application definition
 

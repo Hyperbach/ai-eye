@@ -166,6 +166,9 @@ Here's an example of a prompt in action:
 
 ## Builtin Functions Overview
 Built-in functions are like regular functions that can be invoked with arguments in the standard way, using the syntax function_name(argument1, argument2, ...). Unlike prompts, built-in functions don't use curly braces to denote arguments. They can accept any number of arguments, but they don't accept *args or **kwargs.
+
+Built-in functions utilize a decorator to handle input-output operations, facilitating function chaining. This mechanism converts outputs from one function into suitable inputs for the subsequent one, handling necessary type conversions. Function chaining enables the construction of complex data pipelines, with the decorator underpinning this functionality by managing data-flow and type consistency between the linked functions.
+
 Built-in functions reside in the `funcs` package within the `builtins.py` Python script.
 
 In addition to built-in functions, users can create their own functions and store them in the `funcs` package within Python scripts with names starting with `custom_`, such as `custom_funcs.py` or `custom_addons.py`, among others. These user-defined functions will be dynamically linked on demand.
