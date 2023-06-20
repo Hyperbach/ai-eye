@@ -1,7 +1,12 @@
 import functools
 import inspect
 import json
+import random
+
+import docker
 from datetime import datetime
+
+client = docker.from_env()
 
 
 def type_inference_decorator(func):
@@ -116,3 +121,27 @@ def now():
 # Unwrapped functions
 def identity(x):
     return x
+
+
+@type_inference_decorator
+def eval(code):
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    random_numbers = str(random.randint(100000, 999999))
+    file_name = f"{timestamp}_{random_numbers}.py"
+    file_path = f'/eval/{file_name}'
+    with open(file_path, 'w') as f:
+        f.write(code)
+
+    try:
+        container = client.containers.run(
+            image='ai-eye-eval',
+            command='/entrypoint.sh',
+            environment={
+                'FILE_NAME': file_path
+            },
+            remove=True,
+            volumes={'/tmp/eval': {'bind': '/eval', 'mode': 'rw'}}
+        )
+        return container.decode('utf-8')
+    except docker.errors.ContainerError as e:
+        return e.stderr.decode('utf-8')
