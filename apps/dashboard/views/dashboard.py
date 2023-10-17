@@ -126,6 +126,7 @@ class CachesBaseViewMixin(AiEyeAdminMixin):
 class CachesListView(CachesBaseViewMixin, generic.ListView):
     fields = "__all__"
     template_name = "dashboard/caches/list.html"
+    paginate_by = 10
 
 
 class CachesDeleteView(CachesBaseViewMixin, generic.DeleteView):  # type: ignore[misc]
