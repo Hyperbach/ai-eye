@@ -5,6 +5,39 @@ from datetime import datetime
 
 
 def type_inference_decorator(func):
+    """
+    A decorator that infers and transforms the types of function arguments and return values.
+
+    This decorator serves several primary functions:
+
+    1. **Input Argument Processing**:
+       Processes each argument passed to the decorated function and infers its type.
+       - Tries to interpret the argument as a JSON string. If successful, converts it to a Python data structure.
+       - If not JSON, tries to interpret the argument as a float.
+       - If both attempts fail, assumes the argument is a plain string.
+
+    2. **Return Value Processing**:
+       Checks the type of the decorated function's return value.
+       - If the result is a list or dictionary, it's converted to a JSON string.
+       - Otherwise, the result is converted to a plain string.
+
+    3. **Preservation of Function Signature**:
+       Updates the `__signature__` attribute of the wrapped function to match the signature of the original function.
+
+    Parameters:
+    - func (callable): The function to be decorated.
+
+    Returns:
+    - callable: The wrapped function with enhanced type inference and transformation capabilities.
+
+    Usage Examples:
+    - Calling a decorated `add` function with arguments "5" and "3.2" will convert these to float values and return "8.2".
+    - Calling a decorated `append` function with arguments '["a", "b"]' (a JSON list) and "c" will return '["a", "b", "c"]'.
+
+    Note:
+    This decorator is useful in scenarios like web APIs where functions might receive and produce string representations but operate on richer data types internally.
+    """
+
     def process_arg(arg):
         try:
             # Try to interpret argument as JSON
