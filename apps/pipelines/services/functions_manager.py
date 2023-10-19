@@ -25,6 +25,9 @@ class FunctionsManager:
     def force_reload(self):
         self._load_functions()
 
+    def get_function(self, name):
+        return self.funcs.get(name)
+
     def get_func_names(self):
         return list(self.funcs.keys())
 
