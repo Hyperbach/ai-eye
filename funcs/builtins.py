@@ -199,7 +199,7 @@ def query_embedchain(query, data_source):
 
 
 @type_inference_decorator(needs_context=True)
-def apply(func_name, items):
+def map(func_name, items):
     """
     Apply a given function to each item in a list.
 
