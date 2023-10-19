@@ -264,6 +264,17 @@ def reduce(func_name, items, initializer=None):
     return acc
 
 
+@type_inference_decorator(needs_context=True)
+def get_prompts():
+    """
+    Retrieve the list of prompts available in the context.
+
+    Returns:
+    - list: The list of prompts from the context.
+    """
+    return get_context()["prompts"]
+
+
 # Unwrapped functions
 def identity(x):
     return x

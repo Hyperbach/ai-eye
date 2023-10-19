@@ -30,6 +30,7 @@ class CallBuiltinFunction:
         result = ""
 
         openaikey = kwargs.pop("openaikey", None)
+        prompts = kwargs.pop("prompts", None)
 
         DatabaseLogHandler.log_fn_call_started(
             logger, self.builtin_fn.name, "builtin", kwargs
@@ -39,6 +40,7 @@ class CallBuiltinFunction:
         if hasattr(target_function, "needs_context") and target_function.needs_context:
             context = {
                 "openaikey": openaikey,
+                "prompts": prompts,
                 "functions": FUNCTIONS_MANAGER.funcs  # Add all available functions to the context
             }
             setattr(target_function, "context", context)
