@@ -29,13 +29,18 @@ class CallBuiltinFunction:
     def __call__(self, *args, **kwargs) -> Any:
         result = ""
 
+        openaikey = kwargs.pop("openaikey", None)
+
         DatabaseLogHandler.log_fn_call_started(
             logger, self.builtin_fn.name, "builtin", kwargs
         )
 
+        context = {"openaikey": openaikey}
+        kwargs["context"] = context
+
         try:
             result = FUNCTIONS_MANAGER.call_builtin_function(
-                self.builtin_fn.name, **kwargs
+                name=self.builtin_fn.name, **kwargs
             )
         except Exception as exc:
             error = f"An error occurred while calling the function '{self.builtin_fn.name}'. Details: {exc}"

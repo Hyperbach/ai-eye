@@ -30,9 +30,12 @@ def type_inference_decorator(func):
         # Attempt to infer the type of the keyword arguments
         new_kwargs = {}
         for key, value in kwargs.items():
-            new_value = process_arg(value)
-            new_kwargs[key] = new_value
+            if key != "context":
+                new_value = process_arg(value)
+                new_kwargs[key] = new_value
 
+        context = kwargs.get("context")
+        setattr(wrapper, "context", context)
         # Call the function
         result = func(*new_args, **new_kwargs)
 

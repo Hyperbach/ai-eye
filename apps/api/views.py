@@ -83,7 +83,7 @@ class PipelineCallAPIView(APIView):
     @staticmethod
     def retrieve_openaikey_for_aieyetokenauthenticated_user(request):
         public_token = request.auth
-        return public_token.openaikey
+        return public_token.openaikey.key
 
     @staticmethod
     def retrieve_openaikey_for_session_authenticated_user(request, validated_data):
