@@ -146,6 +146,11 @@ def sort(lst):
 
 
 @type_inference_decorator()
+def to_str(anything):
+    return str(anything)
+
+
+@type_inference_decorator()
 def now():
     return datetime.now().isoformat()
 
