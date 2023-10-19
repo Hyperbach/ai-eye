@@ -10,6 +10,8 @@ from pipelines.services.exceptions import LoadModuleError, UserDefinedFunctionsE
 class FunctionsManager:
     FUNCS_PACKAGE_NAME = "funcs"
     USER_DEFINED_MODULES_NAME_PATTERN = "custom_*.py"
+    IGNORED_BUILTIN_FUNCTIONS = ["get_context", "type_inference_decorator"]
+
     _instance = None
 
     def __new__(cls, *args, **kwargs):
@@ -89,7 +91,7 @@ class FunctionsManager:
         return {
             func.__name__: func
             for func in mod.__dict__.values()
-            if is_module_function(mod, func)
+            if is_module_function(mod, func) and func.__name__ not in self.IGNORED_BUILTIN_FUNCTIONS
         }
 
 
