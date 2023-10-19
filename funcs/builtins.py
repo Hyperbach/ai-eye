@@ -225,6 +225,45 @@ def map(func_name, items):
     return [func_to_apply(item) for item in items]
 
 
+@type_inference_decorator(needs_context=True)
+def reduce(func_name, items, initializer=None):
+    """
+    Apply a binary function to the items of an iterable, from left to right,
+    so as to reduce the iterable to a single accumulated result.
+
+    Args:
+    - func_name (str): The name of the binary function to apply.
+    - items (list): The list of items to which the function will be applied.
+    - initializer (optional): The initial value to start the accumulation.
+
+    Returns:
+    - The accumulated result after applying the binary function.
+    """
+
+    # Retrieve all available functions from the context
+    functions = get_context()["functions"]
+
+    # Check if the function exists
+    if func_name not in functions:
+        raise ValueError(f"Function '{func_name}' not found.")
+
+    # Get the binary function to apply
+    binary_func = functions[func_name]
+
+    # If there's an initializer, start with it
+    if initializer is not None:
+        acc = initializer
+    else:
+        # Otherwise, start with the first item and iterate from the second item
+        acc, *items = items
+
+    # Apply the binary function to each item
+    for item in items:
+        acc = binary_func(acc, item)
+
+    return acc
+
+
 # Unwrapped functions
 def identity(x):
     return x
