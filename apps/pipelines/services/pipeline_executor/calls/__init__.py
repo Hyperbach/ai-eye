@@ -35,8 +35,10 @@ class CallBuiltinFunction:
             logger, self.builtin_fn.name, "builtin", kwargs
         )
 
-        context = {"openaikey": openaikey}
-        kwargs["context"] = context
+        target_function = FUNCTIONS_MANAGER.get_function(self.builtin_fn.name)
+        if hasattr(target_function, "needs_context") and target_function.needs_context:
+            context = {"openaikey": openaikey}
+            setattr(target_function, "context", context)
 
         try:
             result = FUNCTIONS_MANAGER.call_builtin_function(
