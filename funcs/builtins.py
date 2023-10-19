@@ -198,6 +198,33 @@ def query_embedchain(query, data_source):
     return result
 
 
+@type_inference_decorator(needs_context=True)
+def apply(func_name, items):
+    """
+    Apply a given function to each item in a list.
+
+    Args:
+    - func_name (str): The name of the function to apply.
+    - items (list): The list of items to which the function will be applied.
+
+    Returns:
+    - list: A list of results after applying the function to each item.
+    """
+
+    # Retrieve all available functions from the context
+    functions = get_context()["functions"]
+
+    # Check if the function exists
+    if func_name not in functions:
+        raise ValueError(f"Function '{func_name}' not found.")
+
+    # Get the function to apply
+    func_to_apply = functions[func_name]
+
+    # Apply the function to each item and return the results
+    return [func_to_apply(item) for item in items]
+
+
 # Unwrapped functions
 def identity(x):
     return x

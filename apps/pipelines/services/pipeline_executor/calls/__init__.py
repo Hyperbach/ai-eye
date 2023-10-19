@@ -37,7 +37,10 @@ class CallBuiltinFunction:
 
         target_function = FUNCTIONS_MANAGER.get_function(self.builtin_fn.name)
         if hasattr(target_function, "needs_context") and target_function.needs_context:
-            context = {"openaikey": openaikey}
+            context = {
+                "openaikey": openaikey,
+                "functions": FUNCTIONS_MANAGER.funcs  # Add all available functions to the context
+            }
             setattr(target_function, "context", context)
 
         try:
