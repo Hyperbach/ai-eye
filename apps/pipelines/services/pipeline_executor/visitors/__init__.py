@@ -145,5 +145,7 @@ class ExecutorVisitor(BaseVisitor):
                     }
 
             kwargs.update({"openaikey": self.openaikey, "user": self.user})
+        elif isinstance(target_fn, CallBuiltinFunction):
+            kwargs.update({"openaikey": self.openaikey})
 
         return target_fn(**kwargs)
