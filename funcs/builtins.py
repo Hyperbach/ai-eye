@@ -270,6 +270,38 @@ def reduce(func_name, items, initializer=None):
 
 
 @type_inference_decorator(needs_context=True)
+def loop(func_name, fixed_arg, items):
+    """
+    Iterate over a given list of items, applying a given function to each of them.
+    The function always takes two arguments: a fixed argument and an item from the list.
+
+    Args:
+    - func_name (str): The name of the function to apply.
+    - fixed_arg (Any): The fixed argument for the function.
+    - items (list): The list of items to iterate over.
+
+    Returns:
+    - list: A list of results after applying the function to each item.
+    """
+
+    # Retrieve all available functions from the context
+    functions = get_context()["functions"]
+
+    # Check if the function exists
+    if func_name not in functions:
+        raise ValueError(f"Function '{func_name}' not found.")
+
+    # Get the original function
+    original_func = functions[func_name]
+
+    setattr(original_func, "context", get_context())
+
+    # Apply the function to each item with the fixed argument
+    return [original_func(fixed_arg, item) for item in items]
+
+
+
+@type_inference_decorator(needs_context=True)
 def get_prompts():
     """
     Retrieve the list of prompts available in the context.

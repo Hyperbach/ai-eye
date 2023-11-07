@@ -1,7 +1,7 @@
-from django.test import TestCase
-
 import lark.exceptions
+from django.test import TestCase
 from parameterized import param, parameterized
+
 from pipelines.services.dag_builder import DAGBuilder, Edge, Node
 
 
@@ -147,6 +147,51 @@ class DAGBuilderTestCase(TestCase):
 
         b1_node = b_node.edges[0].target
         self.assertEqual(len(b1_node.edges), 0)
+
+    def test_function_invocations_with_string_literals(self):
+        try:
+            root = self.builder.build("foo('Hello, World!')")
+        except Exception as exc:
+            self.fail(
+                f"test_function_invocations_with_string_literals raised an exception: {exc}"
+            )
+
+        self.assertEqual(root.name, "foo")
+        self.assertEqual(len(root.edges), 1)
+        self.assertEqual(root.edges[0].source, root)
+        self.assertEqual(root.edges[0].target.name, 'Hello, World!')
+
+    def test_nested_function_invocations_with_string_literals(self):
+        try:
+            root = self.builder.build('foo(a=bar(\'Hello, World!\'))')
+        except Exception as exc:
+            self.fail(
+                f"test_nested_function_invocations_with_string_literals raised an exception: {exc}"
+            )
+
+        self.assertEqual(root.name, "foo")
+        self.assertEqual(len(root.edges), 1)
+        a_node = root.edges[0].target
+        self.assertEqual(a_node.name, "a")
+        self.assertEqual(a_node.edges[0].target.name, 'bar')
+        bar_node = a_node.edges[0].target
+        self.assertEqual(bar_node.edges[0].target.name, 'Hello, World!')
+
+    def test_function_invocations_with_named_args_and_string_literals(self):
+        try:
+            root = self.builder.build('foo(a=\'Hello\', b=\'World!\')')
+        except Exception as exc:
+            self.fail(
+                f"test_function_invocations_with_named_args_and_string_literals raised an exception: {exc}"
+            )
+
+        self.assertEqual(root.name, "foo")
+        self.assertEqual(len(root.edges), 2)
+        a_node, b_node = root.edges[0].target, root.edges[1].target
+        self.assertEqual(a_node.name, "a")
+        self.assertEqual(b_node.name, "b")
+        self.assertEqual(a_node.edges[0].target.name, 'Hello')
+        self.assertEqual(b_node.edges[0].target.name, 'World!')
 
     @parameterized.expand(
         [

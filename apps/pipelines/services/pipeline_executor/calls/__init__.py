@@ -23,7 +23,7 @@ class CallBuiltinFunction:
         try:
             return FUNCTIONS_MANAGER.get_arity_of_function(self.builtin_fn.name)
         except Exception as exc:
-            error = f"An error occurred while calling the function '{self.builtin_fn.name}'. Details: {exc}"
+            error = f"An error occurred while getting arity of the function '{self.builtin_fn.name}'. Details: {exc}"
             raise CallBuiltinFunctionError(error)
 
     def __call__(self, *args, **kwargs) -> Any:

@@ -2,8 +2,9 @@ from lark import Lark, Transformer, v_args
 
 GRAMMAR = """
     start: func_invocation
-    expression: name | func_invocation
+    expression: name | func_invocation | string_literal
     name: /[a-zA-Z][a-zA-Z_0-9]*/
+    string_literal: "'" /[^']+/ "'"
     func_invocation: name "(" func_args? ")"
     func_args: func_arg ("," func_arg)*
     func_arg: arg_assign | expression
@@ -11,7 +12,6 @@ GRAMMAR = """
     %import common.WS
     %ignore WS
 """
-
 
 class Node:
     last_id = 0
@@ -60,6 +60,11 @@ class DAGBuilder(Transformer):
     @v_args(inline=True)
     def name(self, name):
         return Node(name.value)
+
+    @v_args(inline=True)
+    def string_literal(self, value):
+        return Node("'" + value.value + "'")
+
 
     @v_args(inline=True)
     def func_invocation(self, name, *args):
