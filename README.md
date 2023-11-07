@@ -278,7 +278,7 @@ curl --location 'http://127.0.0.1:8000/api/openai/v1/chat/completions/' \
 --header 'Authorization: Bearer pubtokenpubtoken1pubtoken1pubtokenXXXXXX' \
 --header 'Content-Type: application/json' \
 --data '{
-    "model": "gpt-3.5-turbo",
+    "model": "gpt-3.5-turbo-1106",
     "messages": [{"role": "user", "content": "Is blue a color for blind?"}]
 }'
 
@@ -310,7 +310,7 @@ curl --location 'http://127.0.0.1:8000/api/cache/v1/chat/completions/' \
 --header 'Authorization: Bearer pubtokenpubtoken1pubtoken1pubtokenXXXXXX' \
 --header 'Content-Type: application/json' \
 --data '{
-    "model": "gpt-3.5-turbo",
+    "model": "gpt-3.5-turbo-1106",
     "messages": [{"role": "user", "content": "Is blue a color for blind?"}]
 }'
 
