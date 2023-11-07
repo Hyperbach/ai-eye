@@ -18,7 +18,7 @@ logger = logging.getLogger("db")
 
 class BaseVisitor(metaclass=abc.ABCMeta):
     def __init__(
-        self, graph: nx.DiGraph, prompts: List[Prompt], builtins: List[BuiltinFunction]
+            self, graph: nx.DiGraph, prompts: List[Prompt], builtins: List[BuiltinFunction]
     ):
         self.graph = graph
         self.prompts = prompts
@@ -145,5 +145,9 @@ class ExecutorVisitor(BaseVisitor):
                     }
 
             kwargs.update({"openaikey": self.openaikey, "user": self.user})
+        elif isinstance(target_fn, CallBuiltinFunction):
+            user_prompts = Prompt.objects.filter(owner=self.user)
+            prompt_details = {prompt.name: prompt.description for prompt in user_prompts}
+            kwargs.update({"openaikey": self.openaikey, "prompts": prompt_details})
 
         return target_fn(**kwargs)
