@@ -289,7 +289,7 @@ def identity(x):
     return x
 
 
-@type_inference_decorator
+@type_inference_decorator(needs_context=False)
 def eval(code):
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     random_numbers = str(random.randint(100000, 999999))
