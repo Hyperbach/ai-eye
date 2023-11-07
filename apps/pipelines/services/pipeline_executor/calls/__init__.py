@@ -64,7 +64,7 @@ class CallBuiltinFunction:
 class CallPrompt:
     ARGS_PATTERN_RX = re.compile(r"{([a-zA-Z][a-zA-Z_0-9]*)}")
     ENDPOINT = "v1/chat/completions"
-    MODEL = "gpt-3.5-turbo"
+    MODEL = "gpt-3.5-turbo-1106"
 
     def __init__(self, prompt_fn: Prompt):
         self.prompt_fn = prompt_fn

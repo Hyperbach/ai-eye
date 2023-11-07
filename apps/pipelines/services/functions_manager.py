@@ -10,7 +10,7 @@ from pipelines.services.exceptions import LoadModuleError, UserDefinedFunctionsE
 class FunctionsManager:
     FUNCS_PACKAGE_NAME = "funcs"
     USER_DEFINED_MODULES_NAME_PATTERN = "custom_*.py"
-    IGNORED_BUILTIN_FUNCTIONS = ["get_context", "type_inference_decorator"]
+    IGNORED_BUILTIN_FUNCTIONS = ["get_context", "type_inference_decorator", "decorator"]
 
     _instance = None
 
