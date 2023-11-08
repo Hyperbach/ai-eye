@@ -41,7 +41,7 @@ class CallBuiltinFunction:
             context = {
                 "openaikey": openaikey,
                 "prompts": prompts,
-                "functions": FUNCTIONS_MANAGER.funcs  # Add all available functions to the context
+                "functions": FUNCTIONS_MANAGER.funcs,  # Add all available functions to the context
             }
             setattr(target_function, "context", context)
 
@@ -64,11 +64,11 @@ class CallBuiltinFunction:
 class CallPrompt:
     ARGS_PATTERN_RX = re.compile(r"{([a-zA-Z][a-zA-Z_0-9]*)}")
     ENDPOINT = "v1/chat/completions"
-    MODEL = "gpt-3.5-turbo-1106"
 
     def __init__(self, prompt_fn: Prompt):
         self.prompt_fn = prompt_fn
         self.arg_names = None
+        self.model = prompt_fn.get_type_display()
 
     def __str__(self):
         return self.prompt_fn.name
@@ -103,7 +103,7 @@ class CallPrompt:
             openai_cache_service = OpenAICacheService(
                 endpoint=self.ENDPOINT,
                 parameters={
-                    "model": self.MODEL,
+                    "model": self.model,
                     "messages": [{"role": "user", "content": prompt}],
                 },
             )

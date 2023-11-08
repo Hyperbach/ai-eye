@@ -162,7 +162,7 @@ class PromptListView(PromptBaseView, generic.ListView):
 
 
 class PromptCreateView(PromptBaseView, generic.CreateView):
-    fields = ["name", "body", "description"]
+    fields = ["name", "body", "description", "type"]
     template_name = "dashboard/prompts/create.html"
 
     def form_valid(self, form):
@@ -176,7 +176,7 @@ class PromptDeleteView(PromptBaseView, generic.DeleteView):  # type: ignore[misc
 
 
 class PromptUpdateView(PromptBaseView, generic.UpdateView):
-    fields = ["name", "body", "description"]
+    fields = ["name", "body", "description", "type"]
     template_name = "dashboard/prompts/update.html"
 
 
