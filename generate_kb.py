@@ -66,44 +66,43 @@ def is_git_tracked(file_path):
 
 def pack_project_to_kb(source_dir, output_file, dirs_list):
     added_files = []  # List to store added file paths
+    file_paths = []  # List to store paths of files to be written
     extension_stats = {}  # Dictionary to store file extension statistics
 
+    # First, collect all the file paths
+    for dir_name in dirs_list:
+        dir_path = os.path.join(source_dir, dir_name)
+        if os.path.exists(dir_path) and os.path.isdir(dir_path):
+            print(f"Processing directory: {dir_path}")
+            for file_name in os.listdir(dir_path):
+                file_path = os.path.join(dir_path, file_name)
+                if os.path.isfile(file_path):
+                    if file_path in excluded_files:
+                        print(f"Excluded file: {file_path}")
+                        continue
+                    if not is_git_tracked(file_path):
+                        print(f"File not tracked by Git: {file_path}")
+                        continue
+                    if is_binary(file_path):
+                        print(f"Binary file skipped: {file_path}")
+                        continue
+                    file_paths.append(file_path)  # Collect file path
+                    ext = os.path.splitext(file_path)[1]
+                    extension_stats[ext] = extension_stats.get(ext, 0) + 1
+
+    # Now, write the file list and contents
     with open(output_file, 'w') as outfile:
-        for dir_name in dirs_list:
-            dir_path = os.path.join(source_dir, dir_name)
-            # Check if the directory exists
-            if os.path.exists(dir_path) and os.path.isdir(dir_path):
-                # Writing the directory path
-                outfile.write(dir_path + '\n')
-                print(f"Directory path: {dir_path}")
-                for file_name in os.listdir(dir_path):
-                    file_path = os.path.join(dir_path, file_name)
-                    if os.path.isfile(file_path):
-                        print(f"Checking file: {file_path}")
-                        # Excluding specific files
-                        if file_path not in excluded_files:
-                            if is_git_tracked(file_path):
-                                if not is_binary(file_path):
-                                    outfile.write(file_path + '\n')
-                                    added_files.append(file_path)  # Add file to the list
-                                    print(f"Writing file: {file_path}")
-                                    # Update extension statistics
-                                    ext = os.path.splitext(file_path)[1]
-                                    extension_stats[ext] = extension_stats.get(ext, 0) + 1
-                                    # Reading and writing the file content
-                                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as infile:
-                                        outfile.write(infile.read())
-                                    # Writing the separator line
-                                    outfile.write('\n' + '-' * 55 + '\n')
-                                    print(f"Separator line written")
-                                else:
-                                    print(f"File is binary: {file_path}")
-                            else:
-                                print(f"Excluded non-Git file: {file_path}")
-                        else:
-                            print(f"Excluded file: {file_path}")
-                    else:
-                        print(f"Directory not found: {dir_path}")
+        # Write the list of files at the beginning
+        outfile.write('\n'.join(file_paths) + '\n\n')
+
+        # Write the contents of each file
+        for file_path in file_paths:
+            added_files.append(file_path)
+            print(f"Writing file contents: {file_path}")
+            outfile.write(f"File: {file_path}\n")
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as infile:
+                outfile.write(infile.read())
+            outfile.write('\n' + '-' * 55 + '\n')
 
     def separator():
         print('\n' + '-' * 55 + '\n')
