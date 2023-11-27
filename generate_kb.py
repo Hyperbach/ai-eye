@@ -111,7 +111,6 @@ def pack_project_to_kb(source_dir, output_file, dirs_list):
 
     # Calculate statistics
     num_files_added = len(added_files)
-    total_size_kb = sum(os.path.getsize(file) for file in added_files) / 1024
     print(f"Number of files added: {num_files_added}")
     file_size_kb = os.path.getsize(output_file) / 1024
     print(f"Total size of resulting file (KB): {file_size_kb:.2f}")
