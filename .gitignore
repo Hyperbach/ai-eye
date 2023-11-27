@@ -168,3 +168,5 @@ dev.db
 funcs/*
 !funcs/builtins.py
 !funcs/__init__.py
+
+aieye.kb
