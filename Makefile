@@ -53,3 +53,6 @@ create-app-user:
 
 create-app-admin:
 	docker compose run --rm web python manage.py create_app_admin $(EMAIL) $(PASSWORD) $(FIRST_NAME) $(LAST_NAME)
+
+generate-kb:
+	python3 generate_kb.py
