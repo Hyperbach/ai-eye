@@ -1,27 +1,37 @@
+import datetime
+import logging
+
 from django import forms
+from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.views import View, generic
 from django.views.generic import TemplateView
+from openai import OpenAI, APIStatusError
+from rest_framework import permissions, status
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from api.models import Log
 from api.permissions import AiEyeAdminPermission
+from api.serializers import DocumentSerializer
 from core.forms import UserCreateForm
 from core.mixins import AiEyeAdminMixin, AiEyeAdminOrUserMixin
 from core.models import OpenAIKey, PublicToken
 from dashboard.forms import PublicTokenCreateForm, PublicTokenUpdateForm
 from dashboard.serializers import BuiltinFunctionsSyncSerializer
 from dblogs.models import PipelineExecutionLog
-from pipelines.forms import PipelineCreateForm
-from pipelines.models import BuiltinFunction, PipelineSource, Prompt
+from pipelines.forms import PipelineCreateForm, DocumentForm
+from pipelines.models import BuiltinFunction, PipelineSource, Prompt, Document
 from pipelines.services.functions_manager import FUNCTIONS_MANAGER
-from rest_framework import permissions, status
-from rest_framework.authentication import SessionAuthentication
-from rest_framework.response import Response
-from rest_framework.views import APIView
+
+logger = logging.getLogger("console")
 
 User = get_user_model()
 
@@ -352,3 +362,186 @@ def index(request):
             return redirect("dashboard:prompts")
     else:
         return redirect("access:login")
+
+
+class DocumentBaseView(AiEyeAdminOrUserMixin, View):
+    success_url = reverse_lazy('dashboard:document_list')
+    serializer_class = DocumentSerializer
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+
+        openaikeys = (
+            OpenAIKey.objects.filter(
+                Q(owner=user) | Q(users__in=[user]), is_active=True
+            )
+            .distinct()
+            .order_by("-date_created")
+        )
+
+        context.update({"openaikeys": openaikeys})
+
+        return context
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = Document.objects
+        if user.is_aieye_user:
+            qs = qs.filter(owner=user)  # Assuming each document has an 'owner' field.
+        return qs.order_by('-created_at')
+
+
+class DocumentListView(DocumentBaseView, generic.ListView):
+    template_name = 'dashboard/documents/list.html'
+    context_object_name = 'documents'  # This is used in the template to loop over the documents.
+
+    def get_queryset(self):
+        return super().get_queryset()
+
+
+class DocumentCreateView(DocumentBaseView, generic.CreateView):
+    model = Document
+    form_class = DocumentForm
+    template_name = 'dashboard/documents/create.html'
+    success_url = reverse_lazy('dashboard:document_list')
+
+    def form_valid(self, form):
+        logger.info("Processing form submission.")
+
+        try:
+            openai_key_id = self.request.POST.get('openaikey')
+            openai_key = OpenAIKey.objects.get(id=openai_key_id).key
+
+            uploaded_file = self.request.FILES['file']
+            original_file_name = uploaded_file.name
+            logger.info(f"Received file: {original_file_name}")
+
+            # Generate new filename with prefix
+            prefix = f"1g_{self.request.user.id}_"
+            new_file_name = prefix + original_file_name
+        except Exception as e:
+            logger.error(f"An error occurred during form processing: {str(e)}")
+            form.add_error(None, f'An error occurred: {str(e)}')
+            return self.form_invalid(form)
+
+        try:
+            # Save the file with the new name
+            temp_file = default_storage.save(new_file_name, ContentFile(uploaded_file.read()))
+            logger.info(f"Temporary file saved: {temp_file}")
+
+            # Upload to OpenAI with the new filename
+            response = upload_file_to_openai(temp_file, new_file_name, openai_key)
+            logger.info("Sent file to OpenAI API.")
+
+            logger.debug(f"Response data from OpenAI API: {response}")
+
+            self.object = form.save(commit=False)
+            self.object.id = response.id
+            self.object.object_type = response.object
+            self.object.bytes = response.bytes
+            self.object.filename = response.filename
+            self.object.original_filename = original_file_name
+            self.object.purpose = response.purpose
+            self.object.created_at = datetime.datetime.fromtimestamp(response.created_at)
+            logger.debug("Request user: " + str(self.request.user))
+            self.object.owner = self.request.user
+            self.object.save()
+            logger.info(f"Document object saved with ID: {self.object.id}")
+
+            default_storage.delete(temp_file)
+            logger.info("Temporary file deleted.")
+
+        except Exception as e:
+            logger.error(f"An error occurred during form processing: {str(e)}")
+            default_storage.delete(temp_file)
+            form.add_error(None, f'An error occurred: {str(e)}')
+            return self.form_invalid(form)
+
+        logger.info("Form processed successfully.")
+        response = super().form_valid(form)
+
+        return response
+
+    def get_success_url(self):
+        # Override the success URL after the object is created
+        if self.object:
+            return reverse('dashboard:document_detail', kwargs={'pk': self.object.pk})
+        else:
+            return super().get_success_url()
+
+
+def upload_file_to_openai(file_path, file_name, openai_key):
+    logger.info("Starting upload to OpenAI.")
+    logger.debug(f"File path: {file_path}, File name: {file_name}")
+
+    try:
+        client = OpenAI(api_key=openai_key)
+
+        response = client.files.create(
+            file=open(file_path, "rb"),
+            purpose="assistants"
+        )
+
+        logger.info(f"Received response from OpenAI API: {response}")
+
+        return response
+
+    except Exception as e:
+        logger.exception("An error occurred while uploading file to OpenAI.")
+        raise
+
+
+class DocumentDetailView(DocumentBaseView, generic.DetailView):
+    model = Document
+    template_name = 'dashboard/documents/details.html'
+    context_object_name = 'document'
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = super().get_queryset()
+        if user.is_aieye_user:
+            qs = qs.filter(owner=user)
+        return qs
+
+
+class DocumentDeleteView(DocumentBaseView, generic.DeleteView):
+    template_name = "dashboard/documents/delete.html"
+
+    def form_valid(self, form):
+        self.object = self.get_object()
+
+        try:
+            openai_key_id = self.request.POST.get('openaikey')
+            openai_key = OpenAIKey.objects.get(id=openai_key_id).key
+
+            client = OpenAI(api_key=openai_key)
+            response = client.files.delete(self.object.id)
+
+            if response.deleted:
+                messages.success(self.request, 'Document and corresponding file deleted successfully.')
+            else:
+                messages.error(self.request, 'Failed to delete the file from OpenAI.')
+        except APIStatusError as e:
+            if e.status_code == 404:
+                logger.info(f'File not found in OpenAI, proceeding with deletion: {e}')
+                messages.warning(self.request, 'File not found in OpenAI, but document will be deleted from database.')
+            else:
+                logger.error(f'Error deleting file from OpenAI: {e}')
+                messages.error(self.request, 'An error occurred while deleting the file: {}'.format(e))
+                return redirect(self.success_url)
+        except Exception as e:
+            logger.error(f'General error deleting file from OpenAI: {e}')
+            messages.error(self.request, 'An unexpected error occurred: {}'.format(e))
+            return redirect(self.success_url)
+
+        return super().form_valid(form)
+
+    def get(self, request, *args, **kwargs):
+        """ Ensure that the delete view only works with POST requests """
+        return self.post(request, *args, **kwargs)
+
+
+class DocumentUpdateView(DocumentBaseView, generic.UpdateView):
+    fields = ["description"]
+    template_name = 'dashboard/documents/update.html'

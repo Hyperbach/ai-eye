@@ -1,0 +1,52 @@
+{% extends 'dashboard/index.html' %}
+{% load bootstrap5 %}
+
+{% block dashboard_header %}
+    <h2 class="text-left mt-5">Document Details</h2>
+{% endblock dashboard_header %}
+
+{% block dashboard_content %}
+    {% url 'dashboard:document_list' as document_list %}
+
+    <div class="p-5 bg-light rounded-3">
+        <div class="tab-pane fade show active">
+            <div class="container">
+                <dl class="row mb-4">
+                    <dt class="col-sm-3">ID:</dt>
+                    <dd class="col-sm-9">{{ document.id }}</dd>
+
+                    <dt class="col-sm-3">Size:</dt>
+                    <dd class="col-sm-9">{{ document.bytes }}</dd>
+
+                    <dt class="col-sm-3">Filename:</dt>
+                    <dd class="col-sm-9">{{ document.filename }}</dd>
+
+                    <dt class="col-sm-3">Original Filename:</dt>
+                    <dd class="col-sm-9">{{ document.original_filename }}</dd>
+
+                    <dt class="col-sm-3">Purpose:</dt>
+                    <dd class="col-sm-9">{{ document.purpose }}</dd>
+
+                    <dt class="col-sm-3">Description:</dt>
+                    <dd class="col-sm-9">{{ document.description }}</dd>
+
+                    <dt class="col-sm-3">Created At:</dt>
+                    <dd class="col-sm-9">{{ document.created_at|date:"Y-m-d H:i" }}</dd>
+
+                    <dt class="col-sm-3">Owner:</dt>
+                    <dd class="col-sm-9">{{ document.owner }}</dd>
+                </dl>
+
+                <div class="container d-flex ps-0">
+                    <a href="{% url 'dashboard:document_update' document.pk %}"
+                       class="btn btn-primary me-4 mt-4">Edit</a>
+                    <a href="{% url 'dashboard:document_delete' document.pk %}"
+                       class="btn btn-danger me-4 mt-4">Delete</a>
+                    <input type="button" class="btn btn-secondary mt-4"
+                           onclick="window.location='{{ document_list }}'; return false;" value="Back to List">
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock dashboard_content %}

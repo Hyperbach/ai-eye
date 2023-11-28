@@ -1,6 +1,7 @@
 from dblogs.models import CallEntryLog, PipelineExecutionLog
 from rest_framework import serializers
 
+from pipelines.models import Document
 from .models import Log
 
 
@@ -37,3 +38,17 @@ class CallEntryLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = CallEntryLog
         fields = "__all__"
+
+
+class DocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Document
+        fields = '__all__'
+
+    def create(self, validated_data):
+        return Document.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        instance.description = validated_data.get('description', instance.description)
+        instance.save()
+        return instance

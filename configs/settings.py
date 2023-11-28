@@ -19,7 +19,6 @@ import environ
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(os.path.join(BASE_DIR, "apps"))
 
-
 env = environ.Env(
     # set casting, default value
     DEBUG=(bool, False),
@@ -101,7 +100,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "configs.wsgi.application"
 
-
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
@@ -115,7 +113,6 @@ DATABASES = {
         "PORT": env("DB_PORT"),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -135,7 +132,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
@@ -146,7 +142,6 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
@@ -180,7 +175,12 @@ LOGGING = {
     },
     "loggers": {
         "db": {
-            "handlers": ["db", "console"],
+            "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": True,
+        },
+        "console": {
+            "handlers": ["console"],
             "level": "DEBUG",
             "propagate": True,
         },

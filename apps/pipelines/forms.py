@@ -1,9 +1,9 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.db import transaction
-
 from lark import LarkError
-from pipelines.models import PipelineSource
+
+from pipelines.models import PipelineSource, Document
 from pipelines.services.dag_builder import DAGBuilder
 from pipelines.services.dag_saver import DAGSaver
 
@@ -42,3 +42,11 @@ class PipelineCreateForm(forms.ModelForm):
                 dag_saver.save(pipeline=pipeline, update=update)
 
         return pipeline
+
+
+class DocumentForm(forms.ModelForm):
+    class Meta:
+        model = Document
+        fields = ['description']
+
+    file = forms.FileField()
