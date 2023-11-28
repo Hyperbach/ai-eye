@@ -150,3 +150,27 @@ class DAGEdge(models.Model):
 
     def __str__(self):
         return f"{self.from_node} -> {self.to_node}"
+
+
+class Document(models.Model):
+    id = models.CharField(max_length=100,
+                          primary_key=True)
+    object_type = models.CharField(max_length=50)
+    bytes = models.PositiveIntegerField()  # Size of the file in bytes
+    filename = models.CharField(max_length=255)  # Name of the file, prefixed with the user ID
+    original_filename = models.CharField(max_length=255, default=filename)  # Original name of the file, unprefixed
+    purpose = models.CharField(max_length=50)  # "assistants"
+    description = models.TextField(blank=True, null=True)  # Man-made description, can be blank
+
+    # Handling the 'created_at' as a DateTimeField
+    created_at = models.DateTimeField()
+
+    owner = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name=_("Author of the Document"),
+        related_name='documents'
+    )
+
+    def __str__(self):
+        return self.filename

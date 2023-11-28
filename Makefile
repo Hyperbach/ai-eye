@@ -56,3 +56,9 @@ create-app-admin:
 
 generate-kb:
 	python3 generate_kb.py
+
+migrations:
+	docker compose run --rm web python manage.py makemigrations
+
+migrate:
+	docker compose run --rm web python manage.py migrate

@@ -1,7 +1,8 @@
 from django.urls import path
 
 from . import views
-from .views import index
+from .views import index, DocumentListView, DocumentCreateView, DocumentDetailView, \
+    DocumentDeleteView, DocumentUpdateView
 
 app_name = "dashboard"
 
@@ -109,4 +110,10 @@ urlpatterns = [
         views.PipelineSourceExecuteView.as_view(),
         name="pipeline_execute",
     ),
+    path("documents", DocumentListView.as_view(), name="document_list"),
+    path("documents/add", DocumentCreateView.as_view(), name="document_create"),
+    path("documents/<str:pk>/", DocumentDetailView.as_view(), name="document_detail"),
+    path("documents/<str:pk>/delete", DocumentDeleteView.as_view(), name="document_delete"),
+    path("documents/<str:pk>/update", DocumentUpdateView.as_view(), name="document_update"),
+
 ]
