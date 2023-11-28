@@ -396,9 +396,6 @@ class DocumentListView(DocumentBaseView, generic.ListView):
     template_name = 'dashboard/documents/list.html'
     context_object_name = 'documents'  # This is used in the template to loop over the documents.
 
-    def get_queryset(self):
-        return super().get_queryset()
-
 
 class DocumentCreateView(DocumentBaseView, generic.CreateView):
     model = Document
