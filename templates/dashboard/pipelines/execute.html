@@ -296,8 +296,15 @@
                             args: args
                         }),
                         function (response) {
-                            const response_text = response.response;
-                            output_msg("#success-alert", response_text);
+                            const container = document.querySelector("#success-alert");
+                            container.innerHTML = '';
+
+                            const lines = response.response.split(/\r?\n/);
+                            lines.forEach(line => {
+                                container.appendChild(document.createTextNode(line));
+                                container.appendChild(document.createElement('br'));
+                            });
+
                             show_item("#success-alert", true);
                         },
                         function (error) {
