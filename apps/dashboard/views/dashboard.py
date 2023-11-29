@@ -20,15 +20,15 @@ from rest_framework.views import APIView
 
 from api.models import Log
 from api.permissions import AiEyeAdminPermission
-from api.serializers import DocumentSerializer
+from api.serializers import DocumentSerializer, AssistantSerializer
 from core.forms import UserCreateForm
 from core.mixins import AiEyeAdminMixin, AiEyeAdminOrUserMixin
 from core.models import OpenAIKey, PublicToken
 from dashboard.forms import PublicTokenCreateForm, PublicTokenUpdateForm
 from dashboard.serializers import BuiltinFunctionsSyncSerializer
 from dblogs.models import PipelineExecutionLog
-from pipelines.forms import PipelineCreateForm, DocumentForm
-from pipelines.models import BuiltinFunction, PipelineSource, Prompt, Document
+from pipelines.forms import PipelineCreateForm, DocumentForm, AssistantForm
+from pipelines.models import BuiltinFunction, PipelineSource, Prompt, Document, Assistant
 from pipelines.services.functions_manager import FUNCTIONS_MANAGER
 
 logger = logging.getLogger("console")
@@ -542,3 +542,202 @@ class DocumentDeleteView(DocumentBaseView, generic.DeleteView):
 class DocumentUpdateView(DocumentBaseView, generic.UpdateView):
     fields = ["description"]
     template_name = 'dashboard/documents/update.html'
+
+
+class AssistantBaseView(AiEyeAdminOrUserMixin, View):
+    success_url = reverse_lazy('dashboard:assistant_list')
+    serializer_class = AssistantSerializer
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+
+        openaikeys = (
+            OpenAIKey.objects.filter(
+                Q(owner=user) | Q(users__in=[user]), is_active=True
+            )
+            .distinct()
+            .order_by("-date_created")
+        )
+
+        context.update({"openaikeys": openaikeys})
+
+        return context
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = Assistant.objects
+        if user.is_aieye_user:
+            qs = qs.filter(owner=user)
+        return qs.order_by('-created_at')
+
+
+class AssistantListView(AssistantBaseView, generic.ListView):
+    template_name = 'dashboard/assistants/list.html'
+    context_object_name = 'assistants'
+
+
+class AssistantCreateView(AssistantBaseView, generic.CreateView):
+    model = Assistant
+    form_class = AssistantForm
+    template_name = 'dashboard/assistants/create.html'
+    success_url = reverse_lazy('dashboard:assistant_list')
+
+    def form_valid(self, form):
+        logger.info("Processing form submission.")
+
+        try:
+
+            logger.info("Form data: " + str(self.request.POST))
+
+            openai_key_id = self.request.POST.get('openaikey')
+            openai_key = OpenAIKey.objects.get(id=openai_key_id).key
+            original_assistant_name = form.cleaned_data.get('name', '')
+
+            # Generate new assistant name with prefix
+            prefix = f"1g_{self.request.user.id}_"
+            new_assistant_name = prefix + original_assistant_name
+
+            # Create an instance of the Assistant model with data from the form
+            assistant_instance = Assistant()
+            assistant_instance.name = new_assistant_name
+            assistant_instance.original_name = original_assistant_name
+            assistant_instance.description = form.cleaned_data.get('description', '')
+            assistant_instance.model = form.cleaned_data.get('model', '')
+            assistant_instance.instructions = form.cleaned_data.get('instructions', '')
+            assistant_instance.metadata = form.cleaned_data.get('metadata', '')
+
+            # Create assistant in OpenAI
+            openai_file_ids = self.request.POST.getlist('files')
+            logger.info(f"OpenAI file IDs: {openai_file_ids}")
+            response = create_assistant_in_openai(assistant_instance, openai_file_ids, openai_key)
+
+            logger.info("Created assistant in OpenAI.")
+            logger.debug(f"Response data from OpenAI API: {response}")
+
+            self.object = form.save(commit=False)
+            self.object.openai_id = response.id
+            self.object.name = new_assistant_name
+            self.object.original_name = original_assistant_name
+            self.object.description = response.description
+            self.object.model = response.model
+            self.object.instructions = response.instructions
+            self.object.metadata = response.metadata
+            self.object.created_at = datetime.datetime.fromtimestamp(response.created_at)
+            self.object.owner = self.request.user
+            self.object.save()
+
+            # Handling file associations
+            for openai_file_id in openai_file_ids:
+                try:
+                    # Assuming Document model uses openai_file_id as a reference to OpenAI's file ID
+                    document = Document.objects.get(id=openai_file_id)
+                    self.object.files.add(document)
+                except Document.DoesNotExist:
+                    logger.error(f"Document with OpenAI file ID {openai_file_id} does not exist in the database.")
+
+            self.object.save()
+            logger.info(f"Assistant object saved with ID: {self.object.id}")
+
+        except Exception as e:
+            logger.error(f"An error occurred during form processing: {str(e)}")
+            form.add_error(None, f'An error occurred: {str(e)}')
+            return self.form_invalid(form)
+
+        logger.info("Form processed successfully.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        # Override the success URL after the object is created
+        if self.object:
+            return reverse('dashboard:assistant_detail', kwargs={'pk': self.object.pk})
+        else:
+            return super().get_success_url()
+
+
+def create_assistant_in_openai(assistant, file_ids, openai_key):
+    logger.info("Creating assistant using OpenAI API.")
+    logger.info("Assistant object: " + str(assistant))
+
+    try:
+        client = OpenAI(api_key=openai_key)
+
+        # Extracting necessary information from the assistant argument
+        instructions = assistant.instructions
+        name = assistant.name
+        # Only retrieval is supported for now
+        tools = [{"type": "retrieval"}]
+        model = assistant.model
+
+        # Creating the assistant in OpenAI
+        response = client.beta.assistants.create(
+            instructions=instructions,
+            name=name,
+            tools=tools,
+            model=model,
+            file_ids=file_ids,
+        )
+
+        logger.info(f"Received response from OpenAI API: {response}")
+
+        return response
+
+    except Exception as e:
+        logger.exception("An error occurred while creating assistant in OpenAI.")
+        raise
+
+
+class AssistantDetailView(AssistantBaseView, generic.DetailView):
+    model = Document
+    template_name = 'dashboard/assistants/details.html'
+    context_object_name = 'assistant'
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = super().get_queryset()
+        if user.is_aieye_user:
+            qs = qs.filter(owner=user)
+        return qs
+
+
+class AssistantDeleteView(AssistantBaseView, generic.DeleteView):
+    template_name = "dashboard/assistants/delete.html"
+
+    def form_valid(self, form):
+        self.object = self.get_object()
+
+        try:
+            openai_key_id = self.request.POST.get('openaikey')
+            openai_key = OpenAIKey.objects.get(id=openai_key_id).key
+
+            client = OpenAI(api_key=openai_key)
+
+            response = client.beta.assistants.delete(self.object.openai_id)
+
+            if response.deleted:
+                messages.success(self.request, 'Assistant deleted successfully.')
+            else:
+                messages.error(self.request, 'Failed to delete the assistant from OpenAI.')
+        except APIStatusError as e:
+            if e.status_code == 404:
+                logger.info(f'Assistant not found in OpenAI, proceeding with deletion: {e}')
+                messages.warning(self.request, 'Assistant not found in OpenAI, but it will be deleted from database.')
+            else:
+                logger.error(f'Error deleting assistant from OpenAI: {e}')
+                messages.error(self.request, 'An error occurred while deleting the assistant: {}'.format(e))
+                return redirect(self.success_url)
+        except Exception as e:
+            logger.error(f'General error deleting assistant from OpenAI: {e}')
+            messages.error(self.request, 'An unexpected error occurred: {}'.format(e))
+            return redirect(self.success_url)
+
+        return super().form_valid(form)
+
+    def get(self, request, *args, **kwargs):
+        """ Ensure that the delete view only works with POST requests """
+        return self.post(request, *args, **kwargs)
+
+
+class AssistantUpdateView(AssistantBaseView, generic.UpdateView):
+    fields = ["description", "model", "instructions", "metadata", "files"]
+    template_name = 'dashboard/assistants/update.html'

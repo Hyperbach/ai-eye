@@ -1,0 +1,65 @@
+{% extends 'dashboard/index.html' %}
+{% load bootstrap5 %}
+
+{% block dashboard_header %}
+    <h2 class="text-left mt-5">Assistant Details</h2>
+{% endblock dashboard_header %}
+
+{% block dashboard_content %}
+    {% url 'dashboard:assistant_list' as assistant_list %}
+
+    <div class="p-5 bg-light rounded-3">
+        <div class="tab-pane fade show active">
+            <div class="container">
+                <dl class="row mb-4">
+                    <dt class="col-sm-3">ID:</dt>
+                    <dd class="col-sm-9">{{ assistant.id }}</dd>
+
+                    <dt class="col-sm-3">OpenAI ID:</dt>
+                    <dd class="col-sm-9">{{ assistant.openai_id }}</dd>
+
+                    <dt class="col-sm-3">Name:</dt>
+                    <dd class="col-sm-9">{{ assistant.name }}</dd>
+
+                    <dt class="col-sm-3">Original Name:</dt>
+                    <dd class="col-sm-9">{{ assistant.original_name }}</dd>
+
+                    <dt class="col-sm-3">Description:</dt>
+                    <dd class="col-sm-9">{{ assistant.description }}</dd>
+
+                    <dt class="col-sm-3">Model:</dt>
+                    <dd class="col-sm-9">{{ assistant.model }}</dd>
+
+                    <dt class="col-sm-3">Instructions:</dt>
+                    <dd class="col-sm-9">{{ assistant.instructions }}</dd>
+
+                    <dt class="col-sm-3">Files:</dt>
+                    <dd class="col-sm-9">
+                        {% for file in assistant.files.all %}
+                            {{ file }}<br>
+                        {% endfor %}
+                    </dd>
+
+                    <dt class="col-sm-3">Metadata:</dt>
+                    <dd class="col-sm-9">{{ assistant.metadata }}</dd>
+
+                    <dt class="col-sm-3">Created At:</dt>
+                    <dd class="col-sm-9">{{ assistant.created_at|date:"Y-m-d H:i" }}</dd>
+
+                    <dt class="col-sm-3">Owner:</dt>
+                    <dd class="col-sm-9">{{ assistant.owner }}</dd>
+                </dl>
+
+                <div class="container d-flex ps-0">
+                    <a href="{% url 'dashboard:assistant_update' assistant.pk %}"
+                       class="btn btn-primary me-4 mt-4">Edit</a>
+                    <a href="{% url 'dashboard:assistant_delete' assistant.pk %}"
+                       class="btn btn-danger me-4 mt-4">Delete</a>
+                    <input type="button" class="btn btn-secondary mt-4"
+                           onclick="window.location='{{ assistant_list }}'; return false;" value="Back to List">
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock dashboard_content %}
