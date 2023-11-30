@@ -7,6 +7,7 @@
     <link href="{% static 'css/fontawesomefree/fontawesome.css' %}" rel="stylesheet" type="text/css">
     <link href="{% static 'css/fontawesomefree/solid.css' %}" rel="stylesheet" type="text/css">
     <link href="{% static 'css/pipeline_exec_history.css' %}" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/custom.css' %}">
 {% endblock %}
 
 {% block dashboard_header %}
@@ -112,17 +113,61 @@
 
 {% block bootstrap5_extra_script %}
     <script>
-        $(document).ready(function() {
-            $('tr.main-row').on('click', function() {
+        $(document).ready(function () {
+            $('tr.main-row').on('click', function () {
                 var id = $(this).data('id');
                 var extra_row = $('#extra-' + id);
-                $('tr.extra-row.show').not(extra_row).removeClass('show');
-                extra_row.toggleClass('show');
+
+                // Toggle the visibility of the extra row
+                if (extra_row.hasClass('show')) {
+                    // If currently shown, remove the show class and remove any dynamically added log-entry rows.
+                    extra_row.removeClass('show').removeClass('loaded');
+                    extra_row.nextAll('tr.log-entry').remove(); // Remove the added log entries
+                } else {
+                    // If not currently shown, make the AJAX call and display the logs.
+                    extra_row.addClass('show');
+                    if (!extra_row.hasClass('loaded')) {
+                        // Make a GET AJAX call to retrieve logs for the clicked pipeline execution.
+                        $.ajax({
+                            url: '/api/execution/' + id + '/',
+                            type: 'GET',
+                            contentType: 'application/json',
+                            success: function (response) {
+                                // Assuming response contains an array of log entries.
+                                var logsHtml = '';
+                                response.call_entries.forEach(function (log) {
+                                    var startDate = new Date(log.start_date);
+                                    var endDate = new Date(log.end_date);
+                                    var duration = endDate - startDate; // Duration in milliseconds
+
+                                    var fnTypeColor = log.fn_type === 'builtin' ? 'text-primary' : 'text-success';
+
+                                    logsHtml += '<tr class="log-entry fn-'+log.fn_type+'"><td colspan="5">' +
+                                        '<div class="fn-name ' + fnTypeColor + '">' + log.fn_name + ' (' + log.fn_type + ')</div>' +
+                                        '<div><strong>Parameters:</strong> <pre>' + JSON.stringify(log.parameters, null, 2) + '</pre></div>' +
+                                        '<div><strong>Output:</strong> <pre>' + log.output + '</pre></div>' +
+                                        '<div><strong>Start:</strong> ' + log.start_date + '</div>' +
+                                        '<div><strong>End:</strong> ' + log.end_date + '</div>' +
+                                        '<div><strong>Duration:</strong> ' + duration + ' ms</div>' +
+                                        '</td></tr>';
+                                });
+
+                                // Insert the logs after the clicked row.
+                                extra_row.after(logsHtml);
+                                extra_row.addClass('loaded'); // Mark it as loaded to avoid loading again
+                            },
+                            error: function (xhr, status, error) {
+                                // Handle any error that occurred in any of the previous requests.
+                                console.error("Error fetching logs: " + error);
+                            }
+                        });
+                    }
+                }
             });
 
-            $('a.pipeline-detail-link').on('click', function(e) {
+            $('a.pipeline-detail-link').on('click', function (e) {
                 e.stopPropagation();
             });
-        })
+        });
     </script>
 {% endblock %}

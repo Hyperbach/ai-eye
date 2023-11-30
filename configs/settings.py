@@ -175,7 +175,7 @@ LOGGING = {
     },
     "loggers": {
         "db": {
-            "handlers": ["console"],
+            "handlers": ["db"],
             "level": "DEBUG",
             "propagate": True,
         },
