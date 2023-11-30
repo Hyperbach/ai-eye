@@ -181,7 +181,7 @@ class Assistant(models.Model):
     # Basic assistant information
     openai_id = models.CharField(max_length=255, unique=True)
     name = models.CharField(max_length=256)
-    original_name = models.CharField(max_length=256)
+    prefixed_name = models.CharField(max_length=256)
     description = models.TextField(max_length=512, blank=True, null=True)
     model = models.CharField(max_length=64)
     instructions = models.TextField(max_length=32768, blank=True, null=True)

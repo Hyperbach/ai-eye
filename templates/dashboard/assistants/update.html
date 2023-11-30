@@ -6,21 +6,36 @@
 {% endblock dashboard_header %}
 
 {% block dashboard_content %}
-    {% url 'dashboard:document_list' as assistant_list %}
+    {% url 'dashboard:assistant_list' as assistant_list %}
 
     <div class="p-5 bg-light rounded-3">
-    <div class="tab-pane fade show active">
-        <form method="post">
-            {% csrf_token %}
-            {% bootstrap_form form form_group_class='row mb-3' label_class='col-sm-2 col-form-label' field_class='col-sm-10' %}
+        <div class="tab-pane fade show active">
+            <form method="post">
+                {% csrf_token %}
 
-            <div class="container d-flex ps-0">
-                <input type="submit" class="btn btn-primary me-4 mt-4" value="Update">
-                <input type="submit" class="btn btn-danger mt-4"
-                       onclick="window.location='{{ assistant_list }}'; return false;" value="Cancel">
-            </div>
-        </form>
-    </div>
+                <div class="row mb-3 item-block">
+                    <label class="col-sm-2 col-form-label" for="id_openaikey">OpenAI Key</label>
+                    <div class="col-sm-10">
+                        <select name="openaikey" class="form-select" title="" required id="id_openaikey">
+                            <option value="">---------</option>
+                            {% for openaikey in openaikeys %}
+                                <option value="{{ openaikey.id }}" {% if forloop.first %}selected{% endif %}>
+                                    {{ openaikey.key }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                {% bootstrap_form form form_group_class='row mb-3' label_class='col-sm-2 col-form-label' field_class='col-sm-10' %}
+
+                <div class="container d-flex ps-0">
+                    <input type="submit" class="btn btn-primary me-4 mt-4" value="Update">
+                    <input type="submit" class="btn btn-danger mt-4"
+                           onclick="window.location='{{ assistant_list }}'; return false;" value="Cancel">
+                </div>
+            </form>
+        </div>
     </div>
 
 

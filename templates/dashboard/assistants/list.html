@@ -37,7 +37,7 @@
                     <tr>
                         <td>{{ assistant.id }}</td>
                         <td>{{ assistant.openai_id }}</td>
-                        <td><a href="{% url 'dashboard:assistant_detail' assistant.pk %}">{{ assistant.original_name }}</a></td>
+                        <td><a href="{% url 'dashboard:assistant_detail' assistant.pk %}">{{ assistant.prefixed_name }}</a></td>
                         <td>{{ assistant.description }}</td>
                         <td>{{ assistant.model }}</td>
                         <td>{{ assistant.created_at|date:"Y-m-d H:i" }}</td>

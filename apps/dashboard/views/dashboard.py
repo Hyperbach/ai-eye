@@ -592,16 +592,16 @@ class AssistantCreateView(AssistantBaseView, generic.CreateView):
 
             openai_key_id = self.request.POST.get('openaikey')
             openai_key = OpenAIKey.objects.get(id=openai_key_id).key
-            original_assistant_name = form.cleaned_data.get('name', '')
+            unprefixed_name = form.cleaned_data.get('name', '')
 
             # Generate new assistant name with prefix
             prefix = f"1g_{self.request.user.id}_"
-            new_assistant_name = prefix + original_assistant_name
+            prefixed_name = prefix + unprefixed_name
 
             # Create an instance of the Assistant model with data from the form
             assistant_instance = Assistant()
-            assistant_instance.name = new_assistant_name
-            assistant_instance.original_name = original_assistant_name
+            assistant_instance.prefixed_name = prefixed_name
+            assistant_instance.name = unprefixed_name
             assistant_instance.description = form.cleaned_data.get('description', '')
             assistant_instance.model = form.cleaned_data.get('model', '')
             assistant_instance.instructions = form.cleaned_data.get('instructions', '')
@@ -617,8 +617,8 @@ class AssistantCreateView(AssistantBaseView, generic.CreateView):
 
             self.object = form.save(commit=False)
             self.object.openai_id = response.id
-            self.object.name = new_assistant_name
-            self.object.original_name = original_assistant_name
+            self.object.name = unprefixed_name
+            self.object.prefixed_name = prefixed_name
             self.object.description = response.description
             self.object.model = response.model
             self.object.instructions = response.instructions
@@ -664,7 +664,7 @@ def create_assistant_in_openai(assistant, file_ids, openai_key):
 
         # Extracting necessary information from the assistant argument
         instructions = assistant.instructions
-        name = assistant.name
+        name = assistant.prefixed_name
         # Only retrieval is supported for now
         tools = [{"type": "retrieval"}]
         model = assistant.model
@@ -739,5 +739,80 @@ class AssistantDeleteView(AssistantBaseView, generic.DeleteView):
 
 
 class AssistantUpdateView(AssistantBaseView, generic.UpdateView):
-    fields = ["description", "model", "instructions", "metadata", "files"]
+    model = Assistant
+    form_class = AssistantForm
     template_name = 'dashboard/assistants/update.html'
+    success_url = reverse_lazy('dashboard:assistant_list')
+
+    def form_valid(self, form):
+        logger.info("Processing assistant update submission.")
+        logger.info("Form data: " + str(self.request.POST))
+
+        with transaction.atomic():
+            # Fetch the original (pre-update) state of the object from the database
+            original_object = Assistant.objects.get(id=self.object.id)
+
+            # Update the assistant locally but don't commit yet
+            self.object = form.save(commit=False)
+
+            # Determine if relevant fields have changed
+            relevant_fields_changed = False
+            for field in ['name', 'model', 'instructions', 'metadata']:
+                if form.cleaned_data.get(field) != getattr(original_object, field):
+                    logger.debug(
+                        f"Field {field} has changed: {getattr(original_object, field)} -> {form.cleaned_data.get(field)}")
+                    relevant_fields_changed = True
+                    break
+            else:
+                # Special handling for many-to-many 'files' field
+                form_file_ids = set(form.cleaned_data.get('files').values_list('id', flat=True))
+                original_file_ids = set(original_object.files.values_list('id', flat=True))
+                if form_file_ids != original_file_ids:
+                    logger.debug(f"Field files has changed: {original_file_ids} -> {form_file_ids}")
+                    relevant_fields_changed = True
+
+            if relevant_fields_changed:
+
+                user_provided_name = form.cleaned_data.get('name', '')
+
+                # Generate new assistant prefixed_name with prefix
+                prefix = f"1g_{self.request.user.id}_"
+                self.object.prefixed_name = prefix + user_provided_name
+
+                form_files = form.cleaned_data.get('files', [])
+
+                # Prepare the payload for updating the assistant in OpenAI
+                update_payload = {
+                    'model': self.object.model,
+                    'instructions': self.object.instructions,
+                    'metadata': self.object.metadata,
+                    'name': self.object.prefixed_name,
+                    'file_ids': [doc.id for doc in form_files]
+                }
+
+                try:
+                    # Retrieve OpenAI API key and update the assistant in OpenAI
+                    openai_key_id = self.request.POST.get('openaikey')
+                    openai_key = OpenAIKey.objects.get(id=openai_key_id).key
+                    client = OpenAI(api_key=openai_key)
+
+                    logger.debug("Update payload: " + str(update_payload))
+
+                    response = client.beta.assistants.update(self.object.openai_id, **update_payload)
+                    logger.info("Assistant updated in OpenAI: " + str(response))
+
+
+                except Exception as e:
+                    # Log the error and raise to trigger a rollback
+                    logger.error(f"An error occurred while updating assistant in OpenAI: {str(e)}")
+                    form.add_error(None, f'An error occurred during OpenAI update: {str(e)}')
+                    return self.form_invalid(form)
+
+            # Commit the changes to the local database as OpenAI update is successful
+            self.object.save()
+
+        logger.info("Assistant update processed successfully.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse('dashboard:assistant_detail', kwargs={'pk': self.object.pk})
