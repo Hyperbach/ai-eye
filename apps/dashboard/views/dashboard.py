@@ -277,14 +277,23 @@ class PipelineExecutionHistoryView(AiEyeAdminOrUserMixin, generic.ListView):
 
     def get_context_data(self, *args, **kwargs):
         data = super().get_context_data(*args, **kwargs)
+
+        # Pagination logic
         paginator = data["paginator"]
         page_obj = data["page_obj"]
-
         current_index = paginator.page_range.index(page_obj.number)
         max_index = len(paginator.page_range)
         start_index = current_index - 2 if current_index >= 2 else 0
         end_index = current_index + 3 if current_index <= max_index - 3 else max_index
         data["page_range"] = paginator.page_range[start_index:end_index]
+
+        # Calculate execution time for each log entry
+        for log in page_obj:
+            if log.start_date and log.end_date:
+                duration = (log.end_date - log.start_date).total_seconds() * 1000
+                log.execution_time_ms = int(duration)
+            else:
+                log.execution_time_ms = None
 
         return data
 
