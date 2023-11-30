@@ -12,7 +12,17 @@ class AssistantUploader:
     def __init__(self, openai_key):
         self.openai_key = openai_key
 
-    def create_assistant_in_openai(self, prefixed_name, uploaded_data):
+    def update_assistant_in_openai(self, openai_id, update_payload):
+        logger.info("Updating assistant using OpenAI API.")
+
+        try:
+            client = OpenAI(api_key=self.openai_key)
+            return client.beta.assistants.update(openai_id, **update_payload)
+        except Exception as exc:
+            logger.error(f"An error occurred while updating assistant in OpenAI: {str(exc)}")
+            raise
+
+    def create_assistant_in_openai(self, prefixed_name, uploaded_data, openai_file_ids):
         logger.info("Creating assistant using OpenAI API.")
 
         try:
@@ -24,15 +34,13 @@ class AssistantUploader:
             # Only retrieval is supported for now
             tools = [{"type": "retrieval"}]
 
-            file_ids = [doc.id for doc in uploaded_data.get('files', [])]
-
             # Creating the assistant in OpenAI
             response = client.beta.assistants.create(
                 instructions=uploaded_data.get('instructions', ''),
                 name=name,
                 tools=tools,
                 model=uploaded_data.get('model', ''),
-                file_ids=file_ids,
+                file_ids=openai_file_ids,
             )
 
             logger.info(f"Received response from OpenAI API: {response}")

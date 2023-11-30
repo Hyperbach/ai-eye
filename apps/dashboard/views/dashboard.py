@@ -23,7 +23,7 @@ from api.serializers import DocumentSerializer, AssistantSerializer
 from core.forms import UserCreateForm
 from core.mixins import AiEyeAdminMixin, AiEyeAdminOrUserMixin
 from core.models import OpenAIKey, PublicToken
-from core.services.uploaders import DocumentUploader
+from core.services.uploaders import DocumentUploader, AssistantUploader
 from dashboard.forms import PublicTokenCreateForm, PublicTokenUpdateForm
 from dashboard.serializers import BuiltinFunctionsSyncSerializer
 from dblogs.models import PipelineExecutionLog
@@ -561,46 +561,56 @@ class AssistantCreateView(AssistantBaseView, generic.CreateView):
 
             openai_key_id = self.request.POST.get('openaikey')
             openai_key = OpenAIKey.objects.get(id=openai_key_id).key
-            unprefixed_name = form.cleaned_data.get('name', '')
+
+            cleaned_data = form.cleaned_data
+            unprefixed_name = cleaned_data.get('name', '')
 
             # Generate new assistant name with prefix
             prefix = f"1g_{self.request.user.id}_"
             prefixed_name = prefix + unprefixed_name
 
-            # Create an instance of the Assistant model with data from the form
-            assistant_instance = Assistant()
-            assistant_instance.prefixed_name = prefixed_name
-            assistant_instance.name = unprefixed_name
-            assistant_instance.model = form.cleaned_data.get('model', '')
-            assistant_instance.instructions = form.cleaned_data.get('instructions', '')
-            assistant_instance.metadata = form.cleaned_data.get('metadata', '')
+            try:
+                openai_file_ids = self.request.POST.getlist('files')
+                logger.info(f"OpenAI file IDs: {openai_file_ids}")
 
-            # Create assistant in OpenAI
-            openai_file_ids = self.request.POST.getlist('files')
-            logger.info(f"OpenAI file IDs: {openai_file_ids}")
-            response = create_assistant_in_openai(assistant_instance, openai_file_ids, openai_key)
+                # Create assistant in OpenAI
+                assistant_uploader = AssistantUploader(openai_key=openai_key)
+                response = assistant_uploader.create_assistant_in_openai(prefixed_name=prefixed_name,
+                                                                         uploaded_data=cleaned_data,
+                                                                         openai_file_ids=openai_file_ids)
 
-            logger.info("Created assistant in OpenAI.")
-            logger.debug(f"Response data from OpenAI API: {response}")
+                logger.info("Created assistant in OpenAI.")
+                logger.debug(f"Response data from OpenAI API: {response}")
 
-            self.object = form.save(commit=False)
-            self.object.openai_id = response.id
-            self.object.prefixed_name = prefixed_name
-            self.object.created_at = datetime.datetime.fromtimestamp(response.created_at)
-            self.object.owner = self.request.user
-            self.object.save()
+            except Exception as exc:
+                return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                # Create an instance of the Assistant model with data from the form
+                assistant_instance = Assistant()
+                assistant_instance.prefixed_name = prefixed_name
+                assistant_instance.name = unprefixed_name
+                assistant_instance.model = cleaned_data.get('model', '')
+                assistant_instance.instructions = cleaned_data.get('instructions', '')
+                assistant_instance.metadata = cleaned_data.get('metadata', '')
 
-            # Handling file associations
-            for openai_file_id in openai_file_ids:
-                try:
-                    # Assuming Document model uses openai_file_id as a reference to OpenAI's file ID
-                    document = Document.objects.get(id=openai_file_id)
-                    self.object.files.add(document)
-                except Document.DoesNotExist:
-                    logger.error(f"Document with OpenAI file ID {openai_file_id} does not exist in the database.")
+                self.object = form.save(commit=False)
+                self.object.openai_id = response.id
+                self.object.prefixed_name = prefixed_name
+                self.object.created_at = datetime.datetime.fromtimestamp(response.created_at)
+                self.object.owner = self.request.user
+                self.object.save()
 
-            self.object.save()
-            logger.info(f"Assistant object saved with ID: {self.object.id}")
+                # Handling file associations
+                for openai_file_id in openai_file_ids:
+                    try:
+                        # Assuming Document model uses openai_file_id as a reference to OpenAI's file ID
+                        document = Document.objects.get(id=openai_file_id)
+                        self.object.files.add(document)
+                    except Document.DoesNotExist:
+                        logger.error(f"Document with OpenAI file ID {openai_file_id} does not exist in the database.")
+
+                self.object.save()
+                logger.info(f"Assistant object saved with ID: {self.object.id}")
 
         except Exception as e:
             logger.error(f"An error occurred during form processing: {str(e)}")
@@ -616,38 +626,6 @@ class AssistantCreateView(AssistantBaseView, generic.CreateView):
             return reverse('dashboard:assistant_detail', kwargs={'pk': self.object.pk})
         else:
             return super().get_success_url()
-
-#TODO: remove
-def create_assistant_in_openai(assistant, file_ids, openai_key):
-    logger.info("Creating assistant using OpenAI API.")
-    logger.info("Assistant object: " + str(assistant))
-
-    try:
-        client = OpenAI(api_key=openai_key)
-
-        # Extracting necessary information from the assistant argument
-        instructions = assistant.instructions
-        name = assistant.prefixed_name
-        # Only retrieval is supported for now
-        tools = [{"type": "retrieval"}]
-        model = assistant.model
-
-        # Creating the assistant in OpenAI
-        response = client.beta.assistants.create(
-            instructions=instructions,
-            name=name,
-            tools=tools,
-            model=model,
-            file_ids=file_ids,
-        )
-
-        logger.info(f"Received response from OpenAI API: {response}")
-
-        return response
-
-    except Exception as e:
-        logger.exception("An error occurred while creating assistant in OpenAI.")
-        raise
 
 
 class AssistantDetailView(AssistantBaseView, generic.DetailView):

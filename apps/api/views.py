@@ -1,23 +1,21 @@
 import datetime
 import logging
 
-from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
 from django.db.models import Max, Q
 from django.http import Http404
-
-from core.models import OpenAIKey
-from dblogs.models import CallEntryLog, PipelineExecutionLog
-from pipelines.models import PipelineSource, Document, Assistant
-from pipelines.services.exceptions import PipelineException
-from pipelines.services.pipeline_executor import PipelineExecutor
-from pipelines.utils import find_first
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from core.models import OpenAIKey
+from core.services.uploaders import DocumentUploader, AssistantUploader
+from dblogs.models import CallEntryLog, PipelineExecutionLog
+from pipelines.models import PipelineSource, Document, Assistant
+from pipelines.services.exceptions import PipelineException
+from pipelines.services.pipeline_executor import PipelineExecutor
+from pipelines.utils import find_first
 from .authentication import AiEyeTokenAuthentication
 from .models import Log
 from .permissions import AiEyeAdminPermission, AiEyeUserPermission
@@ -31,7 +29,6 @@ from .serializers import (
     PipelineRetrieveExecutionLogsSerializer, DocumentCreationSerializer, AssistantCreationSerializer,
 )
 from .services import OpenAICacheService
-from core.services.uploaders import DocumentUploader, AssistantUploader
 
 logger = logging.getLogger("console")
 
@@ -230,7 +227,7 @@ class AssistantAPIView(APIView):
 
     http_method_names = [
         "post",
-        "put", #TODO: implement
+        "patch",
     ]
 
     @staticmethod
@@ -238,7 +235,75 @@ class AssistantAPIView(APIView):
         public_token = request.auth
         return public_token.openaikey.key
 
+    def get_object(self, pk):
+        try:
+            return Assistant.objects.get(pk=pk)
+        except Assistant.DoesNotExist:
+            raise Http404
+
+    def patch(self, request, pk, format=None):
+        logger.info("Processing assistant update submission.")
+
+        existing_instance = self.get_object(pk)
+
+        serializer = AssistantCreationSerializer(instance=existing_instance, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        instance_changed = False
+
+        model_fields_changed = False
+        model_fields_to_compare = ["name", "description", "model", "instructions", "metadata"]
+        if not all(serializer.validated_data.get(field) == getattr(existing_instance, field)
+                   for field in model_fields_to_compare):
+            model_fields_changed = True
+
+        if model_fields_changed:
+            existing_instance = serializer.save()
+            instance_changed = True
+        else:
+            existing_instance_file_names = set(existing_instance.files.values_list('filename', flat=True))
+            new_file_names = set(doc.filename for doc in serializer.validated_data.get("files", []))
+            if existing_instance_file_names != new_file_names:
+                instance_changed = True
+                if new_file_names:
+                    document_instances = Document.objects.filter(filename__in=new_file_names)
+                    existing_instance.files.set(document_instances)
+                else:
+                    existing_instance.files.set.clear()
+
+        if instance_changed:
+            openai_key = self.retrieve_openaikey_for_aieyetokenauthenticated_user(request)
+
+            # Prepare the payload for updating the assistant in OpenAI
+            update_payload = {
+                'model': existing_instance.model,
+                'instructions': existing_instance.instructions,
+                'metadata': existing_instance.metadata,
+                'name': existing_instance.prefixed_name,
+                'file_ids': [doc.id for doc in existing_instance.files.all()]
+            }
+
+            try:
+                assistant_uploader = AssistantUploader(openai_key=openai_key)
+                response = assistant_uploader.update_assistant_in_openai(openai_id=existing_instance.openai_id,
+                                                                         update_payload=update_payload)
+            except Exception as exc:
+                return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                logger.info("Assistant updated in OpenAI: " + str(response))
+
+        return Response({
+                "success": True,
+                "assistant_id": existing_instance.id,
+                "was_changed": instance_changed,
+            },
+                status=status.HTTP_200_OK
+        )
+
     def post(self, request, format=None):
+        logger.info("Processing assistant create submission.")
+
         serializer = AssistantCreationSerializer(data=request.data)
 
         if not serializer.is_valid():
@@ -252,10 +317,13 @@ class AssistantAPIView(APIView):
         prefix = f"1g_{self.request.user.id}_"
         prefixed_name = prefix + unprefixed_name
 
+        openai_file_ids = [doc.id for doc in serializer.validated_data.get('files', [])]
+
         try:
             assistant_uploader = AssistantUploader(openai_key=openai_key)
             response = assistant_uploader.create_assistant_in_openai(prefixed_name=prefixed_name,
-                                                                     uploaded_data=serializer.validated_data)
+                                                                     uploaded_data=serializer.validated_data,
+                                                                     openai_file_ids=openai_file_ids)
         except Exception as exc:
             return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         else:
