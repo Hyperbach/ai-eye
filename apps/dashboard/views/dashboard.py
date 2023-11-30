@@ -602,7 +602,6 @@ class AssistantCreateView(AssistantBaseView, generic.CreateView):
             assistant_instance = Assistant()
             assistant_instance.prefixed_name = prefixed_name
             assistant_instance.name = unprefixed_name
-            assistant_instance.description = form.cleaned_data.get('description', '')
             assistant_instance.model = form.cleaned_data.get('model', '')
             assistant_instance.instructions = form.cleaned_data.get('instructions', '')
             assistant_instance.metadata = form.cleaned_data.get('metadata', '')
@@ -617,12 +616,7 @@ class AssistantCreateView(AssistantBaseView, generic.CreateView):
 
             self.object = form.save(commit=False)
             self.object.openai_id = response.id
-            self.object.name = unprefixed_name
             self.object.prefixed_name = prefixed_name
-            self.object.description = response.description
-            self.object.model = response.model
-            self.object.instructions = response.instructions
-            self.object.metadata = response.metadata
             self.object.created_at = datetime.datetime.fromtimestamp(response.created_at)
             self.object.owner = self.request.user
             self.object.save()
