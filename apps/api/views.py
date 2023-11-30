@@ -5,14 +5,15 @@ from django.db.models import Max, Q
 from django.http import Http404
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.authentication import SessionAuthentication
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.models import OpenAIKey
 from core.services.uploaders import DocumentUploader, AssistantUploader
 from dblogs.models import CallEntryLog, PipelineExecutionLog
-from pipelines.models import PipelineSource, Document, Assistant
+from pipelines.models import Document, Assistant
+from pipelines.models import PipelineSource
 from pipelines.services.exceptions import PipelineException
 from pipelines.services.pipeline_executor import PipelineExecutor
 from pipelines.utils import find_first
@@ -218,6 +219,32 @@ class PipelineRetrieveExecutionLogsViewSet(viewsets.ViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class PipelineExecutionLogsViewSet(viewsets.ViewSet):
+    permission_classes = (
+        permissions.IsAuthenticated,
+        (AiEyeUserPermission | AiEyeAdminPermission),
+    )
+    authentication_classes = (SessionAuthentication,)
+
+    def retrieve(self, request, pk=None):  # Ensure 'pk' is accepted as an argument
+        if pk is None:
+            return Response({'error': 'An execution ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            pipeline_execution_log_instance = PipelineExecutionLog.objects.get(pk=pk, user=request.user)
+        except PipelineExecutionLog.DoesNotExist:
+            raise NotFound('A PipelineExecutionLog with the provided ID does not exist.')
+
+        call_entries_logs = CallEntryLog.objects.filter(
+            pipeline_execution_id=pipeline_execution_log_instance.pk).order_by('id')
+        call_entries_log_serializer = CallEntryLogSerializer(instance=call_entries_logs, many=True)
+
+        return Response({
+            'execution_id': pk,
+            'call_entries': call_entries_log_serializer.data
+        }, status=status.HTTP_200_OK)
+
+
 class AssistantAPIView(APIView):
     permission_classes = (
         permissions.IsAuthenticated,
@@ -294,11 +321,11 @@ class AssistantAPIView(APIView):
                 logger.info("Assistant updated in OpenAI: " + str(response))
 
         return Response({
-                "success": True,
-                "assistant_id": existing_instance.id,
-                "was_changed": instance_changed,
-            },
-                status=status.HTTP_200_OK
+            "success": True,
+            "assistant_id": existing_instance.id,
+            "was_changed": instance_changed,
+        },
+            status=status.HTTP_200_OK
         )
 
     def post(self, request, format=None):
@@ -422,8 +449,8 @@ class DocumentAPIView(APIView):
             logger.info(f"Document object saved with ID: {document_instance.id}")
 
             return Response({
-                    "success": True,
-                    "document_id": document_instance.id,
-                },
+                "success": True,
+                "document_id": document_instance.id,
+            },
                 status=status.HTTP_200_OK
             )

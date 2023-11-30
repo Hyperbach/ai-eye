@@ -42,11 +42,20 @@
 
 /* Styling for log entry */
 .log-entry {
-  background-color: white;
-  padding: 10px;
   border-radius: 5px;
-  margin-bottom: 20px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.log-entry td {
+  padding: 20px;
+}
+
+.log-entry.fn-builtin {
+  background-color: #eeeefe;
+}
+
+.log-entry.fn-prompt {
+  background-color: #eefeee;
 }
 
 .log-entry .log-entry-details p {
