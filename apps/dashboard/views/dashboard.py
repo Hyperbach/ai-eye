@@ -1,11 +1,10 @@
 import datetime
 import logging
+from http import HTTPStatus
 
 from django import forms
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect
@@ -24,6 +23,7 @@ from api.serializers import DocumentSerializer, AssistantSerializer
 from core.forms import UserCreateForm
 from core.mixins import AiEyeAdminMixin, AiEyeAdminOrUserMixin
 from core.models import OpenAIKey, PublicToken
+from core.services.uploaders import DocumentUploader
 from dashboard.forms import PublicTokenCreateForm, PublicTokenUpdateForm
 from dashboard.serializers import BuiltinFunctionsSyncSerializer
 from dblogs.models import PipelineExecutionLog
@@ -413,24 +413,18 @@ class DocumentCreateView(DocumentBaseView, generic.CreateView):
             uploaded_file = self.request.FILES['file']
             original_file_name = uploaded_file.name
             logger.info(f"Received file: {original_file_name}")
-
-            # Generate new filename with prefix
-            prefix = f"1g_{self.request.user.id}_"
-            new_file_name = prefix + original_file_name
         except Exception as e:
             logger.error(f"An error occurred during form processing: {str(e)}")
             form.add_error(None, f'An error occurred: {str(e)}')
             return self.form_invalid(form)
 
+        document_uploader = DocumentUploader(openai_key=openai_key)
+
         try:
-            # Save the file with the new name
-            temp_file = default_storage.save(new_file_name, ContentFile(uploaded_file.read()))
-            logger.info(f"Temporary file saved: {temp_file}")
+            response = document_uploader.upload_file_to_openai(uploaded_file=uploaded_file,
+                                                               user_id=self.request.user.id)
 
-            # Upload to OpenAI with the new filename
-            response = upload_file_to_openai(temp_file, new_file_name, openai_key)
             logger.info("Sent file to OpenAI API.")
-
             logger.debug(f"Response data from OpenAI API: {response}")
 
             self.object = form.save(commit=False)
@@ -446,12 +440,8 @@ class DocumentCreateView(DocumentBaseView, generic.CreateView):
             self.object.save()
             logger.info(f"Document object saved with ID: {self.object.id}")
 
-            default_storage.delete(temp_file)
-            logger.info("Temporary file deleted.")
-
         except Exception as e:
             logger.error(f"An error occurred during form processing: {str(e)}")
-            default_storage.delete(temp_file)
             form.add_error(None, f'An error occurred: {str(e)}')
             return self.form_invalid(form)
 
@@ -466,27 +456,6 @@ class DocumentCreateView(DocumentBaseView, generic.CreateView):
             return reverse('dashboard:document_detail', kwargs={'pk': self.object.pk})
         else:
             return super().get_success_url()
-
-
-def upload_file_to_openai(file_path, file_name, openai_key):
-    logger.info("Starting upload to OpenAI.")
-    logger.debug(f"File path: {file_path}, File name: {file_name}")
-
-    try:
-        client = OpenAI(api_key=openai_key)
-
-        response = client.files.create(
-            file=open(file_path, "rb"),
-            purpose="assistants"
-        )
-
-        logger.info(f"Received response from OpenAI API: {response}")
-
-        return response
-
-    except Exception as e:
-        logger.exception("An error occurred while uploading file to OpenAI.")
-        raise
 
 
 class DocumentDetailView(DocumentBaseView, generic.DetailView):
@@ -512,15 +481,15 @@ class DocumentDeleteView(DocumentBaseView, generic.DeleteView):
             openai_key_id = self.request.POST.get('openaikey')
             openai_key = OpenAIKey.objects.get(id=openai_key_id).key
 
-            client = OpenAI(api_key=openai_key)
-            response = client.files.delete(self.object.id)
+            document_uploader = DocumentUploader(openai_key=openai_key)
+            response = document_uploader.delete(self.object.id)
 
             if response.deleted:
                 messages.success(self.request, 'Document and corresponding file deleted successfully.')
             else:
                 messages.error(self.request, 'Failed to delete the file from OpenAI.')
         except APIStatusError as e:
-            if e.status_code == 404:
+            if e.status_code == HTTPStatus.NOT_FOUND:
                 logger.info(f'File not found in OpenAI, proceeding with deletion: {e}')
                 messages.warning(self.request, 'File not found in OpenAI, but document will be deleted from database.')
             else:
@@ -648,7 +617,7 @@ class AssistantCreateView(AssistantBaseView, generic.CreateView):
         else:
             return super().get_success_url()
 
-
+#TODO: remove
 def create_assistant_in_openai(assistant, file_ids, openai_key):
     logger.info("Creating assistant using OpenAI API.")
     logger.info("Assistant object: " + str(assistant))

@@ -8,6 +8,7 @@ from .views import (
     PipelineRetrieveArgumentsViewSet,
     PipelineRetrieveExecutionLogsViewSet,
     RetrieveLogAPIView,
+    DocumentAPIView,
 )
 
 app_name = "api"
@@ -26,4 +27,6 @@ urlpatterns = [
     path("", include(router.urls)),
     re_path(r"^cache/(?P<endpoint>.+)/$", RetrieveLogAPIView.as_view(), name="cache"),
     path("pipeline/call", PipelineCallAPIView.as_view(), name="pipeline_call"),
+    path("documents/", DocumentAPIView.as_view(), name="document_create"),
+    path("documents/<str:pk>/", DocumentAPIView.as_view(), name="document_delete"),
 ]

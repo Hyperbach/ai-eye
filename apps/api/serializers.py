@@ -53,5 +53,12 @@ class DocumentSerializer(serializers.ModelSerializer):
 class AssistantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assistant
+        fields = "__all__"
 
-    fields = "__all__"
+
+class DocumentCreationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Document
+        fields = ["description", "file"]
+
+    file = serializers.FileField()

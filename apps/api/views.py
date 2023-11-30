@@ -1,17 +1,21 @@
-from django.db.models import Max, Q
+import datetime
+import logging
 
-from core.models import OpenAIKey
-from dblogs.models import CallEntryLog, PipelineExecutionLog
-from pipelines.models import PipelineSource
-from pipelines.services.exceptions import PipelineException
-from pipelines.services.pipeline_executor import PipelineExecutor
-from pipelines.utils import find_first
+from django.db.models import Max, Q
+from django.http import Http404
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from core.models import OpenAIKey
+from core.services.uploaders import DocumentUploader
+from dblogs.models import CallEntryLog, PipelineExecutionLog
+from pipelines.models import PipelineSource, Document
+from pipelines.services.exceptions import PipelineException
+from pipelines.services.pipeline_executor import PipelineExecutor
+from pipelines.utils import find_first
 from .authentication import AiEyeTokenAuthentication
 from .models import Log
 from .permissions import AiEyeAdminPermission, AiEyeUserPermission
@@ -22,9 +26,10 @@ from .serializers import (
     PipelineCallWithOpenaiKeyId,
     PipelineExecutionLogSerializer,
     PipelineRetrieveArgumentsCallSerializer,
-    PipelineRetrieveExecutionLogsSerializer,
-)
+    PipelineRetrieveExecutionLogsSerializer, DocumentCreationSerializer, )
 from .services import OpenAICacheService
+
+logger = logging.getLogger("console")
 
 
 class RetrieveLogAPIView(APIView):
@@ -210,3 +215,85 @@ class PipelineRetrieveExecutionLogsViewSet(viewsets.ViewSet):
             )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DocumentAPIView(APIView):
+    permission_classes = (
+        permissions.IsAuthenticated,
+        (AiEyeUserPermission | AiEyeAdminPermission),
+    )
+    authentication_classes = (AiEyeTokenAuthentication,)
+
+    http_method_names = [
+        "post",
+        "delete",
+    ]
+
+    @staticmethod
+    def retrieve_openaikey_for_aieyetokenauthenticated_user(request):
+        public_token = request.auth
+        return public_token.openaikey.key
+
+    def get_object(self, pk):
+        try:
+            return Document.objects.get(pk=pk)
+        except Document.DoesNotExist:
+            raise Http404
+
+    def delete(self, request, pk, format=None):
+        instance = self.get_object(pk)
+        openai_key = self.retrieve_openaikey_for_aieyetokenauthenticated_user(request)
+
+        try:
+            document_uploader = DocumentUploader(openai_key=openai_key)
+            response = document_uploader.delete(instance.id)
+
+            if response.deleted:
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({"error": "Failed to delete the file from OpenAI"},
+                                status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:
+            return Response({"error": f"Failed to delete the file from OpenAI: {exc}"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        finally:
+            instance.delete()
+
+    def post(self, request, format=None):
+        serializer = DocumentCreationSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        openai_key = self.retrieve_openaikey_for_aieyetokenauthenticated_user(request)
+
+        uploaded_file = serializer.validated_data['file']
+        original_file_name = uploaded_file.name
+        document_uploader = DocumentUploader(openai_key=openai_key)
+
+        try:
+            response = document_uploader.upload_file_to_openai(uploaded_file=uploaded_file,
+                                                               user_id=self.request.user.id)
+        except Exception as exc:
+            return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            logger.debug(f"Response data from OpenAI API: {response}")
+
+            document_instance = Document(
+                id=response.id,
+                object_type=response.object,
+                bytes=response.bytes,
+                filename=response.filename,
+                original_filename=original_file_name,
+                purpose=response.purpose,
+                created_at=datetime.datetime.fromtimestamp(response.created_at),
+                owner=self.request.user
+            )
+            document_instance.save()
+            logger.info(f"Document object saved with ID: {document_instance.id}")
+
+            return Response({
+                "success": True,
+                "document_id": document_instance.id,
+            },
+                status=status.HTTP_200_OK)
