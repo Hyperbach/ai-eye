@@ -1,21 +1,23 @@
 import datetime
 import logging
 
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.db.models import Max, Q
 from django.http import Http404
+
+from core.models import OpenAIKey
+from dblogs.models import CallEntryLog, PipelineExecutionLog
+from pipelines.models import PipelineSource, Document, Assistant
+from pipelines.services.exceptions import PipelineException
+from pipelines.services.pipeline_executor import PipelineExecutor
+from pipelines.utils import find_first
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.models import OpenAIKey
-from core.services.uploaders import DocumentUploader
-from dblogs.models import CallEntryLog, PipelineExecutionLog
-from pipelines.models import PipelineSource, Document
-from pipelines.services.exceptions import PipelineException
-from pipelines.services.pipeline_executor import PipelineExecutor
-from pipelines.utils import find_first
 from .authentication import AiEyeTokenAuthentication
 from .models import Log
 from .permissions import AiEyeAdminPermission, AiEyeUserPermission
@@ -26,8 +28,10 @@ from .serializers import (
     PipelineCallWithOpenaiKeyId,
     PipelineExecutionLogSerializer,
     PipelineRetrieveArgumentsCallSerializer,
-    PipelineRetrieveExecutionLogsSerializer, DocumentCreationSerializer, )
+    PipelineRetrieveExecutionLogsSerializer, DocumentCreationSerializer, AssistantCreationSerializer,
+)
 from .services import OpenAICacheService
+from core.services.uploaders import DocumentUploader, AssistantUploader
 
 logger = logging.getLogger("console")
 
@@ -217,6 +221,63 @@ class PipelineRetrieveExecutionLogsViewSet(viewsets.ViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class AssistantAPIView(APIView):
+    permission_classes = (
+        permissions.IsAuthenticated,
+        (AiEyeUserPermission | AiEyeAdminPermission),
+    )
+    authentication_classes = (AiEyeTokenAuthentication,)
+
+    http_method_names = [
+        "post",
+        "put", #TODO: implement
+    ]
+
+    @staticmethod
+    def retrieve_openaikey_for_aieyetokenauthenticated_user(request):
+        public_token = request.auth
+        return public_token.openaikey.key
+
+    def post(self, request, format=None):
+        serializer = AssistantCreationSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        openai_key = self.retrieve_openaikey_for_aieyetokenauthenticated_user(request)
+
+        unprefixed_name = serializer.validated_data.get('name', '')
+
+        # Generate new assistant name with prefix
+        prefix = f"1g_{self.request.user.id}_"
+        prefixed_name = prefix + unprefixed_name
+
+        try:
+            assistant_uploader = AssistantUploader(openai_key=openai_key)
+            response = assistant_uploader.create_assistant_in_openai(prefixed_name=prefixed_name,
+                                                                     uploaded_data=serializer.validated_data)
+        except Exception as exc:
+            return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            logger.debug(f"Response data from OpenAI API: {response}")
+
+            assistance_instance = serializer.save(
+                prefixed_name=prefixed_name,
+                openai_id=openai_key,
+                created_at=datetime.datetime.fromtimestamp(response.created_at),
+                owner=self.request.user
+            )
+
+            logger.info(f"Assistant object saved with ID: {assistance_instance.id}")
+
+            return Response({
+                "success": True,
+                "assistant_id": assistance_instance.id,
+            },
+                status=status.HTTP_200_OK
+            )
+
+
 class DocumentAPIView(APIView):
     permission_classes = (
         permissions.IsAuthenticated,
@@ -293,7 +354,8 @@ class DocumentAPIView(APIView):
             logger.info(f"Document object saved with ID: {document_instance.id}")
 
             return Response({
-                "success": True,
-                "document_id": document_instance.id,
-            },
-                status=status.HTTP_200_OK)
+                    "success": True,
+                    "document_id": document_instance.id,
+                },
+                status=status.HTTP_200_OK
+            )

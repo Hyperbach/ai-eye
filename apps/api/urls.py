@@ -8,7 +8,7 @@ from .views import (
     PipelineRetrieveArgumentsViewSet,
     PipelineRetrieveExecutionLogsViewSet,
     RetrieveLogAPIView,
-    DocumentAPIView,
+    DocumentAPIView, AssistantAPIView,
 )
 
 app_name = "api"
@@ -29,4 +29,5 @@ urlpatterns = [
     path("pipeline/call", PipelineCallAPIView.as_view(), name="pipeline_call"),
     path("documents/", DocumentAPIView.as_view(), name="document_create"),
     path("documents/<str:pk>/", DocumentAPIView.as_view(), name="document_delete"),
+    path("assistants/", AssistantAPIView.as_view(), name="assistant_create"),
 ]

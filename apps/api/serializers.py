@@ -62,3 +62,9 @@ class DocumentCreationSerializer(serializers.ModelSerializer):
         fields = ["description", "file"]
 
     file = serializers.FileField()
+
+
+class AssistantCreationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Assistant
+        fields = ["name", "description", "model", "instructions", "metadata", "files"]

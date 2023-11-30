@@ -8,6 +8,42 @@ from openai import OpenAI, APIStatusError
 logger = logging.getLogger("console")
 
 
+class AssistantUploader:
+    def __init__(self, openai_key):
+        self.openai_key = openai_key
+
+    def create_assistant_in_openai(self, prefixed_name, uploaded_data):
+        logger.info("Creating assistant using OpenAI API.")
+
+        try:
+            client = OpenAI(api_key=self.openai_key)
+
+            # Extracting necessary information from the assistant argument
+            name = prefixed_name
+
+            # Only retrieval is supported for now
+            tools = [{"type": "retrieval"}]
+
+            file_ids = [doc.id for doc in uploaded_data.get('files', [])]
+
+            # Creating the assistant in OpenAI
+            response = client.beta.assistants.create(
+                instructions=uploaded_data.get('instructions', ''),
+                name=name,
+                tools=tools,
+                model=uploaded_data.get('model', ''),
+                file_ids=file_ids,
+            )
+
+            logger.info(f"Received response from OpenAI API: {response}")
+
+            return response
+
+        except Exception as exc:
+            logger.exception("An error occurred while creating assistant in OpenAI.")
+            raise
+
+
 class DocumentUploader:
     def __init__(self, openai_key):
         self.openai_key = openai_key
