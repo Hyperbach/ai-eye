@@ -155,15 +155,45 @@
                 $log_list_div.append($('<h4>').text("Call log entries"))
 
                 call_entries.forEach(function (log_entry) {
-                    const $log_entry_div = $('<div>').addClass('log-entry');
-                    const log_entry_details = $('<div>').addClass('log-entry-details');
-                    const text = `${timestamp_to_locale_string(log_entry.start_date)} Calling ${log_entry.fn_type}
-                                  "<b>${log_entry.fn_name}</b>" with ${JSON.stringify(log_entry.parameters)},
-                                  result = "${log_entry.output}". Duration: ${calc_duration(log_entry.start_date, log_entry.end_date)} ms`;
+                    const $log_entry_row = $('<tr>').addClass('log-entry').addClass('fn-' + log_entry.fn_type).css("display", "block");
+                    const $log_entry_details = $('<td>').attr('colspan', '5');
 
-                    log_entry_details.append($('<p>').html(text));
-                    $log_entry_div.append(log_entry_details);
-                    $log_list_div.append($log_entry_div);
+                    // Format dates and calculate duration
+                    const formattedStartDate = timestamp_to_locale_string(log_entry.start_date);
+                    const formattedEndDate = timestamp_to_locale_string(log_entry.end_date);
+                    const duration = calc_duration(log_entry.start_date, log_entry.end_date);
+
+                    // Function name with type
+                    $('<div>').addClass('fn-name')
+                        .text(log_entry.fn_name + ' (' + log_entry.fn_type + ')')
+                        .appendTo($log_entry_details);
+
+                    // Parameters
+                    $('<div>').append($('<strong>').text('Parameters:'))
+                        .append($('<pre>').text(JSON.stringify(log_entry.parameters, null, 2)))
+                        .appendTo($log_entry_details);
+
+                    // Output
+                    $('<div>').append($('<strong>').text('Output:'))
+                        .append($('<pre>').text(log_entry.output))
+                        .appendTo($log_entry_details);
+
+                    // Start and end dates
+                    $('<div>').append($('<strong>').text('Start:'))
+                        .append(document.createTextNode(formattedStartDate))
+                        .appendTo($log_entry_details);
+
+                    $('<div>').append($('<strong>').text('End:'))
+                        .append(document.createTextNode(formattedEndDate))
+                        .appendTo($log_entry_details);
+
+                    // Duration
+                    $('<div>').append($('<strong>').text('Duration:'))
+                        .append(document.createTextNode(duration + ' ms'))
+                        .appendTo($log_entry_details);
+
+                    $log_entry_row.append($log_entry_details);
+                    $log_list_div.append($log_entry_row);
                 });
 
                 $logs_section.append($log_list_div);
