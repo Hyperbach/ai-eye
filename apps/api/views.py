@@ -58,28 +58,6 @@ class RetrieveLogAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class CreateLogViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
-    permission_classes = (permissions.IsAuthenticated, AiEyeUserPermission)
-    authentication_classes = (AiEyeTokenAuthentication,)
-
-    def create(self, request, *args, **kwargs):
-        endpoint = kwargs["endpoint"]
-        parameters = self.request.data
-
-        public_token = request.auth
-        openaikey = public_token.openaikey
-
-        openai_cache_service = OpenAICacheService(
-            endpoint=endpoint, parameters=parameters
-        )
-        new_log_instance = openai_cache_service.run(
-            openaikey=openaikey, user=self.request.user
-        )
-
-        response_serializer = CacheHitResponseSerializer(instance=new_log_instance)
-        return Response(data=response_serializer.data, status=status.HTTP_200_OK)
-
-
 class PipelineCallAPIView(APIView):
     permission_classes = (
         permissions.IsAuthenticated,

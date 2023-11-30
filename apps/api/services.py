@@ -1,11 +1,14 @@
+import logging
 from typing import Any, Dict
 
+import requests
 from django.db.models import Q
 
-import requests
 from api.exceptions import OpenAIRequestException
 from api.models import Log
 from core.models import OpenAIKey
+
+logger = logging.getLogger("console")
 
 
 class OpenAICacheService:
@@ -97,9 +100,4 @@ class OpenAICacheService:
         except requests.RequestException as exc:
             raise OpenAIRequestException(detail=str(exc))
         else:
-            response_json = response.json()
-
-            try:
-                return response_json["choices"][0]["message"]["content"].strip()
-            except (KeyError, ValueError) as exc:
-                raise OpenAIRequestException(detail=str(exc))
+            return response.json()

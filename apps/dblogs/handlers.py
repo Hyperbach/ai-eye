@@ -1,6 +1,7 @@
 import logging.handlers
 from enum import Enum
 
+from django.db.models import Sum
 from django.utils import timezone
 
 
@@ -28,6 +29,9 @@ class DatabaseLogHandler(logging.Handler):
             "pipeline": PipelineSource.objects.get(pk=metainfo["pipeline_id"]),
             "status": "error",
             "openai_key": OpenAIKey.objects.get(key=metainfo["openai_key"]),
+            "total_prompt_tokens": 0,
+            "total_completion_tokens": 0,
+            "total_tokens": 0,
             "parameters": self._prepare_parameters(metainfo["parameters"]),
         }
 
@@ -41,26 +45,73 @@ class DatabaseLogHandler(logging.Handler):
         self.call_entry_log_instance = CallEntryLog.objects.create(
             fn_name=metainfo["fn_name"],
             fn_type=metainfo["fn_type"],
+            prompt_tokens=0,
+            completion_tokens=0,
             pipeline_execution_id=self.pipeline_execution_log_instance.pk,
             parameters=self._prepare_parameters(metainfo["parameters"]),
         )
 
     def fn_call_completed_handler(self, metainfo):
-        self.call_entry_log_instance.output = metainfo["output"]
+        output = metainfo["output"]
+
+        # Initialize default values
+        text_response = None
+        prompt_tokens = 0
+        completion_tokens = 0
+        full_response = output  # Default to the output itself
+
+        # Check if output is a dictionary
+        if isinstance(output, dict):
+            text_response = output.get("text_response", "")
+            prompt_tokens = output.get("prompt_tokens", 0)
+            completion_tokens = output.get("completion_tokens", 0)
+            full_response = output.get("full_response", output)
+
+        # In case output is a string, use it as the text response
+        elif isinstance(output, str):
+            text_response = output
+
+        # Update the call_entry_log_instance
+        self.call_entry_log_instance.output = text_response
+        self.call_entry_log_instance.prompt_tokens = prompt_tokens
+        self.call_entry_log_instance.completion_tokens = completion_tokens
+        self.call_entry_log_instance.full_response = full_response
+
         self.call_entry_log_instance.end_date = timezone.now()
-        self.call_entry_log_instance.save(update_fields=["output", "end_date"])
+        self.call_entry_log_instance.save(
+            update_fields=["output", "end_date", "prompt_tokens", "completion_tokens", "full_response"])
         self.call_entry_log_instance = None
 
     def completed_handler(self, metainfo):
+        from dblogs.models import CallEntryLog
+
+        # Sum up the token usage from all function calls related to this pipeline execution
+        total_prompt_tokens = CallEntryLog.objects.filter(
+            pipeline_execution_id=self.pipeline_execution_log_instance.pk
+        ).aggregate(sum_prompt_tokens=Sum('prompt_tokens'))['sum_prompt_tokens'] or 0
+
+        total_completion_tokens = CallEntryLog.objects.filter(
+            pipeline_execution_id=self.pipeline_execution_log_instance.pk
+        ).aggregate(sum_completion_tokens=Sum('completion_tokens'))['sum_completion_tokens'] or 0
+
+        # Update the pipeline_execution_log_instance with the total tokens used
+        self.pipeline_execution_log_instance.total_prompt_tokens = total_prompt_tokens
+        self.pipeline_execution_log_instance.total_completion_tokens = total_completion_tokens
+        self.pipeline_execution_log_instance.total_tokens = total_prompt_tokens + total_completion_tokens
+
+        # Update the status, output, error, and end_date for the pipeline_execution_log_instance
         self.pipeline_execution_log_instance.status = metainfo["status"]
-        self.pipeline_execution_log_instance.output = self._prepare_value(
-            metainfo["output"]
-        )
+        self.pipeline_execution_log_instance.output = self._prepare_value(metainfo["output"])
         self.pipeline_execution_log_instance.error = metainfo["error"]
         self.pipeline_execution_log_instance.end_date = timezone.now()
+
+        # Save the updated fields
         self.pipeline_execution_log_instance.save(
-            update_fields=["status", "output", "error", "end_date"]
+            update_fields=["status", "output", "error", "end_date", "total_prompt_tokens", "total_completion_tokens",
+                           "total_tokens"]
         )
+
+        # Reset the instance to None for the next use
         self.pipeline_execution_log_instance = None
 
     def __init__(self):
