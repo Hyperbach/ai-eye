@@ -46,6 +46,11 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
+.log-list > tr > td > div > pre,
+.log-entry > td > div > pre{
+  text-wrap: wrap;
+}
+
 .log-entry td {
   padding: 20px;
 }

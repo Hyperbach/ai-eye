@@ -74,19 +74,17 @@
                             <b>Parameters</b>:
                             <div>{{ execution.parameters }}</div>
                         </td>
-                        <td>
-                            <b>Output</b>:
-                            <div>{{ execution.output }}</div>
-                        </td>
-                        <td>
+
+                        <td colspan="4">
                             {% if execution.error %}
                                 <b>Error</b>:
                                 <div>{{ execution.error }}</div>
+                            {% else %}
+                                <b>Output</b>:
+                                <div>{{ execution.output }}</div>
                             {% endif %}
                         </td>
-                        {% if not pipeline %}
-                            <td></td>
-                        {% endif %}
+
                     </tr>
                     {% endfor %}
                 {% endif %}
