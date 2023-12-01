@@ -311,19 +311,17 @@ class AssistantAPIView(APIView):
             existing_instance = serializer.save()
             instance_changed = True
         else:
-            existing_instance_file_names = set(
-                existing_instance.files.values_list("filename", flat=True)
+            existing_instance_file_ids = set(
+                existing_instance.files.values_list("id", flat=True)
             )
-            new_file_names = set(
-                doc.filename for doc in serializer.validated_data.get("files", [])
+            new_file_ids = set(
+                doc.id for doc in serializer.validated_data.get("files", [])
             )
 
-            if existing_instance_file_names != new_file_names:
+            if existing_instance_file_ids != new_file_ids:
                 instance_changed = True
-                if new_file_names:
-                    document_instances = Document.objects.filter(
-                        filename__in=new_file_names
-                    )
+                if new_file_ids:
+                    document_instances = Document.objects.filter(id__in=new_file_ids)
                     existing_instance.files.set(document_instances)
                 else:
                     existing_instance.files.set.clear()
