@@ -514,7 +514,9 @@ class DocumentDeleteView(DocumentBaseView, generic.DeleteView):
                 messages.error(self.request, "Failed to delete the file from OpenAI.")
         except APIStatusError as exc:
             if exc.status_code == HTTPStatus.NOT_FOUND:
-                logger.info(f"File not found in OpenAI, proceeding with deletion: {exc}")
+                logger.info(
+                    f"File not found in OpenAI, proceeding with deletion: {exc}"
+                )
                 messages.warning(
                     self.request,
                     "File not found in OpenAI, but document will be deleted from database.",
@@ -598,47 +600,43 @@ class AssistantCreateView(AssistantBaseView, generic.CreateView):
             prefix = f"1g_{self.request.user.id}_"
             prefixed_name = prefix + unprefixed_name
 
-            try:
-                openai_file_ids = self.request.POST.getlist("files")
-                logger.info(f"OpenAI file IDs: {openai_file_ids}")
+            openai_file_ids = self.request.POST.getlist("files")
+            logger.info(f"OpenAI file IDs: {openai_file_ids}")
 
-                # Create assistant in OpenAI
-                response = AssistantUploader.create_assistant_in_openai(
-                    openai_key=openai_key,
-                    prefixed_name=prefixed_name,
-                    uploaded_data=cleaned_data,
-                    openai_file_ids=openai_file_ids,
-                )
+            # Create assistant in OpenAI
+            response = AssistantUploader.create_assistant_in_openai(
+                openai_key=openai_key,
+                prefixed_name=prefixed_name,
+                uploaded_data=cleaned_data,
+                openai_file_ids=openai_file_ids,
+            )
 
-                logger.info("Created assistant in OpenAI.")
-                logger.debug(f"Response data from OpenAI API: {response}")
+            logger.info("Created assistant in OpenAI.")
+            logger.debug(f"Response data from OpenAI API: {response}")
 
-            except Exception as exc:
-                return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                # Create an instance of the Assistant model with data from the form
-                self.object = form.save(commit=False)
-                self.object.openai_id = response.id
-                self.object.prefixed_name = prefixed_name
-                self.object.created_at = datetime.datetime.fromtimestamp(
-                    response.created_at
-                )
-                self.object.owner = self.request.user
-                self.object.save()
+            # Create an instance of the Assistant model with data from the form
+            self.object = form.save(commit=False)
+            self.object.openai_id = response.id
+            self.object.prefixed_name = prefixed_name
+            self.object.created_at = datetime.datetime.fromtimestamp(
+                response.created_at
+            )
+            self.object.owner = self.request.user
+            self.object.save()
 
-                # Handling file associations
-                if openai_file_ids:
-                    for openai_file_id in openai_file_ids:
-                        try:
-                            # Assuming Document model uses openai_file_id as a reference to OpenAI's file ID
-                            document = Document.objects.get(id=openai_file_id)
-                            self.object.files.add(document)
-                        except Document.DoesNotExist:
-                            logger.error(
-                                f"Document with OpenAI file ID {openai_file_id} does not exist in the database."
-                            )
+            # Handling file associations
+            if openai_file_ids:
+                for openai_file_id in openai_file_ids:
+                    try:
+                        # Assuming Document model uses openai_file_id as a reference to OpenAI's file ID
+                        document = Document.objects.get(id=openai_file_id)
+                        self.object.files.add(document)
+                    except Document.DoesNotExist:
+                        logger.error(
+                            f"Document with OpenAI file ID {openai_file_id} does not exist in the database."
+                        )
 
-                logger.info(f"Assistant object saved with ID: {self.object.id}")
+            logger.info(f"Assistant object saved with ID: {self.object.id}")
 
         except Exception as exc:
             logger.error(f"An error occurred during form processing: {str(exc)}")
