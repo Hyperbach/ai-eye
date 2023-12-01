@@ -16,11 +16,13 @@ class AssistantUploader:
 
         try:
             client = OpenAI(api_key=openai_key)
-            return client.beta.assistants.update(openai_id, **update_payload)
-        except Exception as exc:
-            logger.error(
-                f"An error occurred while updating assistant in OpenAI: {str(exc)}"
-            )
+            response = client.beta.assistants.update(openai_id, **update_payload)
+
+            logger.info(f"Received response from OpenAI API: {response}")
+
+            return response
+        except Exception:
+            logger.exception("An error occurred while updating assistant in OpenAI")
             raise
 
     @classmethod
@@ -50,7 +52,6 @@ class AssistantUploader:
             logger.info(f"Received response from OpenAI API: {response}")
 
             return response
-
         except Exception:
             logger.exception("An error occurred while creating assistant in OpenAI.")
             raise
@@ -61,7 +62,11 @@ class DocumentUploader:
     def delete(cls, openai_key, object_id):
         try:
             client = OpenAI(api_key=openai_key)
-            return client.files.delete(object_id)
+            response = client.files.delete(object_id)
+
+            logger.info(f"Received response from OpenAI API: {response}")
+
+            return response
         except APIStatusError as exc:
             if exc.status_code == HTTPStatus.NOT_FOUND:
                 logger.info(
@@ -70,7 +75,7 @@ class DocumentUploader:
             else:
                 logger.error(f"Error deleting file from OpenAI: {exc}")
             raise
-        except Exception as exc:
+        except Exception:
             logger.exception("General error deleting file from OpenAI")
             raise
 

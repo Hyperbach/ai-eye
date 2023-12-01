@@ -617,13 +617,6 @@ class AssistantCreateView(AssistantBaseView, generic.CreateView):
                 return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 # Create an instance of the Assistant model with data from the form
-                assistant_instance = Assistant()
-                assistant_instance.prefixed_name = prefixed_name
-                assistant_instance.name = unprefixed_name
-                assistant_instance.model = cleaned_data.get("model", "")
-                assistant_instance.instructions = cleaned_data.get("instructions", "")
-                assistant_instance.metadata = cleaned_data.get("metadata", "")
-
                 self.object = form.save(commit=False)
                 self.object.openai_id = response.id
                 self.object.prefixed_name = prefixed_name
@@ -634,17 +627,17 @@ class AssistantCreateView(AssistantBaseView, generic.CreateView):
                 self.object.save()
 
                 # Handling file associations
-                for openai_file_id in openai_file_ids:
-                    try:
-                        # Assuming Document model uses openai_file_id as a reference to OpenAI's file ID
-                        document = Document.objects.get(id=openai_file_id)
-                        self.object.files.add(document)
-                    except Document.DoesNotExist:
-                        logger.error(
-                            f"Document with OpenAI file ID {openai_file_id} does not exist in the database."
-                        )
+                if openai_file_ids:
+                    for openai_file_id in openai_file_ids:
+                        try:
+                            # Assuming Document model uses openai_file_id as a reference to OpenAI's file ID
+                            document = Document.objects.get(id=openai_file_id)
+                            self.object.files.add(document)
+                        except Document.DoesNotExist:
+                            logger.error(
+                                f"Document with OpenAI file ID {openai_file_id} does not exist in the database."
+                            )
 
-                self.object.save()
                 logger.info(f"Assistant object saved with ID: {self.object.id}")
 
         except Exception as e:
@@ -697,7 +690,7 @@ class AssistantDeleteView(AssistantBaseView, generic.DeleteView):
                     self.request, "Failed to delete the assistant from OpenAI."
                 )
         except APIStatusError as e:
-            if e.status_code == 404:
+            if e.status_code == HTTPStatus.NOT_FOUND:
                 logger.info(
                     f"Assistant not found in OpenAI, proceeding with deletion: {e}"
                 )

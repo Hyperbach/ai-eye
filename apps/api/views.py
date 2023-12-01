@@ -281,7 +281,7 @@ class AssistantAPIView(APIView):
             raise Http404
 
     def patch(self, request, pk, format=None):
-        logger.info("Processing assistant update submission.")
+        logger.info("Processing assistant patch submission.")
 
         existing_instance = self.get_object(pk)
 
@@ -292,8 +292,8 @@ class AssistantAPIView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         instance_changed = False
-
         model_fields_changed = False
+
         model_fields_to_compare = [
             "name",
             "description",
@@ -317,6 +317,7 @@ class AssistantAPIView(APIView):
             new_file_names = set(
                 doc.filename for doc in serializer.validated_data.get("files", [])
             )
+
             if existing_instance_file_names != new_file_names:
                 instance_changed = True
                 if new_file_names:
