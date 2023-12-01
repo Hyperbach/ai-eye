@@ -430,9 +430,9 @@ class DocumentCreateView(DocumentBaseView, generic.CreateView):
             uploaded_file = self.request.FILES["file"]
             original_file_name = uploaded_file.name
             logger.info(f"Received file: {original_file_name}")
-        except Exception as e:
-            logger.error(f"An error occurred during form processing: {str(e)}")
-            form.add_error(None, f"An error occurred: {str(e)}")
+        except Exception as exc:
+            logger.error(f"An error occurred during form processing: {str(exc)}")
+            form.add_error(None, f"An error occurred: {str(exc)}")
             return self.form_invalid(form)
 
         try:
@@ -460,9 +460,9 @@ class DocumentCreateView(DocumentBaseView, generic.CreateView):
             self.object.save()
             logger.info(f"Document object saved with ID: {self.object.id}")
 
-        except Exception as e:
-            logger.error(f"An error occurred during form processing: {str(e)}")
-            form.add_error(None, f"An error occurred: {str(e)}")
+        except Exception as exc:
+            logger.error(f"An error occurred during form processing: {str(exc)}")
+            form.add_error(None, f"An error occurred: {str(exc)}")
             return self.form_invalid(form)
 
         logger.info("Form processed successfully.")
@@ -512,23 +512,23 @@ class DocumentDeleteView(DocumentBaseView, generic.DeleteView):
                 )
             else:
                 messages.error(self.request, "Failed to delete the file from OpenAI.")
-        except APIStatusError as e:
-            if e.status_code == HTTPStatus.NOT_FOUND:
-                logger.info(f"File not found in OpenAI, proceeding with deletion: {e}")
+        except APIStatusError as exc:
+            if exc.status_code == HTTPStatus.NOT_FOUND:
+                logger.info(f"File not found in OpenAI, proceeding with deletion: {exc}")
                 messages.warning(
                     self.request,
                     "File not found in OpenAI, but document will be deleted from database.",
                 )
             else:
-                logger.error(f"Error deleting file from OpenAI: {e}")
+                logger.error(f"Error deleting file from OpenAI: {exc}")
                 messages.error(
                     self.request,
-                    "An error occurred while deleting the file: {}".format(e),
+                    "An error occurred while deleting the file: {}".format(exc),
                 )
                 return redirect(self.success_url)
-        except Exception as e:
-            logger.error(f"General error deleting file from OpenAI: {e}")
-            messages.error(self.request, "An unexpected error occurred: {}".format(e))
+        except Exception as exc:
+            logger.error(f"General error deleting file from OpenAI: {exc}")
+            messages.error(self.request, "An unexpected error occurred: {}".format(exc))
             return redirect(self.success_url)
 
         return super().form_valid(form)
@@ -640,9 +640,9 @@ class AssistantCreateView(AssistantBaseView, generic.CreateView):
 
                 logger.info(f"Assistant object saved with ID: {self.object.id}")
 
-        except Exception as e:
-            logger.error(f"An error occurred during form processing: {str(e)}")
-            form.add_error(None, f"An error occurred: {str(e)}")
+        except Exception as exc:
+            logger.error(f"An error occurred during form processing: {str(exc)}")
+            form.add_error(None, f"An error occurred: {str(exc)}")
             return self.form_invalid(form)
 
         logger.info("Form processed successfully.")
@@ -689,25 +689,25 @@ class AssistantDeleteView(AssistantBaseView, generic.DeleteView):
                 messages.error(
                     self.request, "Failed to delete the assistant from OpenAI."
                 )
-        except APIStatusError as e:
-            if e.status_code == HTTPStatus.NOT_FOUND:
+        except APIStatusError as exc:
+            if exc.status_code == HTTPStatus.NOT_FOUND:
                 logger.info(
-                    f"Assistant not found in OpenAI, proceeding with deletion: {e}"
+                    f"Assistant not found in OpenAI, proceeding with deletion: {exc}"
                 )
                 messages.warning(
                     self.request,
                     "Assistant not found in OpenAI, but it will be deleted from database.",
                 )
             else:
-                logger.error(f"Error deleting assistant from OpenAI: {e}")
+                logger.error(f"Error deleting assistant from OpenAI: {exc}")
                 messages.error(
                     self.request,
-                    "An error occurred while deleting the assistant: {}".format(e),
+                    "An error occurred while deleting the assistant: {}".format(exc),
                 )
                 return redirect(self.success_url)
-        except Exception as e:
-            logger.error(f"General error deleting assistant from OpenAI: {e}")
-            messages.error(self.request, "An unexpected error occurred: {}".format(e))
+        except Exception as exc:
+            logger.error(f"General error deleting assistant from OpenAI: {exc}")
+            messages.error(self.request, "An unexpected error occurred: {}".format(exc))
             return redirect(self.success_url)
 
         return super().form_valid(form)
@@ -758,7 +758,6 @@ class AssistantUpdateView(AssistantBaseView, generic.UpdateView):
                     relevant_fields_changed = True
 
             if relevant_fields_changed:
-
                 user_provided_name = form.cleaned_data.get("name", "")
 
                 # Generate new assistant prefixed_name with prefix
@@ -780,24 +779,23 @@ class AssistantUpdateView(AssistantBaseView, generic.UpdateView):
                     # Retrieve OpenAI API key and update the assistant in OpenAI
                     openai_key_id = self.request.POST.get("openaikey")
                     openai_key = OpenAIKey.objects.get(id=openai_key_id).key
-                    client = OpenAI(api_key=openai_key)
 
-                    logger.debug("Update payload: " + str(update_payload))
-
-                    response = client.beta.assistants.update(
-                        self.object.openai_id, **update_payload
+                    response = AssistantUploader.update_assistant_in_openai(
+                        openai_key=openai_key,
+                        openai_id=self.object.openai_id,
+                        update_payload=update_payload,
                     )
-                    logger.info("Assistant updated in OpenAI: " + str(response))
-
-                except Exception as e:
+                except Exception as exc:
                     # Log the error and raise to trigger a rollback
                     logger.error(
-                        f"An error occurred while updating assistant in OpenAI: {str(e)}"
+                        f"An error occurred while updating assistant in OpenAI: {str(exc)}"
                     )
                     form.add_error(
-                        None, f"An error occurred during OpenAI update: {str(e)}"
+                        None, f"An error occurred during OpenAI update: {str(exc)}"
                     )
                     return self.form_invalid(form)
+                else:
+                    logger.info("Assistant updated in OpenAI: " + str(response))
 
             # Commit the changes to the local database as OpenAI update is successful
             self.object.save()
