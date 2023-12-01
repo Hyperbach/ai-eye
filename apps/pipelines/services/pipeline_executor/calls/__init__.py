@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 from typing import Any
@@ -92,11 +93,15 @@ class CallPrompt:
         user = kwargs.pop("user")
 
         body = self.prompt_fn.body
-        result = ""
 
         DatabaseLogHandler.log_fn_call_started(
             logger, self.prompt_fn.name, "prompt", kwargs
         )
+
+        prompt_tokens = 0
+        completion_tokens = 0
+        full_response = ""
+        text_response = ""
 
         try:
             prompt = body.format(**kwargs)
@@ -108,12 +113,33 @@ class CallPrompt:
                 },
             )
             log_instance = openai_cache_service.run(openaikey=openaikey, user=user)
-            result = log_instance.response
+
+            response = json.loads(log_instance.response)
+
+            text_response = response
+
+            # Check if response is a dictionary (to handle cases where response might be a string)
+            if isinstance(response, dict):
+                # Extract text response from 'choices'
+                text_response = None
+                if 'choices' in response and response['choices']:
+                    text_contents = [choice['message']['content'] for choice in response['choices'] if
+                                     'content' in choice['message']]
+                    text_response = ' '.join(text_contents)
+
+                # Safely extract prompt_tokens and completion_tokens
+                usage_data = response.get('usage', {})
+                prompt_tokens = usage_data.get('prompt_tokens', 0)
+                completion_tokens = usage_data.get('completion_tokens', 0)
+                full_response = response  # Store the full response
 
         except (KeyError, OpenAIRequestException) as exc:
             error_msg = f"An error occurred while calling the function '{self.prompt_fn.name}'. Details: {exc}"
             raise CallPromptError(error_msg)
         finally:
-            DatabaseLogHandler.log_fn_call_completed(logger, result)
+            DatabaseLogHandler.log_fn_call_completed(logger, {"text_response": text_response,
+                                                              "prompt_tokens": prompt_tokens,
+                                                              "completion_tokens": completion_tokens,
+                                                              "full_response": full_response})
 
-        return result
+        return text_response

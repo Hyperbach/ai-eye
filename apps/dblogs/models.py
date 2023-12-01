@@ -21,6 +21,9 @@ class PipelineExecutionLog(models.Model):
     openai_key = models.ForeignKey(OpenAIKey, on_delete=models.CASCADE)
     parameters = models.JSONField()
     output = models.TextField()
+    total_prompt_tokens = models.IntegerField()
+    total_completion_tokens = models.IntegerField()
+    total_tokens = models.IntegerField()
     error = models.TextField()
 
 
@@ -35,5 +38,8 @@ class CallEntryLog(models.Model):
     pipeline_execution_id = models.IntegerField()
     parameters = models.JSONField()
     output = models.TextField()
+    full_response = models.TextField()
+    prompt_tokens = models.IntegerField()
+    completion_tokens = models.IntegerField()
     start_date = models.DateTimeField(auto_now_add=True)
     end_date = models.DateTimeField(auto_now_add=True)

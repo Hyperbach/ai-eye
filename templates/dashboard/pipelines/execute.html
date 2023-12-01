@@ -192,6 +192,16 @@
                         .append(document.createTextNode(duration + ' ms'))
                         .appendTo($log_entry_details);
 
+                    if (log_entry.fn_type === 'prompt') {
+                        // Add tokens consumption (prompt_tokens, completion_tokens)
+                        $('<br/><div>').append($('<strong>').text('Prompt tokens:'))
+                            .append(document.createTextNode(log_entry.prompt_tokens))
+                            .appendTo($log_entry_details);
+                        $('<div>').append($('<strong>').text('Completion tokens:'))
+                            .append(document.createTextNode(log_entry.completion_tokens))
+                            .appendTo($log_entry_details);
+                    }
+
                     $log_entry_row.append($log_entry_details);
                     $log_list_div.append($log_entry_row);
                 });
@@ -326,8 +336,15 @@
                             args: args
                         }),
                         function (response) {
-                            const response_text = response.response;
-                            output_msg("#success-alert", response_text);
+                            const container = document.querySelector("#success-alert");
+                            container.innerHTML = '';
+
+                            const lines = response.response.split(/\r?\n/);
+                            lines.forEach(line => {
+                                container.appendChild(document.createTextNode(line));
+                                container.appendChild(document.createElement('br'));
+                            });
+
                             show_item("#success-alert", true);
                         },
                         function (error) {

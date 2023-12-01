@@ -167,10 +167,39 @@ class Document(models.Model):
 
     owner = models.ForeignKey(
         User,
-        on_delete=models.CASCADE,
+        null=True,
+        on_delete=models.SET_NULL,
         verbose_name=_("Author of the Document"),
         related_name='documents'
     )
 
     def __str__(self):
         return self.filename
+
+
+class Assistant(models.Model):
+    # Basic assistant information
+    openai_id = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=256)
+    prefixed_name = models.CharField(max_length=256)
+    description = models.TextField(max_length=512, blank=True, null=True)
+    model = models.CharField(max_length=64)
+    instructions = models.TextField(max_length=32768, blank=True, null=True)
+
+    # Relationships
+    owner = models.ForeignKey(
+        User,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='assistants',
+        verbose_name=_("Author of the Assistant"))
+    files = models.ManyToManyField('Document', blank=True)
+
+    # Additional metadata
+    metadata = models.JSONField(default=dict, blank=True)
+
+    # Creation timestamp from OpenAI's response
+    created_at = models.DateTimeField(default=None)
+
+    def __str__(self):
+        return self.name

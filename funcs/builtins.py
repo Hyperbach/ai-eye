@@ -1,14 +1,17 @@
 import functools
 import inspect
 import json
+import logging
 import os
 import random
 from datetime import datetime
 
 import docker
 from embedchain import App
+from openai import OpenAI
 
-client = docker.from_env()
+logger = logging.getLogger("console")
+docker_client = docker.from_env()
 
 
 def type_inference_decorator(needs_context=False):
@@ -299,7 +302,7 @@ def eval(code):
         f.write(code)
 
     try:
-        container = client.containers.run(
+        container = docker_client.containers.run(
             image='ai-eye-eval',
             command='/entrypoint.sh',
             environment={
@@ -311,3 +314,88 @@ def eval(code):
         return container.decode('utf-8')
     except docker.errors.ContainerError as e:
         return e.stderr.decode('utf-8')
+
+
+@type_inference_decorator(needs_context=True)
+def call_assistant(assistant_id, user_query):
+    """
+    Interacts with an OpenAI Assistant to process a user query.
+
+    Args:
+    - assistant_id (str): The ID of the OpenAI Assistant.
+    - user_query (str): The user's query or instruction for the assistant.
+
+    Returns:
+    - str: The response from the Assistant.
+    """
+    logger.info(f"Initiating call to OpenAI Assistant: {assistant_id} with query: {user_query[:50]}...")
+
+    # Get the OpenAI API key from the context
+    openai_api_key = get_context()["openaikey"]
+    logger.debug(f"Retrieved OpenAI API key: {openai_api_key}")
+
+    # Initialize OpenAI client
+    client = OpenAI(api_key=openai_api_key)
+    logger.debug("OpenAI client initialized.")
+
+    try:
+        logger.info("Creating new conversation thread.")
+        # Create a new Thread for the conversation
+        thread = client.beta.threads.create(
+            messages=[
+                {"role": "user", "content": user_query}
+            ]
+        )
+        logger.debug(f"Thread created with ID: {thread.id}")
+
+        logger.info("Creating a run for the assistant.")
+        # Create a Run to process the user query
+        run = client.beta.threads.runs.create(
+            thread_id=thread.id,
+            assistant_id=assistant_id
+        )
+        logger.debug(f"Run created with ID: {run.id}")
+
+        # Check the status of the run and retrieve the response
+        logger.info("Checking the status of the run.")
+        while True:
+            run_status = client.beta.threads.runs.retrieve(
+                thread_id=thread.id,
+                run_id=run.id
+            )
+            logger.debug(f"Run status: {run_status.status}")
+            if run_status.status in ['completed', 'failed']:
+                logger.info(f"Run completed with status: {run_status.status}")
+                break
+
+        logger.info("Retrieving assistant's response.")
+
+        # Retrieving all messages from the thread
+        messages = client.beta.threads.messages.list(
+            thread_id=thread.id
+        )
+
+        # Filter out only assistant messages
+        assistant_messages = [msg for msg in messages.data if msg.role == 'assistant']
+
+        if assistant_messages:
+            # Extracting text from the last assistant message
+            # The content field can be a list of different content types; we look for type 'text'
+            text_contents = [content.text.value for content in assistant_messages[-1].content if content.type == 'text']
+
+            if text_contents:
+                # Join all text contents (in case there are multiple text contents)
+                assistant_response = ' '.join(text_contents)
+                logger.debug(f"Assistant response: {assistant_response}")
+            else:
+                assistant_response = "No textual response from the assistant."
+                logger.warning("No textual content found in the assistant's response.")
+        else:
+            assistant_response = "No response from the assistant."
+            logger.warning("No response received from the assistant.")
+
+        return assistant_response
+
+    except Exception as e:
+        logger.error(f"An error occurred while processing the assistant call: {e}")
+        return f"An error occurred: {str(e)}"

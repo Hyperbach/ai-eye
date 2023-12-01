@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from lark import LarkError
 
-from pipelines.models import PipelineSource, Document
+from pipelines.models import PipelineSource, Document, Assistant
 from pipelines.services.dag_builder import DAGBuilder
 from pipelines.services.dag_saver import DAGSaver
 
@@ -50,3 +50,9 @@ class DocumentForm(forms.ModelForm):
         fields = ['description']
 
     file = forms.FileField()
+
+
+class AssistantForm(forms.ModelForm):
+    class Meta:
+        model = Assistant
+        fields = ['name', 'description', 'model', 'instructions', 'files', 'metadata']

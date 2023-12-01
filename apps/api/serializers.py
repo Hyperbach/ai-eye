@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from dblogs.models import CallEntryLog, PipelineExecutionLog
-from pipelines.models import Document
+from pipelines.models import Document, Assistant
 from .models import Log
 
 
@@ -48,3 +48,23 @@ class DocumentSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.save(update_fields=["description"])
         return instance
+
+
+class AssistantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Assistant
+        fields = "__all__"
+
+
+class DocumentCreationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Document
+        fields = ["description", "file"]
+
+    file = serializers.FileField()
+
+
+class AssistantCreationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Assistant
+        fields = ["name", "description", "model", "instructions", "metadata", "files"]
