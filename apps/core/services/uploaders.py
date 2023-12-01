@@ -31,15 +31,14 @@ class AssistantUploader:
     ):
         logger.info("Creating assistant using OpenAI API.")
 
+        # Extracting necessary information from the assistant argument
+        name = prefixed_name
+
+        # Only retrieval is supported for now
+        tools = [{"type": "retrieval"}]
+
         try:
             client = OpenAI(api_key=openai_key)
-
-            # Extracting necessary information from the assistant argument
-            name = prefixed_name
-
-            # Only retrieval is supported for now
-            tools = [{"type": "retrieval"}]
-
             # Creating the assistant in OpenAI
             response = client.beta.assistants.create(
                 instructions=uploaded_data.get("instructions", ""),
