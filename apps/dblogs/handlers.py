@@ -101,7 +101,7 @@ class DatabaseLogHandler(logging.Handler):
 
         # Update the status, output, error, and end_date for the pipeline_execution_log_instance
         self.pipeline_execution_log_instance.status = metainfo["status"]
-        self.pipeline_execution_log_instance.output = self._prepare_value(metainfo["output"])
+        self.pipeline_execution_log_instance.output = metainfo["output"]
         self.pipeline_execution_log_instance.error = metainfo["error"]
         self.pipeline_execution_log_instance.end_date = timezone.now()
 
@@ -129,13 +129,10 @@ class DatabaseLogHandler(logging.Handler):
         handler = getattr(self, handler)
         handler(metainfo)
 
-    def _prepare_parameters(self, params, max_length=250):
+    def _prepare_parameters(self, params):
         return {
-            key: self._prepare_value(value, max_length) for key, value in params.items()
+            key: value for key, value in params.items()
         }
-
-    def _prepare_value(self, param, max_length=250):
-        return param[: max_length - 3] + "..." if len(param) > max_length else param
 
     @staticmethod
     def log_event_started(logger, user, pipeline_id, openaikey, parameters):
