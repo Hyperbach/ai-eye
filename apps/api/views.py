@@ -3,31 +3,33 @@ import logging
 
 from django.db.models import Max, Q
 from django.http import Http404
-from rest_framework import mixins, permissions, status, viewsets
-from rest_framework.authentication import SessionAuthentication
-from rest_framework.exceptions import ValidationError, NotFound
-from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from core.models import OpenAIKey
-from core.services.uploaders import DocumentUploader, AssistantUploader
+from core.services.uploaders import AssistantUploader, DocumentUploader
 from dblogs.models import CallEntryLog, PipelineExecutionLog
-from pipelines.models import Document, Assistant
-from pipelines.models import PipelineSource
+from pipelines.models import Assistant, Document, PipelineSource
 from pipelines.services.exceptions import PipelineException
 from pipelines.services.pipeline_executor import PipelineExecutor
 from pipelines.utils import find_first
+from rest_framework import mixins, permissions, status, viewsets
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from .authentication import AiEyeTokenAuthentication
 from .models import Log
 from .permissions import AiEyeAdminPermission, AiEyeUserPermission
 from .serializers import (
+    AssistantCreationSerializer,
     CacheHitResponseSerializer,
     CallEntryLogSerializer,
+    DocumentCreationSerializer,
     PipelineCallSerializer,
     PipelineCallWithOpenaiKeyId,
     PipelineExecutionLogSerializer,
     PipelineRetrieveArgumentsCallSerializer,
-    PipelineRetrieveExecutionLogsSerializer, DocumentCreationSerializer, AssistantCreationSerializer,
+    PipelineRetrieveExecutionLogsSerializer,
 )
 from .services import OpenAICacheService
 
@@ -228,21 +230,31 @@ class PipelineExecutionLogsViewSet(viewsets.ViewSet):
 
     def retrieve(self, request, pk=None):  # Ensure 'pk' is accepted as an argument
         if pk is None:
-            return Response({'error': 'An execution ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "An execution ID is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
-            pipeline_execution_log_instance = PipelineExecutionLog.objects.get(pk=pk, user=request.user)
+            pipeline_execution_log_instance = PipelineExecutionLog.objects.get(
+                pk=pk, user=request.user
+            )
         except PipelineExecutionLog.DoesNotExist:
-            raise NotFound('A PipelineExecutionLog with the provided ID does not exist.')
+            raise NotFound(
+                "A PipelineExecutionLog with the provided ID does not exist."
+            )
 
         call_entries_logs = CallEntryLog.objects.filter(
-            pipeline_execution_id=pipeline_execution_log_instance.pk).order_by('id')
-        call_entries_log_serializer = CallEntryLogSerializer(instance=call_entries_logs, many=True)
+            pipeline_execution_id=pipeline_execution_log_instance.pk
+        ).order_by("id")
+        call_entries_log_serializer = CallEntryLogSerializer(
+            instance=call_entries_logs, many=True
+        )
 
-        return Response({
-            'execution_id': pk,
-            'call_entries': call_entries_log_serializer.data
-        }, status=status.HTTP_200_OK)
+        return Response(
+            {"execution_id": pk, "call_entries": call_entries_log_serializer.data},
+            status=status.HTTP_200_OK,
+        )
 
 
 class AssistantAPIView(APIView):
@@ -273,59 +285,80 @@ class AssistantAPIView(APIView):
 
         existing_instance = self.get_object(pk)
 
-        serializer = AssistantCreationSerializer(instance=existing_instance, data=request.data, partial=True)
+        serializer = AssistantCreationSerializer(
+            instance=existing_instance, data=request.data, partial=True
+        )
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         instance_changed = False
 
         model_fields_changed = False
-        model_fields_to_compare = ["name", "description", "model", "instructions", "metadata"]
-        if not all(serializer.validated_data.get(field) == getattr(existing_instance, field)
-                   for field in model_fields_to_compare):
+        model_fields_to_compare = [
+            "name",
+            "description",
+            "model",
+            "instructions",
+            "metadata",
+        ]
+        if not all(
+            serializer.validated_data.get(field) == getattr(existing_instance, field)
+            for field in model_fields_to_compare
+        ):
             model_fields_changed = True
 
         if model_fields_changed:
             existing_instance = serializer.save()
             instance_changed = True
         else:
-            existing_instance_file_names = set(existing_instance.files.values_list('filename', flat=True))
-            new_file_names = set(doc.filename for doc in serializer.validated_data.get("files", []))
+            existing_instance_file_names = set(
+                existing_instance.files.values_list("filename", flat=True)
+            )
+            new_file_names = set(
+                doc.filename for doc in serializer.validated_data.get("files", [])
+            )
             if existing_instance_file_names != new_file_names:
                 instance_changed = True
                 if new_file_names:
-                    document_instances = Document.objects.filter(filename__in=new_file_names)
+                    document_instances = Document.objects.filter(
+                        filename__in=new_file_names
+                    )
                     existing_instance.files.set(document_instances)
                 else:
                     existing_instance.files.set.clear()
 
         if instance_changed:
-            openai_key = self.retrieve_openaikey_for_aieyetokenauthenticated_user(request)
+            openai_key = self.retrieve_openaikey_for_aieyetokenauthenticated_user(
+                request
+            )
 
             # Prepare the payload for updating the assistant in OpenAI
             update_payload = {
-                'model': existing_instance.model,
-                'instructions': existing_instance.instructions,
-                'metadata': existing_instance.metadata,
-                'name': existing_instance.prefixed_name,
-                'file_ids': [doc.id for doc in existing_instance.files.all()]
+                "model": existing_instance.model,
+                "instructions": existing_instance.instructions,
+                "metadata": existing_instance.metadata,
+                "name": existing_instance.prefixed_name,
+                "file_ids": [doc.id for doc in existing_instance.files.all()],
             }
 
             try:
-                assistant_uploader = AssistantUploader(openai_key=openai_key)
-                response = assistant_uploader.update_assistant_in_openai(openai_id=existing_instance.openai_id,
-                                                                         update_payload=update_payload)
+                response = AssistantUploader.update_assistant_in_openai(
+                    openai_key=openai_key,
+                    openai_id=existing_instance.openai_id,
+                    update_payload=update_payload,
+                )
             except Exception as exc:
                 return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 logger.info("Assistant updated in OpenAI: " + str(response))
 
-        return Response({
-            "success": True,
-            "assistant_id": existing_instance.id,
-            "was_changed": instance_changed,
-        },
-            status=status.HTTP_200_OK
+        return Response(
+            {
+                "success": True,
+                "assistant_id": existing_instance.id,
+                "was_changed": instance_changed,
+            },
+            status=status.HTTP_200_OK,
         )
 
     def post(self, request, format=None):
@@ -338,19 +371,21 @@ class AssistantAPIView(APIView):
 
         openai_key = self.retrieve_openaikey_for_aieyetokenauthenticated_user(request)
 
-        unprefixed_name = serializer.validated_data.get('name', '')
+        unprefixed_name = serializer.validated_data.get("name", "")
 
         # Generate new assistant name with prefix
         prefix = f"1g_{self.request.user.id}_"
         prefixed_name = prefix + unprefixed_name
 
-        openai_file_ids = [doc.id for doc in serializer.validated_data.get('files', [])]
+        openai_file_ids = [doc.id for doc in serializer.validated_data.get("files", [])]
 
         try:
-            assistant_uploader = AssistantUploader(openai_key=openai_key)
-            response = assistant_uploader.create_assistant_in_openai(prefixed_name=prefixed_name,
-                                                                     uploaded_data=serializer.validated_data,
-                                                                     openai_file_ids=openai_file_ids)
+            response = AssistantUploader.create_assistant_in_openai(
+                openai_key=openai_key,
+                prefixed_name=prefixed_name,
+                uploaded_data=serializer.validated_data,
+                openai_file_ids=openai_file_ids,
+            )
         except Exception as exc:
             return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -360,16 +395,17 @@ class AssistantAPIView(APIView):
                 prefixed_name=prefixed_name,
                 openai_id=openai_key,
                 created_at=datetime.datetime.fromtimestamp(response.created_at),
-                owner=self.request.user
+                owner=self.request.user,
             )
 
             logger.info(f"Assistant object saved with ID: {assistance_instance.id}")
 
-            return Response({
-                "success": True,
-                "assistant_id": assistance_instance.id,
-            },
-                status=status.HTTP_200_OK
+            return Response(
+                {
+                    "success": True,
+                    "assistant_id": assistance_instance.id,
+                },
+                status=status.HTTP_200_OK,
             )
 
 
@@ -401,17 +437,22 @@ class DocumentAPIView(APIView):
         openai_key = self.retrieve_openaikey_for_aieyetokenauthenticated_user(request)
 
         try:
-            document_uploader = DocumentUploader(openai_key=openai_key)
-            response = document_uploader.delete(instance.id)
+            response = DocumentUploader.delete(
+                openai_key=openai_key, object_id=instance.id
+            )
 
             if response.deleted:
                 return Response(status=status.HTTP_204_NO_CONTENT)
             else:
-                return Response({"error": "Failed to delete the file from OpenAI"},
-                                status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": "Failed to delete the file from OpenAI"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         except Exception as exc:
-            return Response({"error": f"Failed to delete the file from OpenAI: {exc}"},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": f"Failed to delete the file from OpenAI: {exc}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         finally:
             instance.delete()
 
@@ -423,13 +464,15 @@ class DocumentAPIView(APIView):
 
         openai_key = self.retrieve_openaikey_for_aieyetokenauthenticated_user(request)
 
-        uploaded_file = serializer.validated_data['file']
+        uploaded_file = serializer.validated_data["file"]
         original_file_name = uploaded_file.name
-        document_uploader = DocumentUploader(openai_key=openai_key)
 
         try:
-            response = document_uploader.upload_file_to_openai(uploaded_file=uploaded_file,
-                                                               user_id=self.request.user.id)
+            response = DocumentUploader.upload_file_to_openai(
+                openai_key=openai_key,
+                uploaded_file=uploaded_file,
+                user_id=self.request.user.id,
+            )
         except Exception as exc:
             return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         else:
@@ -443,14 +486,15 @@ class DocumentAPIView(APIView):
                 original_filename=original_file_name,
                 purpose=response.purpose,
                 created_at=datetime.datetime.fromtimestamp(response.created_at),
-                owner=self.request.user
+                owner=self.request.user,
             )
             document_instance.save()
             logger.info(f"Document object saved with ID: {document_instance.id}")
 
-            return Response({
-                "success": True,
-                "document_id": document_instance.id,
-            },
-                status=status.HTTP_200_OK
+            return Response(
+                {
+                    "success": True,
+                    "document_id": document_instance.id,
+                },
+                status=status.HTTP_200_OK,
             )
