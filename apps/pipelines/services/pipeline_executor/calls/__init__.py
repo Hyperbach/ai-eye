@@ -1,3 +1,4 @@
+import json
 import logging
 import re
 from typing import Any
@@ -92,7 +93,6 @@ class CallPrompt:
         user = kwargs.pop("user")
 
         body = self.prompt_fn.body
-        result = ""
 
         DatabaseLogHandler.log_fn_call_started(
             logger, self.prompt_fn.name, "prompt", kwargs
@@ -100,7 +100,8 @@ class CallPrompt:
 
         prompt_tokens = 0
         completion_tokens = 0
-        full_response = None
+        full_response = ""
+        text_response = ""
 
         try:
             prompt = body.format(**kwargs)
@@ -113,7 +114,7 @@ class CallPrompt:
             )
             log_instance = openai_cache_service.run(openaikey=openaikey, user=user)
 
-            response = log_instance.response
+            response = json.loads(log_instance.response)
 
             text_response = response
 
@@ -136,7 +137,7 @@ class CallPrompt:
             error_msg = f"An error occurred while calling the function '{self.prompt_fn.name}'. Details: {exc}"
             raise CallPromptError(error_msg)
         finally:
-            DatabaseLogHandler.log_fn_call_completed(logger, {"text_response": result,
+            DatabaseLogHandler.log_fn_call_completed(logger, {"text_response": text_response,
                                                               "prompt_tokens": prompt_tokens,
                                                               "completion_tokens": completion_tokens,
                                                               "full_response": full_response})

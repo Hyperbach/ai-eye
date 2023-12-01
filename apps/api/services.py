@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Any, Dict
 
@@ -37,7 +38,7 @@ class OpenAICacheService:
             response = log_instance.response
             cache_hit = True
         else:
-            response = self.get_openai_response(openaikey)
+            response = json.dumps(self.get_openai_response(openaikey))
             cache_hit = False
 
         new_log_instance = self.create_log_instance(
