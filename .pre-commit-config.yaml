@@ -65,6 +65,8 @@ repos:
           'django-environ',
           'djangorestframework',
           'psycopg2-binary',
-          'django-debug-toolbar'
+          'django-debug-toolbar',
           # runtime dependencies
+          'docker',
+          'embedchain'
         ]
