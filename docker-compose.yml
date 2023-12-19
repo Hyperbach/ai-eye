@@ -23,7 +23,7 @@ services:
       - .:/ai-eye
       - /tmp/eval:/eval
       - /var/run/docker.sock:/var/run/docker.sock
-      - static_volume:/ai-eye/static
+      - static_volume:/ai-eye/staticfiles
     ports:
       - "8000:8000"
     env_file:
