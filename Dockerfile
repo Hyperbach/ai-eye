@@ -4,6 +4,7 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 RUN apt-get update && apt-get install -y docker.io
+RUN apt-get install -y libffi-dev
 
 WORKDIR /ai-eye
 RUN mkdir eval
