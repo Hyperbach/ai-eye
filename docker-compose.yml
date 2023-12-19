@@ -18,7 +18,7 @@ services:
   web:
     container_name: aieye-web
     build: .
-    command: bash -c "python manage.py migrate && gunicorn configs.wsgi:application --bind 0.0.0.0:8000 -w 3 --timeout 600"
+    command: bash -c "python manage.py migrate && gunicorn configs.wsgi:application --bind 0.0.0.0:8000 -w 3 --timeout 600 --worker-class gevent"
     volumes:
       - .:/ai-eye
       - /tmp/eval:/eval
