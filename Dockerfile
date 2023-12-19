@@ -17,3 +17,5 @@ RUN pip install docker
 
 # Copy project
 COPY . /ai-eye/
+
+RUN python manage.py collectstatic --noinput
