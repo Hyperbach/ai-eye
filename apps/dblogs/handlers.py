@@ -1,4 +1,5 @@
 import logging.handlers
+import threading
 from enum import Enum
 
 from django.db.models import Sum
@@ -35,19 +36,19 @@ class DatabaseLogHandler(logging.Handler):
             "parameters": self._prepare_parameters(metainfo["parameters"]),
         }
 
-        self.pipeline_execution_log_instance = PipelineExecutionLog.objects.create(
+        self.local.pipeline_execution_log_instance = PipelineExecutionLog.objects.create(
             **kwargs
         )
 
     def fn_call_started_handler(self, metainfo):
         from dblogs.models import CallEntryLog
 
-        self.call_entry_log_instance = CallEntryLog.objects.create(
+        self.local.call_entry_log_instance = CallEntryLog.objects.create(
             fn_name=metainfo["fn_name"],
             fn_type=metainfo["fn_type"],
             prompt_tokens=0,
             completion_tokens=0,
-            pipeline_execution_id=self.pipeline_execution_log_instance.pk,
+            pipeline_execution_id=self.local.pipeline_execution_log_instance.pk,
             parameters=self._prepare_parameters(metainfo["parameters"]),
         )
 
@@ -72,52 +73,47 @@ class DatabaseLogHandler(logging.Handler):
             text_response = output
 
         # Update the call_entry_log_instance
-        self.call_entry_log_instance.output = text_response
-        self.call_entry_log_instance.prompt_tokens = prompt_tokens
-        self.call_entry_log_instance.completion_tokens = completion_tokens
-        self.call_entry_log_instance.full_response = full_response
+        self.local.call_entry_log_instance.output = text_response
+        self.local.call_entry_log_instance.prompt_tokens = prompt_tokens
+        self.local.call_entry_log_instance.completion_tokens = completion_tokens
+        self.local.call_entry_log_instance.full_response = full_response
 
-        self.call_entry_log_instance.end_date = timezone.now()
-        self.call_entry_log_instance.save(
+        self.local.call_entry_log_instance.end_date = timezone.now()
+        self.local.call_entry_log_instance.save(
             update_fields=["output", "end_date", "prompt_tokens", "completion_tokens", "full_response"])
-        self.call_entry_log_instance = None
 
     def completed_handler(self, metainfo):
         from dblogs.models import CallEntryLog
 
         # Sum up the token usage from all function calls related to this pipeline execution
         total_prompt_tokens = CallEntryLog.objects.filter(
-            pipeline_execution_id=self.pipeline_execution_log_instance.pk
+            pipeline_execution_id=self.local.pipeline_execution_log_instance.pk
         ).aggregate(sum_prompt_tokens=Sum('prompt_tokens'))['sum_prompt_tokens'] or 0
 
         total_completion_tokens = CallEntryLog.objects.filter(
-            pipeline_execution_id=self.pipeline_execution_log_instance.pk
+            pipeline_execution_id=self.local.pipeline_execution_log_instance.pk
         ).aggregate(sum_completion_tokens=Sum('completion_tokens'))['sum_completion_tokens'] or 0
 
         # Update the pipeline_execution_log_instance with the total tokens used
-        self.pipeline_execution_log_instance.total_prompt_tokens = total_prompt_tokens
-        self.pipeline_execution_log_instance.total_completion_tokens = total_completion_tokens
-        self.pipeline_execution_log_instance.total_tokens = total_prompt_tokens + total_completion_tokens
+        self.local.pipeline_execution_log_instance.total_prompt_tokens = total_prompt_tokens
+        self.local.pipeline_execution_log_instance.total_completion_tokens = total_completion_tokens
+        self.local.pipeline_execution_log_instance.total_tokens = total_prompt_tokens + total_completion_tokens
 
         # Update the status, output, error, and end_date for the pipeline_execution_log_instance
-        self.pipeline_execution_log_instance.status = metainfo["status"]
-        self.pipeline_execution_log_instance.output = metainfo["output"]
-        self.pipeline_execution_log_instance.error = metainfo["error"]
-        self.pipeline_execution_log_instance.end_date = timezone.now()
+        self.local.pipeline_execution_log_instance.status = metainfo["status"]
+        self.local.pipeline_execution_log_instance.output = metainfo["output"]
+        self.local.pipeline_execution_log_instance.error = metainfo["error"]
+        self.local.pipeline_execution_log_instance.end_date = timezone.now()
 
         # Save the updated fields
-        self.pipeline_execution_log_instance.save(
+        self.local.pipeline_execution_log_instance.save(
             update_fields=["status", "output", "error", "end_date", "total_prompt_tokens", "total_completion_tokens",
                            "total_tokens"]
         )
 
-        # Reset the instance to None for the next use
-        self.pipeline_execution_log_instance = None
-
     def __init__(self):
         super().__init__()
-        self.pipeline_execution_log_instance = None
-        self.call_entry_log_instance = None
+        self.local = threading.local()
 
     def emit(self, record):
         metainfo = getattr(record, "metainfo", None)
