@@ -9,9 +9,9 @@ WORKDIR /ai-eye
 RUN mkdir eval
 
 COPY requirements.txt /ai-eye/
+COPY requirements.dev.txt /ai-eye/
+RUN pip install --no-cache-dir -r requirements.txt -r requirements.dev.txt
 
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install gunicorn
 RUN pip install docker
 
 # Copy project
