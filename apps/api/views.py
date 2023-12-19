@@ -1,8 +1,14 @@
 import datetime
 import logging
+import traceback
 
 from django.db.models import Max, Q
 from django.http import Http404
+from rest_framework import permissions, status, viewsets
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from core.models import OpenAIKey
 from core.services.uploaders import AssistantUploader, DocumentUploader
@@ -11,12 +17,6 @@ from pipelines.models import Assistant, Document, PipelineSource
 from pipelines.services.exceptions import PipelineException
 from pipelines.services.pipeline_executor import PipelineExecutor
 from pipelines.utils import find_first
-from rest_framework import mixins, permissions, status, viewsets
-from rest_framework.authentication import SessionAuthentication
-from rest_framework.exceptions import NotFound, ValidationError
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
 from .authentication import AiEyeTokenAuthentication
 from .models import Log
 from .permissions import AiEyeAdminPermission, AiEyeUserPermission
@@ -96,33 +96,41 @@ class PipelineCallAPIView(APIView):
             )
 
     def post(self, request, format=None):
-        authenticator = find_first(
-            lambda auth: auth.authenticate(request), request.authenticators
-        )
 
-        if isinstance(authenticator, AiEyeTokenAuthentication):
-            serializer_class = PipelineCallSerializer
-        else:
-            serializer_class = PipelineCallWithOpenaiKeyId
-
-        serializer = serializer_class(data=request.data)
-
-        if serializer.is_valid():
-            openaikey = self.get_openaikey(
-                request, authenticator, serializer.validated_data
+        try:
+            authenticator = find_first(
+                lambda auth: auth.authenticate(request), request.authenticators
             )
 
-            pipeline_id = serializer.validated_data["pipeline_id"]
-            args = serializer.validated_data["args"]
-            try:
+            if isinstance(authenticator, AiEyeTokenAuthentication):
+                serializer_class = PipelineCallSerializer
+            else:
+                serializer_class = PipelineCallWithOpenaiKeyId
+
+            serializer = serializer_class(data=request.data)
+
+            if serializer.is_valid():
+                openaikey = self.get_openaikey(
+                    request, authenticator, serializer.validated_data
+                )
+
+                pipeline_id = serializer.validated_data["pipeline_id"]
+                args = serializer.validated_data["args"]
                 p = PipelineExecutor(pipeline_source_id=pipeline_id, user=request.user)
                 result = p.exec(user_args=args, openaikey=openaikey)
-            except PipelineException as exc:
-                return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
             else:
-                return Response({"success": True, "response": result})
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as exc:
+            # Capture the full stack trace
+            tb = traceback.format_exc()
+            error_response = {
+                "error": str(exc)
+            }
+            logger.error(f"An error occurred while executing the pipeline. Details: {str(exc)}, traceback:\n{tb}")
+            return Response(error_response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"success": True, "response": result})
 
 
 class PipelineRetrieveArgumentsViewSet(viewsets.ViewSet):
@@ -280,8 +288,8 @@ class AssistantAPIView(APIView):
             "metadata",
         ]
         if not all(
-            serializer.validated_data.get(field) == getattr(existing_instance, field)
-            for field in model_fields_to_compare
+                serializer.validated_data.get(field) == getattr(existing_instance, field)
+                for field in model_fields_to_compare
         ):
             model_fields_changed = True
 
