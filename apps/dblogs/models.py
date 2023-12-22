@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from core.models import OpenAIKey
+from core.models import APIKey
 from pipelines.models import PipelineSource
 
 User = get_user_model()
@@ -18,7 +18,7 @@ class PipelineExecutionLog(models.Model):
     start_date = models.DateTimeField(auto_now_add=True)
     end_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
-    openai_key = models.ForeignKey(OpenAIKey, on_delete=models.CASCADE)
+    openai_key = models.ForeignKey(APIKey, on_delete=models.CASCADE)
     parameters = models.JSONField()
     output = models.TextField()
     total_prompt_tokens = models.IntegerField()

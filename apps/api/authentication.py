@@ -17,7 +17,7 @@ class AiEyeTokenAuthentication(rest_framework.authentication.TokenAuthentication
         if not token.is_active:
             raise exceptions.AuthenticationFailed(_("Inactive token."))
 
-        if not token.openaikey.is_active:
+        if not token.apikey.is_active:
             raise exceptions.AuthenticationFailed(_("Inactive related OpenAI token."))
 
         if not user.is_aieye_user:

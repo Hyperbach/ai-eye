@@ -4,8 +4,9 @@ import re
 from typing import Any
 
 from api.exceptions import OpenAIRequestException
-from api.services import OpenAICacheService
+from api.services import AICacheService
 from dblogs.handlers import DatabaseLogHandler
+from pipelines.choices import TypesOfModels
 from pipelines.models import BuiltinFunction, Prompt
 from pipelines.services.exceptions import CallBuiltinFunctionError, CallPromptError
 from pipelines.services.functions_manager import FUNCTIONS_MANAGER
@@ -69,7 +70,10 @@ class CallPrompt:
     def __init__(self, prompt_fn: Prompt):
         self.prompt_fn = prompt_fn
         self.arg_names = None
-        self.model = prompt_fn.get_type_display()
+
+        model_choice = TypesOfModels(prompt_fn.type)
+        self.model_name = model_choice.get_model_name()
+        self.base_url = model_choice.get_base_url()
 
     def __str__(self):
         return self.prompt_fn.name
@@ -105,14 +109,14 @@ class CallPrompt:
 
         try:
             prompt = body.format(**kwargs)
-            openai_cache_service = OpenAICacheService(
+
+            openai_cache_service = AICacheService(
+                base_url=self.base_url,
                 endpoint=self.ENDPOINT,
-                parameters={
-                    "model": self.model,
-                    "messages": [{"role": "user", "content": prompt}],
-                },
+                parameters={"model": self.model_name, "messages": [{"role": "user", "content": prompt}]},
+                model=self.model_name,
             )
-            log_instance = openai_cache_service.run(openaikey=openaikey, user=user)
+            log_instance = openai_cache_service.run(apikey=openaikey, user=user)
 
             response = json.loads(log_instance.response)
 

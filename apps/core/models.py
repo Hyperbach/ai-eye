@@ -1,5 +1,6 @@
 from typing import List
 
+import rest_framework.authtoken.models
 from django.contrib.auth import get_user_model
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import Group, PermissionsMixin
@@ -8,8 +9,7 @@ from django.core.validators import MaxLengthValidator, MinLengthValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-import rest_framework.authtoken.models
-
+from pipelines.choices import AIServices
 from .enums import UserGroupType
 
 
@@ -115,7 +115,7 @@ class User(AbstractBaseUser, PermissionsMixin, TimestampMixin, IsActiveMixin):  
 UserModel = get_user_model()
 
 
-class OpenAIKey(TimestampMixin, IsActiveMixin):
+class APIKey(TimestampMixin, IsActiveMixin):
     # an owner (AIEYE_ADMIN user), who issued this OpenAIKey. One owner can issue several OpenAIKeys
     owner = models.ForeignKey(
         User,
@@ -125,21 +125,27 @@ class OpenAIKey(TimestampMixin, IsActiveMixin):
         ),
     )
     key = models.CharField(max_length=255, db_index=True, unique=True)
+    service = models.CharField(
+        max_length=50,
+        choices=AIServices.choices
+    )
     users = models.ManyToManyField(
-        User, related_name="openaikeys", through="PublicToken"
+        User,
+        related_name="openaikeys",
+        through="PublicToken"
     )
 
     class Meta:
-        verbose_name = _("OpenAI key")
-        verbose_name_plural = _("OpenAI keys")
+        verbose_name = _("API key")
+        verbose_name_plural = _("API keys")
 
     def __str__(self):
-        return self.key
+        return f"{self.service}: {self.key}"
 
 
 class PublicToken(rest_framework.authtoken.models.Token, TimestampMixin, IsActiveMixin):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    openaikey = models.ForeignKey(OpenAIKey, on_delete=models.CASCADE)
+    apikey = models.ForeignKey(APIKey, on_delete=models.CASCADE)
     key = models.CharField(
         _("Key"),
         max_length=40,
@@ -150,7 +156,7 @@ class PublicToken(rest_framework.authtoken.models.Token, TimestampMixin, IsActiv
     created = None
 
     class Meta:
-        unique_together = (("user", "openaikey"),)
+        unique_together = (("user", "apikey"),)
         verbose_name = _("Public token")
         verbose_name_plural = _("Public tokens")
 

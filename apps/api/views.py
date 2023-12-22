@@ -10,7 +10,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.models import OpenAIKey
+from core.models import APIKey
 from core.services.uploaders import AssistantUploader, DocumentUploader
 from dblogs.models import CallEntryLog, PipelineExecutionLog
 from pipelines.models import Assistant, Document, PipelineSource
@@ -31,7 +31,7 @@ from .serializers import (
     PipelineRetrieveArgumentsCallSerializer,
     PipelineRetrieveExecutionLogsSerializer,
 )
-from .services import OpenAICacheService
+from .services import AICacheService
 
 logger = logging.getLogger("console")
 
@@ -43,11 +43,10 @@ class RetrieveLogAPIView(APIView):
 
     def post(self, request, *args, **kwargs):
         parameters = request.data
+        endpoint = kwargs["endpoint"]
+        prepared_parameters = Log.jsonify_parameters(parameters)
 
-        openai_cache_service = OpenAICacheService(
-            endpoint=kwargs["endpoint"], parameters=parameters
-        )
-        comparator = openai_cache_service.create_logs_comparator()
+        comparator = AICacheService.create_logs_comparator(endpoint=endpoint, prepared_parameters=prepared_parameters)
 
         queryset = (
             Log.objects.filter(cache_hit=True)
@@ -68,15 +67,15 @@ class PipelineCallAPIView(APIView):
     authentication_classes = (AiEyeTokenAuthentication, SessionAuthentication)
 
     @staticmethod
-    def retrieve_openaikey_for_aieyetokenauthenticated_user(request):
+    def retrieve_apikey_for_aieyetokenauthenticated_user(request):
         public_token = request.auth
-        return public_token.openaikey.key
+        return public_token.apikey.key
 
     @staticmethod
     def retrieve_openaikey_for_session_authenticated_user(request, validated_data):
         openaikey_id = validated_data["openaikey_id"]
 
-        openaikey_instance = OpenAIKey.objects.filter(
+        openaikey_instance = APIKey.objects.filter(
             Q(owner=request.user) | Q(users__in=[request.user]),
             pk=openaikey_id,
             is_active=True,
@@ -89,7 +88,7 @@ class PipelineCallAPIView(APIView):
 
     def get_openaikey(self, request, authenticator, validated_data):
         if isinstance(authenticator, AiEyeTokenAuthentication):
-            return self.retrieve_openaikey_for_aieyetokenauthenticated_user(request)
+            return self.retrieve_apikey_for_aieyetokenauthenticated_user(request)
         else:
             return self.retrieve_openaikey_for_session_authenticated_user(
                 request, validated_data
@@ -258,7 +257,7 @@ class AssistantAPIView(APIView):
     @staticmethod
     def retrieve_openaikey_for_aieyetokenauthenticated_user(request):
         public_token = request.auth
-        return public_token.openaikey.key
+        return public_token.apikey.key
 
     def get_object(self, pk):
         try:
@@ -409,7 +408,7 @@ class DocumentAPIView(APIView):
     @staticmethod
     def retrieve_openaikey_for_aieyetokenauthenticated_user(request):
         public_token = request.auth
-        return public_token.openaikey.key
+        return public_token.apikey.key
 
     def get_object(self, pk):
         try:

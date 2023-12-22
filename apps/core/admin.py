@@ -2,9 +2,9 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
 
-from .models import OpenAIKey, PublicToken, User
+from .models import APIKey, PublicToken, User
 
-admin.site.register(OpenAIKey)
+admin.site.register(APIKey)
 admin.site.register(PublicToken)
 
 

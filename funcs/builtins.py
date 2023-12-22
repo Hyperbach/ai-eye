@@ -40,7 +40,7 @@ def type_inference_decorator(needs_context=False):
 
     @type_inference_decorator(needs_context=True)
     def another_function(arg1, arg2):
-        api_key = get_context()["openaikey"]
+        api_key = get_context()["apikey"]
         ...
     """
 

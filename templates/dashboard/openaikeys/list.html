@@ -16,6 +16,7 @@
                     <th scope="col">Date created</th>
                     <th scope="col">Date updated</th>
                     <th scope="col">Is active</th>
+                    <th scope="col">Service</th>
                     <th scope="col"></th>
                     <th scope="col"></th>
                 </tr>
@@ -31,6 +32,7 @@
                             <td>{{ obj.date_created|date:'m-d-Y H:i:s' }}</td>
                             <td>{{ obj.date_updated|date:'m-d-Y H:i:s' }}</td>
                             <td>{{ obj.is_active }}</td>
+                            <td>{{ obj.service }}</td>
                             <td><a href="{% url 'dashboard:openaikeys_update' obj.pk %}">Update</a></td>
                             <td><a href="{% url 'dashboard:openaikeys_delete' obj.pk %}">Delete</a></td>
                         </tr>

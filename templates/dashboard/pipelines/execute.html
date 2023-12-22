@@ -19,13 +19,13 @@
     <form role="form" id="execute_pipeline_form" method="post">
         {% csrf_token %}
         <div class="row mb-3 item-block">
-            <label class="col-sm-2 col-form-label" for="id_openaikey">OpenAI Key</label>
+            <label class="col-sm-2 col-form-label" for="id_openaikey">API Key</label>
             <div class="col-sm-10">
                 <select name="pipeline" class="form-select" title="" required id="id_openaikey">
                     <option value="">---------</option>
-                    {% for openaikey in openaikeys %}
-                        <option value="{{ openaikey.id }}" {% if forloop.first %}selected{% endif %}>
-                            {{ openaikey.key }}
+                    {% for apikey in openaikeys %}
+                        <option value="{{ apikey.id }}" {% if forloop.first %}selected{% endif %}>
+                            {{ apikey.key }}
                         </option>
                     {% endfor %}
                 </select>

@@ -17,7 +17,7 @@ from api.permissions import AiEyeAdminPermission
 from api.serializers import AssistantSerializer, DocumentSerializer
 from core.forms import UserCreateForm
 from core.mixins import AiEyeAdminMixin, AiEyeAdminOrUserMixin
-from core.models import OpenAIKey, PublicToken
+from core.models import APIKey, PublicToken
 from core.services.uploaders import AssistantUploader, DocumentUploader
 from dashboard.forms import PublicTokenCreateForm, PublicTokenUpdateForm
 from dashboard.serializers import BuiltinFunctionsSyncSerializer
@@ -59,7 +59,7 @@ class OpenAIKeysBaseView(AiEyeAdminMixin, View):
     success_url = reverse_lazy("dashboard:openaikeys")
 
     def get_queryset(self):
-        return OpenAIKey.objects.filter(owner=self.request.user).order_by(
+        return APIKey.objects.filter(owner=self.request.user).order_by(
             "-date_created"
         )
 
@@ -91,7 +91,7 @@ class OpenAIKeysDeleteView(OpenAIKeysBaseView, generic.DeleteView):  # type: ign
 class PublicTokensFormMixin:
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        form.fields["openaikey"].queryset = OpenAIKey.objects.filter(
+        form.fields["apikey"].queryset = APIKey.objects.filter(
             owner=self.request.user
         )
         form.fields["user"].queryset = User.aieye_users_objects
@@ -103,8 +103,8 @@ class PublicTokensBaseViewMixin(AiEyeAdminMixin):
 
     def get_queryset(self):
         return (
-            PublicToken.objects.filter(openaikey__owner=self.request.user)
-            .prefetch_related("user", "openaikey")
+            PublicToken.objects.filter(apikey__owner=self.request.user)
+            .prefetch_related("user", "apikey")
             .order_by("-date_created")
         )
 
@@ -355,7 +355,7 @@ class PipelineSourceExecuteView(AiEyeAdminOrUserMixin, TemplateView):
 
         pipelines = qs.order_by("-date_created")
         openaikeys = (
-            OpenAIKey.objects.filter(
+            APIKey.objects.filter(
                 Q(owner=user) | Q(users__in=[user]), is_active=True
             )
             .distinct()
@@ -388,7 +388,7 @@ class DocumentBaseView(AiEyeAdminOrUserMixin, View):
         user = self.request.user
 
         openaikeys = (
-            OpenAIKey.objects.filter(
+            APIKey.objects.filter(
                 Q(owner=user) | Q(users__in=[user]), is_active=True
             )
             .distinct()
@@ -424,8 +424,8 @@ class DocumentCreateView(DocumentBaseView, generic.CreateView):
         logger.info("Processing form submission.")
 
         try:
-            openai_key_id = self.request.POST.get("openaikey")
-            openai_key = OpenAIKey.objects.get(id=openai_key_id).key
+            api_key_id = self.request.POST.get("apikey")
+            api_key = APIKey.objects.get(id=api_key_id).key
 
             uploaded_file = self.request.FILES["file"]
             original_file_name = uploaded_file.name
@@ -437,7 +437,7 @@ class DocumentCreateView(DocumentBaseView, generic.CreateView):
 
         try:
             response = DocumentUploader.upload_file_to_openai(
-                openai_key=openai_key,
+                openai_key=api_key,
                 uploaded_file=uploaded_file,
                 user_id=self.request.user.id,
             )
@@ -498,11 +498,11 @@ class DocumentDeleteView(DocumentBaseView, generic.DeleteView):
         self.object = self.get_object()
 
         try:
-            openai_key_id = self.request.POST.get("openaikey")
-            openai_key = OpenAIKey.objects.get(id=openai_key_id).key
+            api_key_id = self.request.POST.get("apikey")
+            api_key = APIKey.objects.get(id=api_key_id).key
 
             response = DocumentUploader.delete(
-                openai_key=openai_key, object_id=self.object.id
+                openai_key=api_key, object_id=self.object.id
             )
 
             if response.deleted:
@@ -554,7 +554,7 @@ class AssistantBaseView(AiEyeAdminOrUserMixin, View):
         user = self.request.user
 
         openaikeys = (
-            OpenAIKey.objects.filter(
+            APIKey.objects.filter(
                 Q(owner=user) | Q(users__in=[user]), is_active=True
             )
             .distinct()
@@ -590,8 +590,8 @@ class AssistantCreateView(AssistantBaseView, generic.CreateView):
         try:
             logger.info("Form data: " + str(self.request.POST))
 
-            openai_key_id = self.request.POST.get("openaikey")
-            openai_key = OpenAIKey.objects.get(id=openai_key_id).key
+            api_key_id = self.request.POST.get("apikey")
+            api_key = APIKey.objects.get(id=api_key_id).key
 
             cleaned_data = form.cleaned_data
             unprefixed_name = cleaned_data.get("name", "")
@@ -605,7 +605,7 @@ class AssistantCreateView(AssistantBaseView, generic.CreateView):
 
             # Create assistant in OpenAI
             response = AssistantUploader.create_assistant_in_openai(
-                openai_key=openai_key,
+                openai_key=api_key,
                 prefixed_name=prefixed_name,
                 uploaded_data=cleaned_data,
                 openai_file_ids=openai_file_ids,
@@ -674,10 +674,10 @@ class AssistantDeleteView(AssistantBaseView, generic.DeleteView):
         self.object = self.get_object()
 
         try:
-            openai_key_id = self.request.POST.get("openaikey")
-            openai_key = OpenAIKey.objects.get(id=openai_key_id).key
+            api_key_id = self.request.POST.get("apikey")
+            api_key = APIKey.objects.get(id=api_key_id).key
 
-            client = OpenAI(api_key=openai_key)
+            client = OpenAI(api_key=api_key)
 
             response = client.beta.assistants.delete(self.object.openai_id)
 
@@ -775,11 +775,11 @@ class AssistantUpdateView(AssistantBaseView, generic.UpdateView):
 
                 try:
                     # Retrieve OpenAI API key and update the assistant in OpenAI
-                    openai_key_id = self.request.POST.get("openaikey")
-                    openai_key = OpenAIKey.objects.get(id=openai_key_id).key
+                    api_key_id = self.request.POST.get("apikey")
+                    api_key = APIKey.objects.get(id=api_key_id).key
 
                     response = AssistantUploader.update_assistant_in_openai(
-                        openai_key=openai_key,
+                        openai_key=api_key,
                         openai_id=self.object.openai_id,
                         update_payload=update_payload,
                     )

@@ -21,7 +21,7 @@ class DatabaseLogHandler(logging.Handler):
     }
 
     def event_started_handler(self, metainfo):
-        from core.models import OpenAIKey
+        from core.models import APIKey
         from dblogs.models import PipelineExecutionLog
         from pipelines.models import PipelineSource
 
@@ -29,7 +29,7 @@ class DatabaseLogHandler(logging.Handler):
             "user": metainfo["user"],
             "pipeline": PipelineSource.objects.get(pk=metainfo["pipeline_id"]),
             "status": "error",
-            "openai_key": OpenAIKey.objects.get(key=metainfo["openai_key"]),
+            "openai_key": APIKey.objects.get(key=metainfo["openai_key"]),
             "total_prompt_tokens": 0,
             "total_completion_tokens": 0,
             "total_tokens": 0,

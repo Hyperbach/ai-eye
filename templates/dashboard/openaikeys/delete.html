@@ -8,7 +8,7 @@
 {% block dashboard_content %}
     {% url 'dashboard:openaikeys' as openaikeys_list %}
 
-    <p class="h5">Are you sure you want to delete the OpenAIKey: {{ openaikey.key }}?</p>
+    <p class="h5">Are you sure you want to delete the API key: {{ apikey.key }}?</p>
     <form action="" method="POST">
         {% csrf_token %}
         <div class="container d-flex ps-0">
