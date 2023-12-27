@@ -121,7 +121,7 @@ class APIKey(TimestampMixin):
         User,
         on_delete=models.CASCADE,
         help_text=_(
-            "Designates a user who issued this OpenAI key. It's supposed to be an AIEYE_ADMIN user"
+            "Designates a user who issued this API Key. It's supposed to be an AIEYE_ADMIN user"
         ),
     )
     key = models.CharField(max_length=255, db_index=True, unique=True)

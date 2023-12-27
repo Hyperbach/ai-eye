@@ -3,7 +3,7 @@ import logging
 import re
 from typing import Any
 
-from api.exceptions import OpenAIRequestException
+from api.exceptions import ApiRequestException
 from api.services import AICacheService
 from dblogs.handlers import DatabaseLogHandler
 from pipelines.choices import TypesOfModels
@@ -169,7 +169,7 @@ class CallPrompt:
 
                 full_response = response  # Store the full response
 
-        except (KeyError, OpenAIRequestException) as exc:
+        except (KeyError, ApiRequestException) as exc:
             error_msg = f"An error occurred while calling the function '{self.prompt_fn.name}'. Details: {exc}"
             raise CallPromptError(error_msg)
         finally:

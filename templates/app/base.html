@@ -16,7 +16,7 @@
                 {% if user.is_authenticated %}
                     {% if user.is_aieye_admin %}
                         <a href="{% url 'dashboard:users' %}" class="nav-item nav-link {% if "dashboard/users" in request.path %}active{% endif %}">Users</a>
-                        <a href="{% url 'dashboard:apikeys' %}" class="nav-item nav-link {% if "dashboard/apikeys" in request.path %}active{% endif %}">OpenAI Keys</a>
+                        <a href="{% url 'dashboard:apikeys' %}" class="nav-item nav-link {% if "dashboard/apikeys" in request.path %}active{% endif %}">API Keys</a>
                         <a href="{% url 'dashboard:publictokens' %}" class="nav-item nav-link {% if "dashboard/publictokens" in request.path %}active{% endif %}">Public Tokens</a>
                         <a href="{% url 'dashboard:caches' %}" class="nav-item nav-link {% if "dashboard/caches" in request.path %}active{% endif %} ">Cache/Logs</a>
                     {% endif %}

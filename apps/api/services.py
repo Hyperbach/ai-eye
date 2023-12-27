@@ -6,7 +6,7 @@ import requests
 from django.db.models import Q
 from django.utils import timezone
 
-from api.exceptions import OpenAIRequestException
+from api.exceptions import ApiRequestException
 from api.models import Log
 from core.models import APIKey
 
@@ -23,10 +23,10 @@ class AICacheService:
 
     def run(self, apikey, user):
         if self.endpoint not in self.get_allowed_endpoints():
-            raise OpenAIRequestException(detail="Invalid data")
+            raise ApiRequestException(detail="Invalid data")
 
         if not self.parameters:
-            raise OpenAIRequestException(detail="Invalid data")
+            raise ApiRequestException(detail="Invalid data")
 
         log_instance = self.get_log_instance()
 
@@ -91,7 +91,7 @@ class AICacheService:
             api_response = self.api_request(
                 apikey=apikey, endpoint=self.endpoint, parameters=self.parameters
             )
-        except OpenAIRequestException as exc:
+        except ApiRequestException as exc:
             raise exc
         else:
             return api_response
@@ -109,6 +109,6 @@ class AICacheService:
             )
             response.raise_for_status()
         except requests.RequestException as exc:
-            raise OpenAIRequestException(detail=str(exc))
+            raise ApiRequestException(detail=str(exc))
         else:
             return response.json()
