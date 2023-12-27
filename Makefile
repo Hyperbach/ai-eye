@@ -19,9 +19,6 @@ down:
 
 restart: down up
 
-migrate:
-	docker compose run --rm web python manage.py migrate
-
 create-admin:
 	docker compose run --rm web python manage.py createsuperuser
 
@@ -62,3 +59,6 @@ migrations:
 
 migrate:
 	docker compose run --rm web python manage.py migrate
+
+psql:
+	docker compose run db psql -U $(DB_USER) -d $(DB_NAME)

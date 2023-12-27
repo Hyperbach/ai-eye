@@ -5,7 +5,7 @@ from core.models import PublicToken
 
 class PublicTokenForm(forms.ModelForm):
     key = forms.CharField(required=False)
-    field_order = ["user", "apikey", "key", "is_active"]
+    field_order = ["user", "openaikey", "togetheraikey", "key", "is_active"]
 
     def save(self, *args, **kwargs):
         key = self.cleaned_data.get("key", None)

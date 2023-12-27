@@ -56,7 +56,7 @@ class UserListView(AiEyeAdminMixin, generic.ListView):
 
 
 class OpenAIKeysBaseView(AiEyeAdminMixin, View):
-    success_url = reverse_lazy("dashboard:openaikeys")
+    success_url = reverse_lazy("dashboard:apikeys")
 
     def get_queryset(self):
         return APIKey.objects.filter(owner=self.request.user).order_by(
@@ -66,12 +66,12 @@ class OpenAIKeysBaseView(AiEyeAdminMixin, View):
 
 class OpenAIKeysListView(OpenAIKeysBaseView, generic.ListView):
     fields = "__all__"
-    template_name = "dashboard/openaikeys/list.html"
+    template_name = "dashboard/apikeys/list.html"
 
 
 class OpenAIKeysCreateView(OpenAIKeysBaseView, generic.CreateView):
-    fields = ["key"]
-    template_name = "dashboard/openaikeys/create.html"
+    fields = ["key", "service"]
+    template_name = "dashboard/apikeys/create.html"
 
     def form_valid(self, form):
         obj = form.save(commit=False)
@@ -80,20 +80,20 @@ class OpenAIKeysCreateView(OpenAIKeysBaseView, generic.CreateView):
 
 
 class OpenAIKeysUpdateView(OpenAIKeysBaseView, generic.UpdateView):
-    fields = ["key", "is_active"]
-    template_name = "dashboard/openaikeys/update.html"
+    fields = ["key", "service"]
+    template_name = "dashboard/apikeys/update.html"
 
 
 class OpenAIKeysDeleteView(OpenAIKeysBaseView, generic.DeleteView):  # type: ignore[misc]
-    template_name = "dashboard/openaikeys/delete.html"
+    template_name = "dashboard/apikeys/delete.html"
 
 
 class PublicTokensFormMixin:
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        form.fields["apikey"].queryset = APIKey.objects.filter(
-            owner=self.request.user
-        )
+        # form.fields["apikey"].queryset = APIKey.objects.filter(
+        #     owner=self.request.user
+        # )
         form.fields["user"].queryset = User.aieye_users_objects
         return form
 
@@ -103,8 +103,7 @@ class PublicTokensBaseViewMixin(AiEyeAdminMixin):
 
     def get_queryset(self):
         return (
-            PublicToken.objects.filter(apikey__owner=self.request.user)
-            .prefetch_related("user", "apikey")
+            PublicToken.objects.filter(user=self.request.user)
             .order_by("-date_created")
         )
 
@@ -354,15 +353,15 @@ class PipelineSourceExecuteView(AiEyeAdminOrUserMixin, TemplateView):
             qs = qs.filter(owner=user)
 
         pipelines = qs.order_by("-date_created")
-        openaikeys = (
-            APIKey.objects.filter(
-                Q(owner=user) | Q(users__in=[user]), is_active=True
+        publictokens = (
+            PublicToken.objects.filter(
+                user=user, is_active=True
             )
             .distinct()
             .order_by("-date_created")
         )
 
-        context.update({"pipelines": pipelines, "openaikeys": openaikeys})
+        context.update({"pipelines": pipelines, "publictokens": publictokens})
         if selected_pipeline := kwargs.get("id"):
             context.update({"selected_pipeline": selected_pipeline})
 
@@ -389,7 +388,7 @@ class DocumentBaseView(AiEyeAdminOrUserMixin, View):
 
         openaikeys = (
             APIKey.objects.filter(
-                Q(owner=user) | Q(users__in=[user]), is_active=True
+                owner=user, service="openai"
             )
             .distinct()
             .order_by("-date_created")
@@ -555,7 +554,7 @@ class AssistantBaseView(AiEyeAdminOrUserMixin, View):
 
         openaikeys = (
             APIKey.objects.filter(
-                Q(owner=user) | Q(users__in=[user]), is_active=True
+                Q(owner=user, service="openai")
             )
             .distinct()
             .order_by("-date_created")

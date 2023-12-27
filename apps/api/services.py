@@ -35,7 +35,7 @@ class AICacheService:
             cache_hit = True
         else:
             started = timezone.now()
-            logger.debug(f"Calling API with {self.parameters}")
+            logger.info(f"Calling API with {self.parameters} and apikey: {apikey}")
             response = json.dumps(self.get_api_response(apikey))
             finished = timezone.now()
             logger.debug(f"API response: {response}")

@@ -13,8 +13,8 @@
                 <tr>
                     <th scope="col">Id</th>
                     <th scope="col">Key</th>
+                    <th scope="col">Alias</th>
                     <th scope="col">User</th>
-                    <th scope="col">API Key</th>
                     <th scope="col">Date created</th>
                     <th scope="col">Date updated</th>
                     <th scope="col">Is active</th>
@@ -30,10 +30,10 @@
                             <td>
                                 {{ obj.key|truncatechars:10 }}
                             </td>
-                            <td>{{ obj.user }}</td>
                             <td>
-                                {{ obj.apikey }}
+                                {{ obj.alias }}
                             </td>
+                            <td>{{ obj.user }}</td>
                             <td>{{ obj.date_created|date:'m-d-Y H:i:s' }}</td>
                             <td>{{ obj.date_updated|date:'m-d-Y H:i:s' }}</td>
                             <td>{{ obj.is_active }}</td>

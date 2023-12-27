@@ -115,7 +115,7 @@ class User(AbstractBaseUser, PermissionsMixin, TimestampMixin, IsActiveMixin):  
 UserModel = get_user_model()
 
 
-class APIKey(TimestampMixin, IsActiveMixin):
+class APIKey(TimestampMixin):
     # an owner (AIEYE_ADMIN user), who issued this OpenAIKey. One owner can issue several OpenAIKeys
     owner = models.ForeignKey(
         User,
@@ -129,11 +129,6 @@ class APIKey(TimestampMixin, IsActiveMixin):
         max_length=50,
         choices=AIServices.choices
     )
-    users = models.ManyToManyField(
-        User,
-        related_name="openaikeys",
-        through="PublicToken"
-    )
 
     class Meta:
         verbose_name = _("API key")
@@ -145,7 +140,9 @@ class APIKey(TimestampMixin, IsActiveMixin):
 
 class PublicToken(rest_framework.authtoken.models.Token, TimestampMixin, IsActiveMixin):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    apikey = models.ForeignKey(APIKey, on_delete=models.CASCADE)
+    openaikey = models.ForeignKey(APIKey, null=True, on_delete=models.CASCADE, related_name='openai_tokens')
+    togetheraikey = models.ForeignKey(APIKey, null=True, on_delete=models.CASCADE, related_name='togetherai_tokens')
+    alias = models.CharField("Alias", max_length=64, blank=True, null=True)
     key = models.CharField(
         _("Key"),
         max_length=40,
@@ -156,7 +153,7 @@ class PublicToken(rest_framework.authtoken.models.Token, TimestampMixin, IsActiv
     created = None
 
     class Meta:
-        unique_together = (("user", "apikey"),)
+        unique_together = (("user", "openaikey"), ("user", "togetheraikey"),)
         verbose_name = _("Public token")
         verbose_name_plural = _("Public tokens")
 

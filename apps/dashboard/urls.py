@@ -11,17 +11,17 @@ urlpatterns = [
     path("", index, name="index"),
     path("users", views.UserListView.as_view(), name="users"),
     path("users/add", views.UserCreateView.as_view(), name="users_create"),
-    path("openaikeys", views.OpenAIKeysListView.as_view(), name="openaikeys"),
+    path("apikeys", views.OpenAIKeysListView.as_view(), name="apikeys"),
     path(
-        "openaikeys/add", views.OpenAIKeysCreateView.as_view(), name="openaikeys_create"
+        "apikeys/add", views.OpenAIKeysCreateView.as_view(), name="openaikeys_create"
     ),
     path(
-        "openaikeys/<int:pk>/update/",
+        "apikeys/<int:pk>/update/",
         views.OpenAIKeysUpdateView.as_view(),
         name="openaikeys_update",
     ),
     path(
-        "openaikeys/<int:pk>/delete/",
+        "apikeys/<int:pk>/delete/",
         views.OpenAIKeysDeleteView.as_view(),
         name="openaikeys_delete",
     ),

@@ -18,14 +18,14 @@ class AIServices(models.TextChoices):
     def get_base_url(service):
         urls = {
             AIServices.OPENAI: "https://api.openai.com",
-            AIServices.TOGETHERAI: "https://api.together.xyz/v1"
+            AIServices.TOGETHERAI: "https://api.together.xyz"
         }
         return urls.get(service, None)
 
 
 class TypesOfModels(models.TextChoices):
     # OpenAI Models
-    GPT_4_TURBO_1106 = "gpt-4-1106", _("GPT-4 Turbo 1106")
+    GPT_4_TURBO_1106 = "gpt-4-1106-preview", _("GPT-4 Turbo 1106")
     GPT_4_1106_VISION_PREVIEW = "gpt-4-1106-vision-preview", _("GPT-4 1106 Vision Preview")
     GPT_4 = "gpt-4", _("GPT-4")
     GPT_4_32K = "gpt-4-32k", _("GPT-4 32K")
@@ -33,26 +33,26 @@ class TypesOfModels(models.TextChoices):
     GPT_35_TURBO_INSTRUCT = "gpt-3.5-turbo-instruct", _("GPT-3.5 Turbo Instruct")
 
     # Together.ai / MistralAI Models
-    MISTRAL_7B_INSTRUCT_V02 = "mistral-7b-instruct-v0.2", _("Mistral 7B Instruct v0.2")
-    MIXTRAL_8X7B_INSTRUCT = "mixtral-8x7b-instruct", _("Mixtral 8x7B Instruct")
-    MIXTRAL_8X7B = "mixtral-8x7b", _("Mixtral 8x7B")
+    MISTRAL_7B_INSTRUCT_V02 = "mistralai/Mistral-7B-Instruct-v0.2", _("Mistral (7B) Instruct v0.2	")
+    MIXTRAL_8X7B_INSTRUCT = "mistralai/Mixtral-8x7B-Instruct-v0.1", _("Mixtral 8x7B Instruct")
+    MIXTRAL_8X7B = "mistralai/Mixtral-8x7B-v0.1", _("Mixtral MoE 8x7B	")
 
     def get_service_for_model(self):
         return MODEL_TO_SERVICE_MAPPING.get(self, None)
 
     def get_pricing_details(self) -> Tuple[float, float]:
-        pricing = {
-            "gpt-4-1106": (0.01, 0.03),
+        pricing: dict[str, Tuple[float, float]] = {
+            "gpt-4-1106-preview": (0.01, 0.03),
             "gpt-4-1106-vision-preview": (0.01, 0.03),
             "gpt-4": (0.03, 0.06),
             "gpt-4-32k": (0.06, 0.12),
             "gpt-3.5-turbo-1106": (0.0010, 0.0020),
             "gpt-3.5-turbo-instruct": (0.0015, 0.0020),
-            "mistral-7b-instruct-v0.2": (0.0002, 0.0002),
-            "mixtral-8x7b-instruct": (0.0006, 0.0006),
-            "mixtral-8x7b": (0.0006, 0.0006),
+            "mistralai/Mistral-7B-Instruct-v0.2": (0.0002, 0.0002),
+            "mistralai/Mixtral-8x7B-Instruct-v0.1": (0.0006, 0.0006),
+            "mistralai/Mixtral-8x7B-v0.1": (0.0006, 0.0006),
         }
-        return pricing.get(self.value[0], (0.0, 0.0))
+        return pricing.get(str(self.value), (0.0, 0.0))
 
     def get_model_name(self):
         return self.value
