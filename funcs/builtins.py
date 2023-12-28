@@ -195,7 +195,7 @@ def query_embedchain(query, data_source):
     - str: Result from embedchain.
     """
 
-    os.environ["OPENAI_API_KEY"] = get_context()["apikey"].openaikey
+    os.environ["OPENAI_API_KEY"] = get_context()["apikey"].openaikey.key
     embedchain_app = App()
 
     try:
