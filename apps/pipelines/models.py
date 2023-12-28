@@ -90,6 +90,25 @@ class PipelineSource(TimestampMixin):
     def __str__(self):
         return self.body
 
+    def format(self):
+        """
+        Formats the expression for readability.
+        """
+        expression = str(self.body)
+        indent_level = 0
+        formatted_expression = ""
+        for char in expression:
+            if char == '(':
+                indent_level += 1
+                formatted_expression += char + "\n" + "    " * indent_level
+            elif char == ')':
+                indent_level -= 1
+                formatted_expression = formatted_expression.rstrip()  # Remove trailing spaces
+                formatted_expression += "\n" + "    " * indent_level + char
+            else:
+                formatted_expression += char
+        return formatted_expression
+
     def delete_dependents(self):
         with transaction.atomic():
             DAGEdge.objects.filter(
