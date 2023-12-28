@@ -40,7 +40,7 @@ def type_inference_decorator(needs_context=False):
 
     @type_inference_decorator(needs_context=True)
     def another_function(arg1, arg2):
-        api_key = get_context()["openaikey"]
+        api_key = get_context()["apikey"]
         ...
     """
 
@@ -195,7 +195,7 @@ def query_embedchain(query, data_source):
     - str: Result from embedchain.
     """
 
-    os.environ["OPENAI_API_KEY"] = get_context()["openaikey"]
+    os.environ["OPENAI_API_KEY"] = get_context()["apikey"].openaikey
     embedchain_app = App()
 
     try:
@@ -331,7 +331,7 @@ def call_assistant(assistant_id, user_query):
     logger.info(f"Initiating call to OpenAI Assistant: {assistant_id} with query: {user_query[:50]}...")
 
     # Get the OpenAI API key from the context
-    openai_api_key = get_context()["openaikey"]
+    openai_api_key = get_context()["apikey"].openaikey
     logger.debug(f"Retrieved OpenAI API key: {openai_api_key}")
 
     # Initialize OpenAI client

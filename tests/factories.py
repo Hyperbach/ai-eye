@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 
 import factory
 from core.enums import UserGroupType
-from core.models import OpenAIKey, PublicToken
+from core.models import APIKey, PublicToken
 
 from tests import AIEYE_ADMIN_PASSWORD, AIEYE_USER_PASSWORD
 
@@ -18,7 +18,7 @@ class PublicTokenFactory(factory.django.DjangoModelFactory):
 
 class OpenAIKeyFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = OpenAIKey
+        model = APIKey
 
     owner = factory.Iterator(
         User.objects.filter(groups__name=UserGroupType.AIEYE_ADMINS)

@@ -19,13 +19,13 @@
     <form role="form" id="execute_pipeline_form" method="post">
         {% csrf_token %}
         <div class="row mb-3 item-block">
-            <label class="col-sm-2 col-form-label" for="id_openaikey">OpenAI Key</label>
+            <label class="col-sm-2 col-form-label" for="publictoken_id">Public Token</label>
             <div class="col-sm-10">
-                <select name="pipeline" class="form-select" title="" required id="id_openaikey">
+                <select name="pipeline" class="form-select" title="" required id="publictoken_id">
                     <option value="">---------</option>
-                    {% for openaikey in openaikeys %}
-                        <option value="{{ openaikey.id }}" {% if forloop.first %}selected{% endif %}>
-                            {{ openaikey.key }}
+                    {% for publictoken in publictokens %}
+                        <option value="{{ publictoken.id }}" {% if forloop.first %}selected{% endif %}>
+                            {{ publictoken.alias|default:publictoken.key }}
                         </option>
                     {% endfor %}
                 </select>
@@ -169,6 +169,11 @@
                         .appendTo($log_entry_details);
 
                     // Parameters
+                    $('<div>').append($('<strong>').text('Model:'))
+                        .append($('<pre>').text(log_entry.model))
+                        .appendTo($log_entry_details);
+
+                    // Parameters
                     $('<div>').append($('<strong>').text('Parameters:'))
                         .append($('<pre>').text(JSON.stringify(log_entry.parameters, null, 2)))
                         .appendTo($log_entry_details);
@@ -199,6 +204,12 @@
                             .appendTo($log_entry_details);
                         $('<div>').append($('<strong>').text('Completion tokens:'))
                             .append(document.createTextNode(log_entry.completion_tokens))
+                            .appendTo($log_entry_details);
+                        $('<br/><div>').append($('<strong>').text('Prompt cost:'))
+                            .append(document.createTextNode('$' + log_entry.prompt_cost))
+                            .appendTo($log_entry_details);
+                        $('<div>').append($('<strong>').text('Completion cost:'))
+                            .append(document.createTextNode('$' + log_entry.completion_cost))
                             .appendTo($log_entry_details);
                     }
 
@@ -312,7 +323,7 @@
                 show_item("#error-alert", false);
 
                 const pipeline_id_selected = $pipeline_selector.find("option:selected").data("id");
-                const openaikey_id_selected = $("#id_openaikey").val();
+                const publictoken_id = $("#publictoken_id").val();
 
                 const $tag_vals = $(".tag_value");
 
@@ -332,7 +343,7 @@
                         'POST',
                         JSON.stringify({
                             pipeline_id: pipeline_id_selected,
-                            openaikey_id: openaikey_id_selected,
+                            publictoken_id: publictoken_id,
                             args: args
                         }),
                         function (response) {

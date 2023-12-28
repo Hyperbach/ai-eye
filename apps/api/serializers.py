@@ -16,8 +16,8 @@ class PipelineCallSerializer(serializers.Serializer):
     args = serializers.JSONField(required=True)
 
 
-class PipelineCallWithOpenaiKeyId(PipelineCallSerializer):
-    openaikey_id = serializers.IntegerField(min_value=0, required=True)
+class PipelineCallWithPublicTokenId(PipelineCallSerializer):
+    publictoken_id = serializers.IntegerField(min_value=0, required=True)
 
 
 class PipelineRetrieveArgumentsCallSerializer(serializers.Serializer):

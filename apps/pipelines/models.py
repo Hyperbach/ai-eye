@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from core.models import TimestampMixin
-from pipelines.choices import TypesOfDAGNodes, TypesOfGPTModels
+from pipelines.choices import TypesOfDAGNodes, TypesOfModels
 from pipelines.services.functions_manager import FUNCTIONS_MANAGER
 from pipelines.validators import FunctionNameValidator
 
@@ -25,8 +25,9 @@ class Prompt(TimestampMixin):
     owner: models.ForeignKey = models.ForeignKey(
         User, on_delete=models.CASCADE, verbose_name=_("author of the prompt")
     )
-    type = models.IntegerField(
-        default=TypesOfGPTModels.GPT_35_TURBO_1106, choices=TypesOfGPTModels.choices
+    type = models.CharField(
+        max_length=50,
+        choices=TypesOfModels.choices
     )
 
     class Meta:

@@ -2,7 +2,7 @@ import datetime
 import logging
 import traceback
 
-from django.db.models import Max, Q
+from django.db.models import Max
 from django.http import Http404
 from rest_framework import permissions, status, viewsets
 from rest_framework.authentication import SessionAuthentication
@@ -10,7 +10,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.models import OpenAIKey
+from core.models import PublicToken
 from core.services.uploaders import AssistantUploader, DocumentUploader
 from dblogs.models import CallEntryLog, PipelineExecutionLog
 from pipelines.models import Assistant, Document, PipelineSource
@@ -26,12 +26,12 @@ from .serializers import (
     CallEntryLogSerializer,
     DocumentCreationSerializer,
     PipelineCallSerializer,
-    PipelineCallWithOpenaiKeyId,
+    PipelineCallWithPublicTokenId,
     PipelineExecutionLogSerializer,
     PipelineRetrieveArgumentsCallSerializer,
     PipelineRetrieveExecutionLogsSerializer,
 )
-from .services import OpenAICacheService
+from .services import AICacheService
 
 logger = logging.getLogger("console")
 
@@ -43,11 +43,10 @@ class RetrieveLogAPIView(APIView):
 
     def post(self, request, *args, **kwargs):
         parameters = request.data
+        endpoint = kwargs["endpoint"]
+        prepared_parameters = Log.jsonify_parameters(parameters)
 
-        openai_cache_service = OpenAICacheService(
-            endpoint=kwargs["endpoint"], parameters=parameters
-        )
-        comparator = openai_cache_service.create_logs_comparator()
+        comparator = AICacheService.create_logs_comparator(endpoint=endpoint, prepared_parameters=prepared_parameters)
 
         queryset = (
             Log.objects.filter(cache_hit=True)
@@ -68,30 +67,30 @@ class PipelineCallAPIView(APIView):
     authentication_classes = (AiEyeTokenAuthentication, SessionAuthentication)
 
     @staticmethod
-    def retrieve_openaikey_for_aieyetokenauthenticated_user(request):
-        public_token = request.auth
-        return public_token.openaikey.key
+    def retrieve_apikey_for_aieyetokenauthenticated_user(request):
+        logger.info("Retrieving API key for AiEyeTokenAuthenticated user: " + str(request.auth))
+        return request.auth
 
     @staticmethod
-    def retrieve_openaikey_for_session_authenticated_user(request, validated_data):
-        openaikey_id = validated_data["openaikey_id"]
+    def retrieve_apikeys_for_session_authenticated_user(request, validated_data):
+        logger.info("Retrieving API key for SessionAuthenticated user: " + str(request.user))
+        publictoken_id = validated_data["publictoken_id"]
+        logger.info("PublicToken ID: " + str(publictoken_id))
 
-        openaikey_instance = OpenAIKey.objects.filter(
-            Q(owner=request.user) | Q(users__in=[request.user]),
-            pk=openaikey_id,
-            is_active=True,
-        ).first()
+        # Retrieve the PublicToken instance for the authenticated user
+        public_token = PublicToken.objects.filter(user=request.user, id=publictoken_id, is_active=True).first()
+        logger.info("PublicToken instance: " + str(public_token))
 
-        if not openaikey_instance:
-            raise ValidationError("OpenAIKey not found")
-        else:
-            return openaikey_instance.key
+        if not public_token:
+            raise ValidationError(f"PublicToken with id = {publictoken_id} not found for the user {request.user}")
 
-    def get_openaikey(self, request, authenticator, validated_data):
+        return public_token
+
+    def get_apikey(self, request, authenticator, validated_data):
         if isinstance(authenticator, AiEyeTokenAuthentication):
-            return self.retrieve_openaikey_for_aieyetokenauthenticated_user(request)
+            return self.retrieve_apikey_for_aieyetokenauthenticated_user(request)
         else:
-            return self.retrieve_openaikey_for_session_authenticated_user(
+            return self.retrieve_apikeys_for_session_authenticated_user(
                 request, validated_data
             )
 
@@ -105,19 +104,19 @@ class PipelineCallAPIView(APIView):
             if isinstance(authenticator, AiEyeTokenAuthentication):
                 serializer_class = PipelineCallSerializer
             else:
-                serializer_class = PipelineCallWithOpenaiKeyId
+                serializer_class = PipelineCallWithPublicTokenId
 
             serializer = serializer_class(data=request.data)
 
             if serializer.is_valid():
-                openaikey = self.get_openaikey(
+                apikey = self.get_apikey(
                     request, authenticator, serializer.validated_data
                 )
 
                 pipeline_id = serializer.validated_data["pipeline_id"]
                 args = serializer.validated_data["args"]
                 p = PipelineExecutor(pipeline_source_id=pipeline_id, user=request.user)
-                result = p.exec(user_args=args, openaikey=openaikey)
+                result = p.exec(user_args=args, apikey=apikey)
 
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

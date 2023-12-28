@@ -21,17 +21,23 @@ class DatabaseLogHandler(logging.Handler):
     }
 
     def event_started_handler(self, metainfo):
-        from core.models import OpenAIKey
+        from core.models import PublicToken
         from dblogs.models import PipelineExecutionLog
         from pipelines.models import PipelineSource
+
+        apikey_str = metainfo["apikey"]
+        apikey = PublicToken.objects.get(key=apikey_str)
 
         kwargs = {
             "user": metainfo["user"],
             "pipeline": PipelineSource.objects.get(pk=metainfo["pipeline_id"]),
             "status": "error",
-            "openai_key": OpenAIKey.objects.get(key=metainfo["openai_key"]),
+            "apikey": apikey,
             "total_prompt_tokens": 0,
             "total_completion_tokens": 0,
+            "total_prompt_cost": 0,
+            "total_completion_cost": 0,
+            "total_cost": 0,
             "total_tokens": 0,
             "parameters": self._prepare_parameters(metainfo["parameters"]),
         }
@@ -48,6 +54,9 @@ class DatabaseLogHandler(logging.Handler):
             fn_type=metainfo["fn_type"],
             prompt_tokens=0,
             completion_tokens=0,
+            prompt_cost=0,
+            completion_cost=0,
+            model=metainfo["model"],
             pipeline_execution_id=self.local.pipeline_execution_log_instance.pk,
             parameters=self._prepare_parameters(metainfo["parameters"]),
         )
@@ -59,6 +68,9 @@ class DatabaseLogHandler(logging.Handler):
         text_response = None
         prompt_tokens = 0
         completion_tokens = 0
+        prompt_cost = 0
+        completion_cost = 0
+        model = None
         full_response = output  # Default to the output itself
 
         # Check if output is a dictionary
@@ -66,6 +78,9 @@ class DatabaseLogHandler(logging.Handler):
             text_response = output.get("text_response", "")
             prompt_tokens = output.get("prompt_tokens", 0)
             completion_tokens = output.get("completion_tokens", 0)
+            prompt_cost = output.get("prompt_cost", 0)
+            completion_cost = output.get("completion_cost", 0)
+            model = output.get("model", None)
             full_response = output.get("full_response", output)
 
         # In case output is a string, use it as the text response
@@ -76,11 +91,17 @@ class DatabaseLogHandler(logging.Handler):
         self.local.call_entry_log_instance.output = text_response
         self.local.call_entry_log_instance.prompt_tokens = prompt_tokens
         self.local.call_entry_log_instance.completion_tokens = completion_tokens
+        self.local.call_entry_log_instance.prompt_cost = prompt_cost
+        self.local.call_entry_log_instance.completion_cost = completion_cost
+        self.local.call_entry_log_instance.model = model
         self.local.call_entry_log_instance.full_response = full_response
 
         self.local.call_entry_log_instance.end_date = timezone.now()
         self.local.call_entry_log_instance.save(
-            update_fields=["output", "end_date", "prompt_tokens", "completion_tokens", "full_response"])
+            update_fields=["output", "end_date",
+                           "prompt_tokens", "completion_tokens",
+                           "prompt_cost", "completion_cost",
+                           "full_response"])
 
     def completed_handler(self, metainfo):
         from dblogs.models import CallEntryLog
@@ -94,10 +115,22 @@ class DatabaseLogHandler(logging.Handler):
             pipeline_execution_id=self.local.pipeline_execution_log_instance.pk
         ).aggregate(sum_completion_tokens=Sum('completion_tokens'))['sum_completion_tokens'] or 0
 
+        total_prompt_cost = CallEntryLog.objects.filter(
+            pipeline_execution_id=self.local.pipeline_execution_log_instance.pk
+        ).aggregate(sum_prompt_cost=Sum('prompt_cost'))['sum_prompt_cost'] or 0
+
+        total_completion_cost = CallEntryLog.objects.filter(
+            pipeline_execution_id=self.local.pipeline_execution_log_instance.pk
+        ).aggregate(sum_completion_cost=Sum('completion_cost'))['sum_completion_cost'] or 0
+
         # Update the pipeline_execution_log_instance with the total tokens used
         self.local.pipeline_execution_log_instance.total_prompt_tokens = total_prompt_tokens
         self.local.pipeline_execution_log_instance.total_completion_tokens = total_completion_tokens
         self.local.pipeline_execution_log_instance.total_tokens = total_prompt_tokens + total_completion_tokens
+
+        self.local.pipeline_execution_log_instance.total_prompt_cost = total_prompt_cost
+        self.local.pipeline_execution_log_instance.total_completion_cost = total_completion_cost
+        self.local.pipeline_execution_log_instance.total_cost = total_prompt_cost + total_completion_cost
 
         # Update the status, output, error, and end_date for the pipeline_execution_log_instance
         self.local.pipeline_execution_log_instance.status = metainfo["status"]
@@ -107,8 +140,9 @@ class DatabaseLogHandler(logging.Handler):
 
         # Save the updated fields
         self.local.pipeline_execution_log_instance.save(
-            update_fields=["status", "output", "error", "end_date", "total_prompt_tokens", "total_completion_tokens",
-                           "total_tokens"]
+            update_fields=["status", "output", "error", "end_date",
+                           "total_prompt_tokens", "total_completion_tokens", "total_tokens",
+                           "total_prompt_cost", "total_completion_cost", "total_cost"]
         )
 
     def __init__(self):
@@ -120,7 +154,7 @@ class DatabaseLogHandler(logging.Handler):
         event = record.msg
 
         if not (handler := self.HANDLERS_MAP.get(event)):
-            raise NotImplementedError("Unsupported event type.")
+            raise NotImplementedError(f"Unsupported event type: {event}")
 
         handler = getattr(self, handler)
         handler(metainfo)
@@ -131,14 +165,14 @@ class DatabaseLogHandler(logging.Handler):
         }
 
     @staticmethod
-    def log_event_started(logger, user, pipeline_id, openaikey, parameters):
+    def log_event_started(logger, user, pipeline_id, apikey, parameters):
         logger.info(
             msg=DatabaseLogHandler.Event.STARTED,
             extra={
                 "metainfo": {
                     "user": user,
                     "pipeline_id": pipeline_id,
-                    "openai_key": openaikey,
+                    "apikey": apikey,
                     "parameters": parameters,
                 }
             },
@@ -158,13 +192,14 @@ class DatabaseLogHandler(logging.Handler):
         )
 
     @staticmethod
-    def log_fn_call_started(logger, fn_name, fn_type, parameters):
+    def log_fn_call_started(logger, fn_name, fn_type, model, parameters):
         logger.info(
             msg=DatabaseLogHandler.Event.FN_CALL_STARTED,
             extra={
                 "metainfo": {
                     "fn_name": fn_name,
                     "fn_type": fn_type,
+                    "model": model,
                     "parameters": parameters,
                 }
             },

@@ -5,6 +5,8 @@ from typing import Any, Dict, List, Type
 from django.contrib.auth.models import AbstractUser
 
 import networkx as nx
+
+from core.models import APIKey
 from pipelines.models import BuiltinFunction, Prompt
 from pipelines.services.exceptions import (
     InvalidArgumentsError,
@@ -81,12 +83,12 @@ class ExecutorVisitor(BaseVisitor):
         graph: nx.DiGraph,
         prompts: List[Prompt],
         builtins: List[BuiltinFunction],
-        openaikey: str,
+        apikey: APIKey,
         user_args: Dict[str, str],
         user: Type[AbstractUser],
     ):
         super().__init__(graph=graph, prompts=prompts, builtins=builtins)
-        self.openaikey = openaikey
+        self.apikey = apikey
         self.user_args = user_args
         self.user = user
 
@@ -144,10 +146,10 @@ class ExecutorVisitor(BaseVisitor):
                         fn_arg_name: kwargs_values[0],
                     }
 
-            kwargs.update({"openaikey": self.openaikey, "user": self.user})
+            kwargs.update({"apikey": self.apikey, "user": self.user})
         elif isinstance(target_fn, CallBuiltinFunction):
             user_prompts = Prompt.objects.filter(owner=self.user)
             prompt_details = {prompt.name: prompt.description for prompt in user_prompts}
-            kwargs.update({"openaikey": self.openaikey, "prompts": prompt_details})
+            kwargs.update({"apikey": self.apikey, "prompts": prompt_details})
 
         return target_fn(**kwargs)
