@@ -399,3 +399,10 @@ def call_assistant(assistant_id, user_query):
     except Exception as e:
         logger.error(f"An error occurred while processing the assistant call: {e}")
         return f"An error occurred: {str(e)}"
+
+
+@type_inference_decorator(needs_context=True)
+def get(var):
+    context = get_context()
+    if context and "vars" in context:
+        return context["vars"].get(var)

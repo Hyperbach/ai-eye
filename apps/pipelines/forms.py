@@ -26,8 +26,8 @@ class PipelineCreateForm(forms.ModelForm):
 
         try:
             self.cleaned_data["root"] = dag_builder.build(body)
-        except LarkError:
-            raise ValidationError("Failed to parse expression.")
+        except LarkError as exc:
+            raise ValidationError("Failed to parse expression: " + str(exc))
 
         return cleaned_data
 

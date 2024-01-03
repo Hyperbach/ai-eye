@@ -33,9 +33,9 @@ class TypesOfModels(models.TextChoices):
     GPT_35_TURBO_INSTRUCT = "gpt-3.5-turbo-instruct", _("GPT-3.5 Turbo Instruct")
 
     # Together.ai / MistralAI Models
-    MISTRAL_7B_INSTRUCT_V02 = "mistralai/Mistral-7B-Instruct-v0.2", _("Mistral (7B) Instruct v0.2	")
+    MISTRAL_7B_INSTRUCT_V02 = "mistralai/Mistral-7B-Instruct-v0.2", _("Mistral (7B) Instruct v0.2")
     MIXTRAL_8X7B_INSTRUCT = "mistralai/Mixtral-8x7B-Instruct-v0.1", _("Mixtral 8x7B Instruct")
-    MIXTRAL_8X7B = "mistralai/Mixtral-8x7B-v0.1", _("Mixtral MoE 8x7B	")
+    MIXTRAL_8X7B = "mistralai/Mixtral-8x7B-v0.1", _("Mixtral MoE 8x7B")
 
     def get_service_for_model(self):
         return MODEL_TO_SERVICE_MAPPING.get(self, None)

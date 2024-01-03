@@ -32,21 +32,9 @@ class CallBuiltinFunction:
     def __call__(self, *args, **kwargs) -> Any:
         result = ""
 
-        apikey = kwargs.pop("apikey", None)
-        prompts = kwargs.pop("prompts", None)
-
         DatabaseLogHandler.log_fn_call_started(
             logger, self.builtin_fn.name, "builtin", None, kwargs
         )
-
-        target_function = FUNCTIONS_MANAGER.get_function(self.builtin_fn.name)
-        if hasattr(target_function, "needs_context") and target_function.needs_context:
-            context = {
-                "apikey": apikey,
-                "prompts": prompts,
-                "functions": FUNCTIONS_MANAGER.funcs,  # Add all available functions to the context
-            }
-            setattr(target_function, "context", context)
 
         try:
             result = FUNCTIONS_MANAGER.call_builtin_function(
