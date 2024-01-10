@@ -17,4 +17,4 @@ jobs:
     - name: Build the Docker image
       env:
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
-      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s) --build-arg SECRET_KEY=${{ secrets.SECRET_KEY }}
