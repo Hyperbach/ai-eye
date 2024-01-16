@@ -5,8 +5,10 @@ import traceback
 from django.db.models import Max
 from django.http import Http404
 from rest_framework import permissions, status, viewsets
+from rest_framework import serializers
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -157,6 +159,32 @@ class PipelineRetrieveArgumentsViewSet(viewsets.ViewSet):
                 return Response({"success": True, "response": arg_names})
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PipelineSourceSerializer(serializers.ModelSerializer):
+    tags = serializers.StringRelatedField(many=True)
+
+    class Meta:
+        model = PipelineSource
+        fields = ['id', 'name', 'body', 'tags']
+
+
+class PipelineListAPIView(ListAPIView):
+    permission_classes = (
+        permissions.IsAuthenticated,
+        (AiEyeUserPermission | AiEyeAdminPermission),
+    )
+    authentication_classes = (AiEyeTokenAuthentication, SessionAuthentication)
+    serializer_class = PipelineSourceSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        tag_name = self.request.query_params.get('tag', None)
+
+        queryset = PipelineSource.objects.filter(owner=user)
+        if tag_name:
+            queryset = queryset.filter(tags__name=tag_name)
+        return queryset
 
 
 class PipelineRetrieveExecutionLogsViewSet(viewsets.ViewSet):

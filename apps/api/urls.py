@@ -7,7 +7,7 @@ from .views import (
     PipelineRetrieveExecutionLogsViewSet,
     RetrieveLogAPIView,
     PipelineExecutionLogsViewSet,
-    DocumentAPIView, AssistantAPIView,
+    DocumentAPIView, AssistantAPIView, PipelineListAPIView,
 )
 
 app_name = "api"
@@ -26,9 +26,10 @@ router.register(
 urlpatterns = [
     path("", include(router.urls)),
     re_path(r"^cache/(?P<endpoint>.+)/$", RetrieveLogAPIView.as_view(), name="cache"),
+    path("pipelines/", PipelineListAPIView.as_view(), name="pipeline_list"),
     path("pipeline/call", PipelineCallAPIView.as_view(), name="pipeline_call"),
     path("documents/", DocumentAPIView.as_view(), name="document_create"),
     path("documents/<str:pk>/", DocumentAPIView.as_view(), name="document_delete"),
     path("assistants/", AssistantAPIView.as_view(), name="assistant_create"),
-    path("assistants/<str:pk>/",  AssistantAPIView.as_view(), name="assistant_update"),
+    path("assistants/<str:pk>/", AssistantAPIView.as_view(), name="assistant_update"),
 ]

@@ -4,15 +4,24 @@ include .env
 export $(shell sed 's/=.*//' .env)
 
 build:
-	docker compose build
-
-rebuild:
+ifeq ($(ENVIRONMENT), dev)
+	@echo "Building in dev mode"
 	docker compose down
-	docker compose build --no-cache
-	docker compose up
+	docker compose -f docker-compose.dev.yml build --no-cache
+else
+	@echo "Building in prod mode"
+	docker-compose down
+	docker-compose build --no-cache
+endif
 
 up:
-	docker compose up -d
+ifeq ($(ENVIRONMENT), dev)
+	@echo "Starting in dev mode"
+	docker-compose -f docker-compose.dev.yml up -d
+else
+	@echo "Starting in prod mode"
+	docker-compose up -d
+endif
 
 down:
 	docker compose down
@@ -62,3 +71,6 @@ migrate:
 
 psql:
 	docker compose run db psql -U $(DB_USER) -d $(DB_NAME)
+
+collectstatic:
+	docker compose run --rm web python manage.py collectstatic --noinput
