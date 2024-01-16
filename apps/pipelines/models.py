@@ -96,7 +96,8 @@ class PipelineSource(TimestampMixin):
         verbose_name_plural = _("PipelineSources")
 
     def __str__(self):
-        return self.body
+        tag_list = "Not saved" if self._state.adding else ', '.join([tag.name for tag in self.tags.all()])
+        return f"{self.name} `{self.body}` [Tags: {tag_list}]"
 
     def format(self):
         """

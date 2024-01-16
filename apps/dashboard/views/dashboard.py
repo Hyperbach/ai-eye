@@ -260,7 +260,7 @@ class PipelineSourceBaseView(AiEyeAdminOrUserMixin, View):
         if user.is_aieye_user:
             qs = qs.filter(owner=user)
 
-        return qs.order_by("-date_created")
+        return qs.order_by("-date_created").prefetch_related('tags')
 
 
 class PipelineSourceListView(PipelineSourceBaseView, generic.ListView):
