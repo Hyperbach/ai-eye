@@ -72,6 +72,13 @@ class BuiltinFunction(TimestampMixin):
         return "Built-in" if is_builtin_fn else "User-defined"
 
 
+class Tag(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
 class PipelineSource(TimestampMixin):
     """
     Represents a source of DAG nodes and edges
@@ -82,6 +89,7 @@ class PipelineSource(TimestampMixin):
         User, on_delete=models.CASCADE, verbose_name=_("Author of the Pipeline")
     )
     name: models.CharField = models.CharField(max_length=100, unique=True)
+    tags = models.ManyToManyField(Tag, blank=True)
 
     class Meta:
         verbose_name = _("PipelineSource")
