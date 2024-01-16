@@ -11,7 +11,6 @@ from embedchain import App
 from openai import OpenAI
 
 logger = logging.getLogger("console")
-docker_client = docker.from_env()
 
 
 def type_inference_decorator(needs_context=False):
@@ -162,6 +161,13 @@ def now():
     return datetime.now().isoformat()
 
 
+def get_docker_client():
+    global docker_client
+    if 'docker_client' not in globals():
+        docker_client = docker.from_env()
+    return docker_client
+
+
 def get_context():
     """
     Dynamically retrieves the context of the calling function if it has one.
@@ -302,7 +308,7 @@ def eval(code):
         f.write(code)
 
     try:
-        container = docker_client.containers.run(
+        container = get_docker_client().containers.run(
             image='ai-eye-eval',
             command='/entrypoint.sh',
             environment={
