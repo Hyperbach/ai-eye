@@ -10,17 +10,17 @@ ifeq ($(ENVIRONMENT), dev)
 	docker compose -f docker-compose.dev.yml build --no-cache
 else
 	@echo "Building in prod mode"
-	docker-compose down
-	docker-compose build --no-cache
+	docker compose down
+	docker compose build --no-cache
 endif
 
 up:
 ifeq ($(ENVIRONMENT), dev)
 	@echo "Starting in dev mode"
-	docker-compose -f docker-compose.dev.yml up -d
+	docker compose -f docker-compose.dev.yml up -d
 else
 	@echo "Starting in prod mode"
-	docker-compose up -d
+	docker compose up -d
 endif
 
 down:
