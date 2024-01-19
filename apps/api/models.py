@@ -14,7 +14,7 @@ class Log(models.Model):
     endpoint = models.CharField(max_length=100)
     parameters = models.JSONField()
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    api_key = models.ForeignKey(APIKey, on_delete=models.CASCADE)
+    api_key = models.ForeignKey(APIKey, null=True, on_delete=models.SET_NULL)
     response = models.TextField()
     cache_hit = models.BooleanField()
     timestamp = models.DateTimeField(auto_now_add=True)

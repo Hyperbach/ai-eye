@@ -18,7 +18,7 @@ class PipelineExecutionLog(models.Model):
     start_date = models.DateTimeField(auto_now_add=True)
     end_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
-    apikey = models.ForeignKey(PublicToken, on_delete=models.CASCADE)
+    apikey = models.ForeignKey(PublicToken, null=True, on_delete=models.SET_NULL, related_name='execution_logs')
     parameters = models.JSONField()
     output = models.TextField()
     total_prompt_tokens = models.IntegerField()

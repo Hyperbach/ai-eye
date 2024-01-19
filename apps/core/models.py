@@ -140,8 +140,8 @@ class APIKey(TimestampMixin):
 
 class PublicToken(rest_framework.authtoken.models.Token, TimestampMixin, IsActiveMixin):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    openaikey = models.ForeignKey(APIKey, null=True, on_delete=models.CASCADE, related_name='openai_tokens')
-    togetheraikey = models.ForeignKey(APIKey, null=True, on_delete=models.CASCADE, related_name='togetherai_tokens')
+    openaikey = models.ForeignKey(APIKey, null=True, on_delete=models.SET_NULL, related_name='openai_tokens')
+    togetheraikey = models.ForeignKey(APIKey, null=True, on_delete=models.SET_NULL, related_name='togetherai_tokens')
     alias = models.CharField("Alias", max_length=64, blank=True, null=True)
     key = models.CharField(
         _("Key"),
