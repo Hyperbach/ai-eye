@@ -70,7 +70,7 @@ migrate:
 	docker compose run --rm web python manage.py migrate
 
 psql:
-	docker compose run db psql -U $(DB_USER) -d $(DB_NAME)
+	docker compose exec db psql -U $(DB_USER) -d $(DB_NAME)
 
 collectstatic:
 	docker compose run --rm web python manage.py collectstatic --noinput
