@@ -13,7 +13,7 @@ from pipelines.services.exceptions import (
 )
 from pipelines.services.functions_manager import FUNCTIONS_MANAGER
 from pipelines.services.pipeline_executor.calls import CallBuiltinFunction, CallPrompt
-from pipelines.utils import find_first, strip_json_response
+from pipelines.utils import find_first
 
 logger = logging.getLogger("db")
 console_logger = logging.getLogger("console")
@@ -29,8 +29,7 @@ class BaseVisitor(metaclass=abc.ABCMeta):
 
     def _create_call_func_by_name(self, name):
         if prompt_fn := find_first(lambda p: p.name == name, self.prompts):
-            # use strict=True only when json=True (not implemented yet)
-            return strip_json_response(CallPrompt(prompt_fn=prompt_fn), strict=False)
+            return CallPrompt(prompt_fn=prompt_fn)
         if builtin_fn := find_first(lambda b: b.name == name, self.builtins):
             return CallBuiltinFunction(builtin_fn=builtin_fn)
 

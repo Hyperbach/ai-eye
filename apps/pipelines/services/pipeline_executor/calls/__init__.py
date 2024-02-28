@@ -10,6 +10,7 @@ from pipelines.choices import TypesOfModels
 from pipelines.models import BuiltinFunction, Prompt
 from pipelines.services.exceptions import CallBuiltinFunctionError, CallPromptError
 from pipelines.services.functions_manager import FUNCTIONS_MANAGER
+from pipelines.utils import strip_json_response
 
 logger = logging.getLogger("db")
 console_logger = logging.getLogger("console")
@@ -138,7 +139,9 @@ class CallPrompt:
                 if 'choices' in response and response['choices']:
                     text_contents = [choice['message']['content'] for choice in response['choices'] if
                                      'content' in choice['message']]
-                    text_response = ' '.join(text_contents)
+                    text_response = ''.join(text_contents)
+                    # use strict=True only when json=True (not implemented yet)
+                    text_response = strip_json_response(text_response, strict=False)
 
                 # Safely extract prompt_tokens and completion_tokens
                 usage_data = response.get('usage', {})
