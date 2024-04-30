@@ -1,6 +1,7 @@
-from dblogs.models import CallEntryLog, PipelineExecutionLog
 from rest_framework import serializers
 
+from dblogs.models import CallEntryLog, PipelineExecutionLog
+from pipelines.models import Document, Assistant
 from .models import Log
 
 
@@ -15,8 +16,8 @@ class PipelineCallSerializer(serializers.Serializer):
     args = serializers.JSONField(required=True)
 
 
-class PipelineCallWithOpenaiKeyId(PipelineCallSerializer):
-    openaikey_id = serializers.IntegerField(min_value=0, required=True)
+class PipelineCallWithPublicTokenId(PipelineCallSerializer):
+    publictoken_id = serializers.IntegerField(min_value=0, required=True)
 
 
 class PipelineRetrieveArgumentsCallSerializer(serializers.Serializer):
@@ -37,3 +38,33 @@ class CallEntryLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = CallEntryLog
         fields = "__all__"
+
+
+class DocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Document
+        fields = '__all__'
+
+    def update(self, instance, validated_data):
+        instance.save(update_fields=["description"])
+        return instance
+
+
+class AssistantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Assistant
+        fields = "__all__"
+
+
+class DocumentCreationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Document
+        fields = ["description", "file"]
+
+    file = serializers.FileField()
+
+
+class AssistantCreationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Assistant
+        fields = ["name", "description", "model", "instructions", "metadata", "files"]

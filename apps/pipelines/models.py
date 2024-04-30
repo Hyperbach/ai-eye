@@ -5,7 +5,7 @@ from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from core.models import TimestampMixin
-from pipelines.choices import TypesOfDAGNodes
+from pipelines.choices import TypesOfDAGNodes, TypesOfModels
 from pipelines.services.functions_manager import FUNCTIONS_MANAGER
 from pipelines.validators import FunctionNameValidator
 
@@ -24,6 +24,10 @@ class Prompt(TimestampMixin):
     body: models.TextField = models.TextField()
     owner: models.ForeignKey = models.ForeignKey(
         User, on_delete=models.CASCADE, verbose_name=_("author of the prompt")
+    )
+    type = models.CharField(
+        max_length=50,
+        choices=TypesOfModels.choices
     )
 
     class Meta:
@@ -68,6 +72,13 @@ class BuiltinFunction(TimestampMixin):
         return "Built-in" if is_builtin_fn else "User-defined"
 
 
+class Tag(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
 class PipelineSource(TimestampMixin):
     """
     Represents a source of DAG nodes and edges
@@ -78,13 +89,34 @@ class PipelineSource(TimestampMixin):
         User, on_delete=models.CASCADE, verbose_name=_("Author of the Pipeline")
     )
     name: models.CharField = models.CharField(max_length=100, unique=True)
+    tags = models.ManyToManyField(Tag, blank=True)
 
     class Meta:
         verbose_name = _("PipelineSource")
         verbose_name_plural = _("PipelineSources")
 
     def __str__(self):
-        return self.body
+        tag_list = "Not saved" if self._state.adding else ', '.join([tag.name for tag in self.tags.all()])
+        return f"{self.name} `{self.body}` [Tags: {tag_list}]"
+
+    def format(self):
+        """
+        Formats the expression for readability.
+        """
+        expression = str(self.body)
+        indent_level = 0
+        formatted_expression = ""
+        for char in expression:
+            if char == '(':
+                indent_level += 1
+                formatted_expression += char + "\n" + "    " * indent_level
+            elif char == ')':
+                indent_level -= 1
+                formatted_expression = formatted_expression.rstrip()  # Remove trailing spaces
+                formatted_expression += "\n" + "    " * indent_level + char
+            else:
+                formatted_expression += char
+        return formatted_expression
 
     def delete_dependents(self):
         with transaction.atomic():
@@ -147,3 +179,56 @@ class DAGEdge(models.Model):
 
     def __str__(self):
         return f"{self.from_node} -> {self.to_node}"
+
+
+class Document(models.Model):
+    id = models.CharField(max_length=100,
+                          primary_key=True)
+    object_type = models.CharField(max_length=50)
+    bytes = models.PositiveIntegerField()  # Size of the file in bytes
+    filename = models.CharField(max_length=255)  # Name of the file, prefixed with the user ID
+    original_filename = models.CharField(max_length=255, default=filename)  # Original name of the file, unprefixed
+    purpose = models.CharField(max_length=50)  # "assistants"
+    description = models.TextField(blank=True, null=True)  # Man-made description, can be blank
+
+    # Handling the 'created_at' as a DateTimeField
+    created_at = models.DateTimeField()
+
+    owner = models.ForeignKey(
+        User,
+        null=True,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Author of the Document"),
+        related_name='documents'
+    )
+
+    def __str__(self):
+        return self.filename
+
+
+class Assistant(models.Model):
+    # Basic assistant information
+    openai_id = models.CharField(max_length=255, unique=True)
+    name = models.CharField(max_length=256)
+    prefixed_name = models.CharField(max_length=256)
+    description = models.TextField(max_length=512, blank=True, null=True)
+    model = models.CharField(max_length=64)
+    instructions = models.TextField(max_length=32768, blank=True, null=True)
+
+    # Relationships
+    owner = models.ForeignKey(
+        User,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='assistants',
+        verbose_name=_("Author of the Assistant"))
+    files = models.ManyToManyField('Document', blank=True)
+
+    # Additional metadata
+    metadata = models.JSONField(default=dict, blank=True)
+
+    # Creation timestamp from OpenAI's response
+    created_at = models.DateTimeField(default=None)
+
+    def __str__(self):
+        return self.name

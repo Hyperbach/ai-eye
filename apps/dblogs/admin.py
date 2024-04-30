@@ -14,7 +14,7 @@ class PipelineExecutionLogAdmin(admin.ModelAdmin):
         "user",
         "pipeline",
         "status",
-        "openai_key",
+        "apikey",
         "parameters",
         "output",
         "error",

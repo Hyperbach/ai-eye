@@ -1,0 +1,57 @@
+{% extends 'dashboard/index.html' %}
+{% load static %}
+{% load bootstrap5 %}
+
+{% block bootstrap5_extra_head %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/custom.css' %}">
+{% endblock %}
+
+{% block dashboard_header %}
+    <h2 class="text-left mt-5">Assistants</h2>
+{% endblock dashboard_header %}
+
+{% block dashboard_content %}
+
+    <div class="d-flex p-1">
+        <a href="{% url 'dashboard:assistant_create' %}" class="d-block btn btn-primary my-2">Add New</a>
+    </div>
+
+    <div class="p-5 bg-light rounded-3">
+
+        <div class="tab-pane fade show active ">
+            <table class="table table-striped table-hover">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>OpenAI ID</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Model</th>
+                    <th>Created At</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for assistant in assistants %}
+                    <tr>
+                        <td>{{ assistant.id }}</td>
+                        <td>{{ assistant.openai_id }}</td>
+                        <td><a href="{% url 'dashboard:assistant_detail' assistant.pk %}">{{ assistant.prefixed_name }}</a></td>
+                        <td>{{ assistant.description }}</td>
+                        <td>{{ assistant.model }}</td>
+                        <td>{{ assistant.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            <a href="{% url 'dashboard:assistant_update' assistant.pk %}">Update</a> |
+                            <a href="{% url 'dashboard:assistant_delete' assistant.pk %}">Delete</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+
+{% endblock %}

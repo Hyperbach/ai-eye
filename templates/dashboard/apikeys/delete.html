@@ -2,19 +2,19 @@
 {% load bootstrap5 %}
 
 {% block dashboard_header %}
-    <h2 class="text-left mt-5">OpenAI Keys Management - delete keys</h2>
+    <h2 class="text-left mt-5">API Keys Management - delete keys</h2>
 {% endblock dashboard_header %}
 
 {% block dashboard_content %}
-    {% url 'dashboard:openaikeys' as openaikeys_list %}
+    {% url 'dashboard:apikeys' as apikeys_list %}
 
-    <p class="h5">Are you sure you want to delete the OpenAIKey: {{ openaikey.key }}?</p>
+    <p class="h5">Are you sure you want to delete the API key: {{ apikey.key }}?</p>
     <form action="" method="POST">
         {% csrf_token %}
         <div class="container d-flex ps-0">
             <input type="submit" class="btn btn-primary me-4 mt-4" value="Confirm">
             <input type="submit" class="btn btn-danger mt-4"
-                   onclick="window.location='{{ openaikeys_list }}'; return false;" value="Cancel">
+                   onclick="window.location='{{ apikeys_list }}'; return false;" value="Cancel">
         </div>
     </form>
 {% endblock dashboard_content %}

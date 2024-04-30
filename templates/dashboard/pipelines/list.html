@@ -9,10 +9,10 @@
 {% endblock %}
 
 {% block dashboard_header %}
-<div class="header-container">
-    <h2 class="text-left mt-5" style="display: inline-block; margin-right: 5px;">Pipelines Management</h2>
-    <a href="{% url 'dashboard:pipeline_execute' %}" style="display: inline-block;">Execute</a>
-</div>
+    <div class="header-container">
+        <h2 class="text-left mt-5" style="display: inline-block; margin-right: 5px;">Pipelines Management</h2>
+        <a href="{% url 'dashboard:pipeline_execute' %}" style="display: inline-block;">Execute</a>
+    </div>
 {% endblock dashboard_header %}
 
 {% block dashboard_content %}
@@ -24,6 +24,7 @@
                     <th scope="col">Id</th>
                     <th scope="col">Name</th>
                     <th scope="col">Body</th>
+                    <th scope="col">Tags</th>
                     <th scope="col">Date created</th>
                     <th scope="col">Date updated</th>
                     <th scope="col"></th>
@@ -34,20 +35,26 @@
                 <tbody>
                 {% if object_list %}
                     {% for pipeline in object_list %}
-                    <tr>
-                        <td>{{ pipeline.id }}</td>
-                        <td>{{ pipeline.name }}</td>
-                        <td>{{ pipeline.body }}</td>
-                        <td>{{ pipeline.date_created|date:'m-d-Y H:i:s' }}</td>
-                        <td>{{ pipeline.date_updated|date:'m-d-Y H:i:s' }}</td>
-                        <td><a href="{% url 'dashboard:pipeline_update' pipeline.pk %}">Update</a></td>
-                        <td><a href="{% url 'dashboard:pipeline_delete' pipeline.pk %}">Delete</a></td>
-                        <td>
-                            <a href="{% url 'dashboard:pipeline_execute' pipeline.pk %}" title="Execute">
-                                <i class="fa-sharp fa-regular fa-play" style="color: green;"></i>
-                            </a>
-                        </td>
-                    </tr>
+                        <tr>
+                            <td>{{ pipeline.id }}</td>
+                            <td>{{ pipeline.name }}</td>
+                            <td>{{ pipeline.body }}</td>
+                            <td>
+                                {% for tag in pipeline.tags.all %}
+                                    {{ tag.name }}{% if not forloop.last %}, {% endif %}
+                                    {% empty %}
+                                {% endfor %}
+                            </td>
+                            <td>{{ pipeline.date_created|date:'m-d-Y H:i:s' }}</td>
+                            <td>{{ pipeline.date_updated|date:'m-d-Y H:i:s' }}</td>
+                            <td><a href="{% url 'dashboard:pipeline_update' pipeline.pk %}">Update</a></td>
+                            <td><a href="{% url 'dashboard:pipeline_delete' pipeline.pk %}">Delete</a></td>
+                            <td>
+                                <a href="{% url 'dashboard:pipeline_execute' pipeline.pk %}" title="Execute">
+                                    <i class="fa-sharp fa-regular fa-play" style="color: green;"></i>
+                                </a>
+                            </td>
+                        </tr>
                     {% endfor %}
                 {% endif %}
                 </tbody>

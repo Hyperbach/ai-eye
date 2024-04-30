@@ -2,6 +2,8 @@ import logging
 from typing import Dict
 
 import networkx as nx
+
+from core.models import APIKey
 from dblogs.handlers import DatabaseLogHandler
 from pipelines.models import BuiltinFunction, DAGEdge, DAGNode, Prompt
 from pipelines.services.exceptions import (
@@ -55,7 +57,7 @@ class PipelineExecutor:
             )
         return roots[0]
 
-    def exec(self, user_args: Dict[str, str], openaikey: str):
+    def exec(self, user_args: Dict[str, str], apikey: APIKey):
         """
         builtins:
         --
@@ -71,7 +73,7 @@ class PipelineExecutor:
         """
 
         DatabaseLogHandler.log_event_started(
-            logger, self.user, self.pipeline_source_id, openaikey, user_args
+            logger, self.user, self.pipeline_source_id, apikey, user_args
         )
         result = ""
         error = ""
@@ -80,7 +82,7 @@ class PipelineExecutor:
                 graph=self.graph,
                 prompts=self.prompts,
                 builtins=self.builtins,
-                openaikey=openaikey,
+                apikey=apikey,
                 user_args=user_args,
                 user=self.user,
             ).visit(node=self.root)

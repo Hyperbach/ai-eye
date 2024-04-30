@@ -15,6 +15,7 @@
                     <th scope="col">Name</th>
                     <th scope="col">Description</th>
                     <th scope="col">Body</th>
+                    <th scope="col">Type</th>
                     <th scope="col">Date created</th>
                     <th scope="col">Date updated</th>
                     <th scope="col"></th>
@@ -29,6 +30,7 @@
                             <td>{{ prompt.name }}</td>
                             <td>{{ prompt.description }}</td>
                             <td>{{ prompt.body }}</td>
+                            <td>{{ prompt.get_type_display }}</td>
                             <td>{{ prompt.date_created|date:'m-d-Y H:i:s' }}</td>
                             <td>{{ prompt.date_updated|date:'m-d-Y H:i:s' }}</td>
                             <td><a href="{% url 'dashboard:prompt_update' prompt.pk %}">Update</a></td>

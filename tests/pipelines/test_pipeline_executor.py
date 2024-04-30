@@ -107,7 +107,7 @@ class PipelineExecutorTestCase(TestCase):
         try:
             pipeline_executor = self._create_pipeline_executor(input_str=input_str)
             result = pipeline_executor.exec(
-                user_args=user_args, openaikey=self.openaikey.key
+                user_args=user_args, apikey=self.openaikey.key
             )
         except Exception as exc:
             self.fail(f"test_positive_exec raised an exception: {exc}")
@@ -149,7 +149,7 @@ class PipelineExecutorTestCase(TestCase):
         with self.assertRaises(expected_exception):
             pipeline_executor = self._create_pipeline_executor(input_str=input_str)
             _ = pipeline_executor.exec(
-                user_args=user_args, openaikey=self.openaikey.key
+                user_args=user_args, apikey=self.openaikey.key
             )
 
     @parameterized.expand(

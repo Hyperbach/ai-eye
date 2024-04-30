@@ -4,23 +4,29 @@ include .env
 export $(shell sed 's/=.*//' .env)
 
 build:
-	docker compose build
-
-rebuild:
+ifeq ($(ENVIRONMENT), dev)
+	@echo "Building in dev mode"
+	docker compose down
+	docker compose -f docker-compose.dev.yml build --no-cache
+else
+	@echo "Building in prod mode"
 	docker compose down
 	docker compose build --no-cache
-	docker compose up
+endif
 
 up:
+ifeq ($(ENVIRONMENT), dev)
+	@echo "Starting in dev mode"
+	docker compose -f docker-compose.dev.yml up -d
+else
+	@echo "Starting in prod mode"
 	docker compose up -d
+endif
 
 down:
 	docker compose down
 
 restart: down up
-
-migrate:
-	docker compose run --rm web python manage.py migrate
 
 create-admin:
 	docker compose run --rm web python manage.py createsuperuser
@@ -53,3 +59,18 @@ create-app-user:
 
 create-app-admin:
 	docker compose run --rm web python manage.py create_app_admin $(EMAIL) $(PASSWORD) $(FIRST_NAME) $(LAST_NAME)
+
+generate-kb:
+	python3 generate_kb.py
+
+migrations:
+	docker compose run --rm web python manage.py makemigrations
+
+migrate:
+	docker compose run --rm web python manage.py migrate
+
+psql:
+	docker compose exec db psql -U $(DB_USER) -d $(DB_NAME)
+
+collectstatic:
+	docker compose run --rm web python manage.py collectstatic --noinput

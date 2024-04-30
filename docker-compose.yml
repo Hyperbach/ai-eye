@@ -18,9 +18,12 @@ services:
   web:
     container_name: aieye-web
     build: .
-    command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: bash -c "python manage.py migrate && gunicorn configs.wsgi:application --bind 0.0.0.0:8000 -w 3 --timeout 600 --worker-class gevent"
     volumes:
       - .:/ai-eye
+      - /tmp/eval:/eval
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./staticfiles:/ai-eye/staticfiles
     ports:
       - "8000:8000"
     env_file:
@@ -31,6 +34,15 @@ services:
       - db:db
     networks:
       - aieye_network
+
+  eval:
+    build:
+      context: .
+      dockerfile: Dockerfile.eval
+    environment:
+      - FILE_NAME=${FILE_NAME}
+    volumes:
+      - /tmp/eval:/eval
 
 volumes:
   db_data: { }

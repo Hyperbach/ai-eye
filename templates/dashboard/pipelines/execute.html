@@ -19,13 +19,13 @@
     <form role="form" id="execute_pipeline_form" method="post">
         {% csrf_token %}
         <div class="row mb-3 item-block">
-            <label class="col-sm-2 col-form-label" for="id_openaikey">OpenAI Key</label>
+            <label class="col-sm-2 col-form-label" for="publictoken_id">Public Token</label>
             <div class="col-sm-10">
-                <select name="pipeline" class="form-select" title="" required id="id_openaikey">
+                <select name="pipeline" class="form-select" title="" required id="publictoken_id">
                     <option value="">---------</option>
-                    {% for openaikey in openaikeys %}
-                        <option value="{{ openaikey.id }}" {% if forloop.first %}selected{% endif %}>
-                            {{ openaikey.key }}
+                    {% for publictoken in publictokens %}
+                        <option value="{{ publictoken.id }}" {% if forloop.first %}selected{% endif %}>
+                            {{ publictoken.alias|default:publictoken.key }}
                         </option>
                     {% endfor %}
                 </select>
@@ -155,15 +155,66 @@
                 $log_list_div.append($('<h4>').text("Call log entries"))
 
                 call_entries.forEach(function (log_entry) {
-                    const $log_entry_div = $('<div>').addClass('log-entry');
-                    const log_entry_details = $('<div>').addClass('log-entry-details');
-                    const text = `${timestamp_to_locale_string(log_entry.start_date)} Calling ${log_entry.fn_type}
-                                  "<b>${log_entry.fn_name}</b>" with ${JSON.stringify(log_entry.parameters)},
-                                  result = "${log_entry.output}". Duration: ${calc_duration(log_entry.start_date, log_entry.end_date)} ms`;
+                    const $log_entry_row = $('<tr>').addClass('log-entry').addClass('fn-' + log_entry.fn_type).css("display", "block");
+                    const $log_entry_details = $('<td>').attr('colspan', '5');
 
-                    log_entry_details.append($('<p>').html(text));
-                    $log_entry_div.append(log_entry_details);
-                    $log_list_div.append($log_entry_div);
+                    // Format dates and calculate duration
+                    const formattedStartDate = timestamp_to_locale_string(log_entry.start_date);
+                    const formattedEndDate = timestamp_to_locale_string(log_entry.end_date);
+                    const duration = calc_duration(log_entry.start_date, log_entry.end_date);
+
+                    // Function name with type
+                    $('<div>').addClass('fn-name')
+                        .text(log_entry.fn_name + ' (' + log_entry.fn_type + ')')
+                        .appendTo($log_entry_details);
+
+                    // Parameters
+                    $('<div>').append($('<strong>').text('Model:'))
+                        .append($('<pre>').text(log_entry.model))
+                        .appendTo($log_entry_details);
+
+                    // Parameters
+                    $('<div>').append($('<strong>').text('Parameters:'))
+                        .append($('<pre>').text(JSON.stringify(log_entry.parameters, null, 2)))
+                        .appendTo($log_entry_details);
+
+                    // Output
+                    $('<div>').append($('<strong>').text('Output:'))
+                        .append($('<pre>').text(log_entry.output))
+                        .appendTo($log_entry_details);
+
+                    // Start and end dates
+                    $('<div>').append($('<strong>').text('Start:'))
+                        .append(document.createTextNode(formattedStartDate))
+                        .appendTo($log_entry_details);
+
+                    $('<div>').append($('<strong>').text('End:'))
+                        .append(document.createTextNode(formattedEndDate))
+                        .appendTo($log_entry_details);
+
+                    // Duration
+                    $('<div>').append($('<strong>').text('Duration:'))
+                        .append(document.createTextNode(duration + ' ms'))
+                        .appendTo($log_entry_details);
+
+                    if (log_entry.fn_type === 'prompt') {
+                        // Add tokens consumption (prompt_tokens, completion_tokens)
+                        $('<br/><div>').append($('<strong>').text('Prompt tokens:'))
+                            .append(document.createTextNode(log_entry.prompt_tokens))
+                            .appendTo($log_entry_details);
+                        $('<div>').append($('<strong>').text('Completion tokens:'))
+                            .append(document.createTextNode(log_entry.completion_tokens))
+                            .appendTo($log_entry_details);
+                        $('<br/><div>').append($('<strong>').text('Prompt cost:'))
+                            .append(document.createTextNode('$' + log_entry.prompt_cost))
+                            .appendTo($log_entry_details);
+                        $('<div>').append($('<strong>').text('Completion cost:'))
+                            .append(document.createTextNode('$' + log_entry.completion_cost))
+                            .appendTo($log_entry_details);
+                    }
+
+                    $log_entry_row.append($log_entry_details);
+                    $log_list_div.append($log_entry_row);
                 });
 
                 $logs_section.append($log_list_div);
@@ -272,7 +323,7 @@
                 show_item("#error-alert", false);
 
                 const pipeline_id_selected = $pipeline_selector.find("option:selected").data("id");
-                const openaikey_id_selected = $("#id_openaikey").val();
+                const publictoken_id = $("#publictoken_id").val();
 
                 const $tag_vals = $(".tag_value");
 
@@ -292,12 +343,19 @@
                         'POST',
                         JSON.stringify({
                             pipeline_id: pipeline_id_selected,
-                            openaikey_id: openaikey_id_selected,
+                            publictoken_id: publictoken_id,
                             args: args
                         }),
                         function (response) {
-                            const response_text = response.response;
-                            output_msg("#success-alert", response_text);
+                            const container = document.querySelector("#success-alert");
+                            container.innerHTML = '';
+
+                            const lines = response.response.split(/\r?\n/);
+                            lines.forEach(line => {
+                                container.appendChild(document.createTextNode(line));
+                                container.appendChild(document.createElement('br'));
+                            });
+
                             show_item("#success-alert", true);
                         },
                         function (error) {

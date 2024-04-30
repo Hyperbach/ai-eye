@@ -1,0 +1,16 @@
+FROM python:3.9
+
+# Set the working directory
+WORKDIR /eval
+
+# Install any necessary dependencies
+RUN pip install docker
+RUN pip install bs4
+RUN pip install sympy
+
+# Set the entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Set the command to execute the entrypoint script
+CMD ["/entrypoint.sh"]

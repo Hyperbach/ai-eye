@@ -2,7 +2,7 @@
 {% load bootstrap5 %}
 
 {% block dashboard_header %}
-    <h2 class="text-left mt-5">OpenAI Keys Management - add keys</h2>
+    <h2 class="text-left mt-5">API Keys Management - add keys</h2>
 {% endblock dashboard_header %}
 
 {% block dashboard_content %}
@@ -13,7 +13,7 @@
         <div class="container d-flex ps-0">
             <input type="submit" class="btn btn-primary me-4 mt-4" value="Submit">
             <input type="submit" class="btn btn-danger mt-4"
-                   onclick="window.location='{% url 'dashboard:openaikeys' %}'; return false;" value="Cancel">
+                   onclick="window.location='{% url 'dashboard:apikeys' %}'; return false;" value="Cancel">
         </div>
     </form>
 {% endblock dashboard_content %}

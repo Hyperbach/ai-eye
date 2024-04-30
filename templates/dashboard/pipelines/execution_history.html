@@ -7,18 +7,19 @@
     <link href="{% static 'css/fontawesomefree/fontawesome.css' %}" rel="stylesheet" type="text/css">
     <link href="{% static 'css/fontawesomefree/solid.css' %}" rel="stylesheet" type="text/css">
     <link href="{% static 'css/pipeline_exec_history.css' %}" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/custom.css' %}">
 {% endblock %}
 
 {% block dashboard_header %}
-<div class="header-container">
-    <h2 class="text-left mt-5" style="display: inline-block; margin-right: 5px;">
-        {% if pipeline %}
-            {{ pipeline.name }} Execution History
-        {% else %}
-            Pipelines Execution History
-        {% endif %}
-    </h2>
-</div>
+    <div class="header-container">
+        <h2 class="text-left mt-5" style="display: inline-block; margin-right: 5px;">
+            {% if pipeline %}
+                {{ pipeline.name }} Execution History
+            {% else %}
+                Pipelines Execution History
+            {% endif %}
+        </h2>
+    </div>
 {% endblock dashboard_header %}
 
 {% block dashboard_content %}
@@ -33,78 +34,101 @@
                     {% endif %}
                     <th scope="col">Date started</th>
                     <th scope="col">Date ended</th>
+                    <th scope="col">ms</th>
+                    <th scope="col">Tokens</th>
+                    <th scope="col">Cost, $</th>
                     <th scope="col">Status</th>
                 </tr>
                 </thead>
                 <tbody>
                 {% if page_obj %}
                     {% for execution in page_obj %}
-                    <tr class="main-row" data-id="{{ execution.id }}">
-                        <td>{{ execution.id }}</td>
-                        {% if not pipeline %}
+                        <tr class="main-row" data-id="{{ execution.id }}">
+                            <td>{{ execution.id }}</td>
+                            {% if not pipeline %}
+                                <td>
+                                    <a class="pipeline-detail-link"
+                                       href="{% url 'dashboard:pipeline_detail_exec_history' execution.pipeline.id %}">
+                                        {{ execution.pipeline.name }}
+                                    </a>
+                                </td>
+                            {% endif %}
+                            <td><small>{{ execution.start_date|date:'m-d-Y H:i:s' }}</small></td>
+                            <td><small>{{ execution.end_date|date:'m-d-Y H:i:s' }}</small></td>
                             <td>
-                                <a class="pipeline-detail-link" href="{% url 'dashboard:pipeline_detail_exec_history' execution.pipeline.id %}">
-                                    {{ execution.pipeline.name }}
-                                </a>
+                                {% if execution.execution_time_ms %}
+                                    <div>{{ execution.execution_time_ms|floatformat:0 }}</div>
+                                {% else %}
+                                    <div>Not available</div>
+                                {% endif %}
                             </td>
-                        {% endif %}
-                        <td>{{ execution.start_date|date:'m-d-Y H:i:s' }}</td>
-                        <td>{{ execution.end_date|date:'m-d-Y H:i:s' }}</td>
-                        <td>
+                            <td>
+                                {% if execution.total_tokens %}
+                                    <div>{{ execution.total_tokens|floatformat:0 }}</div>
+                                {% else %}
+                                    <div>Not available</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if execution.total_cost %}
+                                    <div>{{ execution.total_cost|floatformat:5 }}</div>
+                                {% else %}
+                                    <div>Not available</div>
+                                {% endif %}
+                            </td>
+                            <td>
                             <span class="{% if execution.status == 'success' %}text-success{% else %}text-danger{% endif %}">
                                 {{ execution.get_status_display }}
                             </span>
-                        </td>
-                    </tr>
-                    <tr class="extra-row" id="extra-{{ execution.id }}">
-                        <td>
-                            <b>Pipeline body</b>:
-                            <div>{{ execution.pipeline.body }}</div>
-                        </td>
-                        <td>
-                            <b>Parameters</b>:
-                            <div>{{ execution.parameters }}</div>
-                        </td>
-                        <td>
-                            <b>Output</b>:
-                            <div>{{ execution.output }}</div>
-                        </td>
-                        <td>
-                            {% if execution.error %}
-                                <b>Error</b>:
-                                <div>{{ execution.error }}</div>
-                            {% endif %}
-                        </td>
-                        {% if not pipeline %}
-                            <td></td>
-                        {% endif %}
-                    </tr>
+                            </td>
+                        </tr>
+                        <tr class="extra-row" id="extra-{{ execution.id }}">
+                            <td>
+                                <b>Pipeline body</b>:
+                                <div>{{ execution.pipeline.body }}</div>
+                            </td>
+                            <td>
+                                <b>Parameters</b>:
+                                <div>{{ execution.parameters }}</div>
+                            </td>
+
+                            <td colspan="6">
+                                {% if execution.error %}
+                                    <b>Error</b>:
+                                    <div>{{ execution.error }}</div>
+                                {% else %}
+                                    <b>Output</b>:
+                                    <div>{{ execution.output }}</div>
+                                {% endif %}
+                            </td>
+
+                        </tr>
                     {% endfor %}
                 {% endif %}
                 </tbody>
             </table>
 
             <nav aria-label="#">
-              <ul class="pagination">
-                {% if page_obj.has_previous %}
-                <li class="page-item">
-                  <a class="page-link" href="?page={{ page_obj.previous_page_number }}"
-                     tabindex="-1" aria-disabled="true">
-                      Previous
-                  </a>
-                </li>
-                {% endif %}
-                {% for num in page_range %}
-                <li class="page-item {% if num == page_obj.number %}active{% endif %}" aria-current="page">
-                  <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                </li>
-                {% endfor %}
-                {% if page_obj.has_next %}
-                    <li class="page-item">
-                      <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-                    </li>
-                {% endif %}
-              </ul>
+                <ul class="pagination">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}"
+                               tabindex="-1" aria-disabled="true">
+                                Previous
+                            </a>
+                        </li>
+                    {% endif %}
+                    {% for num in page_range %}
+                        <li class="page-item {% if num == page_obj.number %}active{% endif %}" aria-current="page">
+                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                        </li>
+                    {% endif %}
+                </ul>
             </nav>
         </div>
     </div>
@@ -112,17 +136,86 @@
 
 {% block bootstrap5_extra_script %}
     <script>
-        $(document).ready(function() {
-            $('tr.main-row').on('click', function() {
+        $(document).ready(function () {
+            $('tr.main-row').on('click', function () {
                 var id = $(this).data('id');
                 var extra_row = $('#extra-' + id);
-                $('tr.extra-row.show').not(extra_row).removeClass('show');
-                extra_row.toggleClass('show');
+
+                // Toggle the visibility of the extra row
+                if (extra_row.hasClass('show')) {
+                    // If currently shown, remove the show class and remove any dynamically added log-entry rows.
+                    extra_row.removeClass('show').removeClass('loaded');
+                    extra_row.nextAll('tr.log-entry').remove(); // Remove the added log entries
+                } else {
+                    // If not currently shown, make the AJAX call and display the logs.
+                    extra_row.addClass('show');
+                    if (!extra_row.hasClass('loaded')) {
+                        // Make a GET AJAX call to retrieve logs for the clicked pipeline execution.
+                        $.ajax({
+                            url: '/api/execution/' + id + '/',
+                            type: 'GET',
+                            contentType: 'application/json',
+                            success: function (response) {
+                                response.call_entries.forEach(function (log) {
+                                    const startDate = new Date(log.start_date);
+                                    const endDate = new Date(log.end_date);
+                                    const duration = endDate - startDate; // Duration in milliseconds
+
+                                    // Create elements for each piece of data
+                                    const $logEntryRow = $('<tr>', {'class': 'log-entry fn-' + log.fn_type});
+                                    const $td = $('<td>', {'colspan': 8}).appendTo($logEntryRow);
+
+                                    // Set the function name and type with appropriate color
+                                    $('<div>', {'class': 'fn-name ' + (log.fn_type === 'builtin' ? 'text-primary' : 'text-success')})
+                                        .text(log.fn_name + ' (' + log.fn_type + ')').appendTo($td);
+
+                                    // Add model name
+                                    $('<div>').append($('<strong>').text('Model:'))
+                                        .append($('<pre>').text(log.model))
+                                        .appendTo($td);
+
+                                    // Add parameters
+                                    $('<div>').append($('<strong>').text('Parameters:'))
+                                        .append($('<pre>').text(JSON.stringify(log.parameters, null, 2)))
+                                        .appendTo($td);
+
+                                    // Add output
+                                    $('<div>').append($('<strong>').text('Output:'))
+                                        .append($('<pre>').text(log.output))
+                                        .appendTo($td);
+
+                                    // Add start, end, and duration
+                                    $('<div>').append($('<strong>').text('Start:')).append(document.createTextNode(log.start_date)).appendTo($td);
+                                    $('<div>').append($('<strong>').text('End:')).append(document.createTextNode(log.end_date)).appendTo($td);
+                                    $('<div>').append($('<strong>').text('Duration:')).append(document.createTextNode(duration + ' ms')).appendTo($td);
+
+                                    // only if the function is a prompt
+                                    if (log.fn_type === 'prompt') {
+                                        // Add tokens consumption (prompt_tokens, completion_tokens)
+                                        $('<br/><div>').append($('<strong>').text('Prompt tokens:')).append(document.createTextNode(log.prompt_tokens)).appendTo($td);
+                                        $('<div>').append($('<strong>').text('Completion tokens:')).append(document.createTextNode(log.completion_tokens)).appendTo($td);
+                                        $('<br/><div>').append($('<strong>').text('Prompt cost:')).append(document.createTextNode(log.prompt_cost)).appendTo($td);
+                                        $('<div>').append($('<strong>').text('Completion cost:')).append(document.createTextNode(log.completion_cost)).appendTo($td);
+                                    }
+
+                                    // Insert the new elements into the DOM after the extra row
+                                    extra_row.after($logEntryRow);
+                                });
+
+                                extra_row.addClass('loaded'); // Mark it as loaded to avoid loading again
+                            },
+                            error: function (xhr, status, error) {
+                                // Handle any error that occurred in any of the previous requests.
+                                console.error("Error fetching logs: " + error);
+                            }
+                        });
+                    }
+                }
             });
 
-            $('a.pipeline-detail-link').on('click', function(e) {
+            $('a.pipeline-detail-link').on('click', function (e) {
                 e.stopPropagation();
             });
-        })
+        });
     </script>
 {% endblock %}
