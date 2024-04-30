@@ -159,11 +159,11 @@ class DAGBuilderTestCase(TestCase):
         self.assertEqual(root.name, "foo")
         self.assertEqual(len(root.edges), 1)
         self.assertEqual(root.edges[0].source, root)
-        self.assertEqual(root.edges[0].target.name, 'Hello, World!')
+        self.assertEqual(root.edges[0].target.name, "'Hello, World!'")
 
     def test_nested_function_invocations_with_string_literals(self):
         try:
-            root = self.builder.build('foo(a=bar(\'Hello, World!\'))')
+            root = self.builder.build("foo(a=bar('Hello, World!'))")
         except Exception as exc:
             self.fail(
                 f"test_nested_function_invocations_with_string_literals raised an exception: {exc}"
@@ -175,7 +175,7 @@ class DAGBuilderTestCase(TestCase):
         self.assertEqual(a_node.name, "a")
         self.assertEqual(a_node.edges[0].target.name, 'bar')
         bar_node = a_node.edges[0].target
-        self.assertEqual(bar_node.edges[0].target.name, 'Hello, World!')
+        self.assertEqual(bar_node.edges[0].target.name, "'Hello, World!'")
 
     def test_function_invocations_with_named_args_and_string_literals(self):
         try:
@@ -190,8 +190,8 @@ class DAGBuilderTestCase(TestCase):
         a_node, b_node = root.edges[0].target, root.edges[1].target
         self.assertEqual(a_node.name, "a")
         self.assertEqual(b_node.name, "b")
-        self.assertEqual(a_node.edges[0].target.name, 'Hello')
-        self.assertEqual(b_node.edges[0].target.name, 'World!')
+        self.assertEqual(a_node.edges[0].target.name, "'Hello'")
+        self.assertEqual(b_node.edges[0].target.name, "'World!'")
 
     @parameterized.expand(
         [

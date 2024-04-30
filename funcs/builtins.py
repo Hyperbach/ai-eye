@@ -313,7 +313,6 @@ def loop(func_name, fixed_arg, items):
     return [original_func(fixed_arg, item) for item in items]
 
 
-
 @type_inference_decorator(needs_context=True)
 def get_prompts():
     """
