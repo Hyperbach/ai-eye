@@ -293,6 +293,20 @@ def get_prompts():
     return get_context()["prompts"]
 
 
+@type_inference_decorator(needs_context=True)
+def prompt(prompt_name):
+    """
+    Retrieve the prompt content for a given prompt name.
+    :param prompt_name:  The name of the prompt to retrieve.
+    :return: The content of the prompt.
+    """
+    p = get_context()["full_prompts"].get(prompt_name)
+    if p:
+        return p.body
+    else:
+        raise ValueError(f"Prompt '{prompt_name}' not found.")
+
+
 # Unwrapped functions
 def identity(x):
     return x

@@ -96,9 +96,11 @@ class ExecutorVisitor(BaseVisitor):
         # Initialize the global context
         user_prompts = Prompt.objects.filter(owner=self.user)
         prompt_details = {prompt.name: prompt.description for prompt in user_prompts}
+        full_prompts = {prompt.name: prompt for prompt in user_prompts}
         self.global_context = {
             "apikey": self.apikey,
             "prompts": prompt_details,
+            "full_prompts": full_prompts,
             "functions": FUNCTIONS_MANAGER.funcs,
         }
 
