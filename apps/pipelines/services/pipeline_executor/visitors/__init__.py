@@ -65,6 +65,10 @@ class ArgumentsGathererVisitor(BaseVisitor):
 
         for index, child in enumerate(self.graph.successors(node)):
             child_func = self._create_call_func_by_name(child.name)
+
+            if child.name.startswith('\'') and child.name.endswith('\''):  # Check if it's a string literal
+                continue  # Skip string literals
+
             if self.is_placeholder(child_func):
                 assign_arg_nodes = list(self.graph.successors(child))
                 if len(assign_arg_nodes) > 0:
@@ -105,6 +109,10 @@ class ExecutorVisitor(BaseVisitor):
         }
 
     def _find_arg_value(self, arg_name):
+        # Check if arg_name is a string literal
+        if (arg_name.startswith('"') and arg_name.endswith('"')) or (arg_name.startswith("'") and arg_name.endswith("'")):
+            return arg_name[1:-1]  # Return the string without the quotes
+
         arg_value = self.user_args.get(arg_name, None)
         if arg_value is None:
             error_msg = f"details: Argument named `{arg_name}` is not supplied."
@@ -136,7 +144,9 @@ class ExecutorVisitor(BaseVisitor):
                 try:
                     arg_name = target_fn.get_arg_name_by_index(index)
                 except IndexError as exc:
-                    raise InvalidArgumentsError(f"Invalid arguments. Details {exc}")
+                    raise InvalidArgumentsError(f"Invalid arguments for function '{node.name}' at index {index}. "
+                                                f"Details: {exc}")
+
 
             kwargs[arg_name] = arg_value
 
