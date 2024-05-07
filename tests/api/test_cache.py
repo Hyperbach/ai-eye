@@ -115,7 +115,7 @@ class CacheTests(TestCase):
         ]
     )
     @patch(
-        "api.services.OpenAICacheService.openai_request",
+        "api.services.AICacheService.api_request",
         side_effect=mock_openai_request,
     )
     def test_cache_case(self, request_data, mock_openai_request):

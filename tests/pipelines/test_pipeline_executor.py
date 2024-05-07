@@ -96,7 +96,7 @@ class PipelineExecutorTestCase(TestCase):
         ]
     )
     @patch(
-        "api.services.OpenAICacheService.openai_request",
+        "api.services.AICacheService.api_request",
         side_effect=mock_openai_request,
     )
     def test_positive_exec(self, test_data, mock_openai_request):
@@ -138,7 +138,7 @@ class PipelineExecutorTestCase(TestCase):
         ]
     )
     @patch(
-        "api.services.OpenAICacheService.openai_request",
+        "api.services.AICacheService.api_request",
         side_effect=mock_openai_request,
     )
     def test_negative_exec(self, test_data, mock_openai_request):
@@ -199,7 +199,7 @@ class PipelineExecutorTestCase(TestCase):
         ]
     )
     @patch(
-        "api.services.OpenAICacheService.openai_request",
+        "api.services.AICacheService.api_request",
         side_effect=mock_openai_request,
     )
     def test_exec_arg_names_only(self, test_data, mock_openai_request):
