@@ -57,18 +57,25 @@ class BaseVisitor(metaclass=abc.ABCMeta):
 
 
 class ArgumentsGathererVisitor(BaseVisitor):
+    @staticmethod
+    def is_string_literal(node_name):
+        # Check if the node name starts and ends with single or double quotes
+        return ((node_name.startswith('"') and node_name.endswith('"'))
+                or (node_name.startswith("'") and node_name.endswith("'")))
+
     def visit_leaf(self, node) -> Any:
+        if self.is_string_literal(node.name):
+            return set()  # Return an empty set for string literals
         return {node.name}
 
     def visit_fn(self, node, target_fn) -> Any:
         arg_names = set()
 
         for index, child in enumerate(self.graph.successors(node)):
-            child_func = self._create_call_func_by_name(child.name)
-
-            if child.name.startswith('\'') and child.name.endswith('\''):  # Check if it's a string literal
+            if self.is_string_literal(child.name):
                 continue  # Skip string literals
 
+            child_func = self._create_call_func_by_name(child.name)
             if self.is_placeholder(child_func):
                 assign_arg_nodes = list(self.graph.successors(child))
                 if len(assign_arg_nodes) > 0:
@@ -110,7 +117,8 @@ class ExecutorVisitor(BaseVisitor):
 
     def _find_arg_value(self, arg_name):
         # Check if arg_name is a string literal
-        if (arg_name.startswith('"') and arg_name.endswith('"')) or (arg_name.startswith("'") and arg_name.endswith("'")):
+        if (arg_name.startswith('"') and arg_name.endswith('"')) or (
+                arg_name.startswith("'") and arg_name.endswith("'")):
             return arg_name[1:-1]  # Return the string without the quotes
 
         arg_value = self.user_args.get(arg_name, None)
@@ -147,7 +155,6 @@ class ExecutorVisitor(BaseVisitor):
                     raise InvalidArgumentsError(f"Invalid arguments for function '{node.name}' at index {index}. "
                                                 f"Details: {exc}")
 
-
             kwargs[arg_name] = arg_value
 
         fn_arity = target_fn.get_arity_of_function()
@@ -163,7 +170,7 @@ class ExecutorVisitor(BaseVisitor):
         if output_var_name is not None:
             fn_call_arity -= 1  # Decrease expected arity if 'set' is present
         if fn_arity != fn_call_arity:
-            error_msg = f"function expects: {fn_arity}, user provided {fn_call_arity}"
+            error_msg = f"function `{node.name}` expects {fn_arity} arguments, but {fn_call_arity} were provided."
             raise InvalidArgumentsError(
                 f"Invalid arguments amount specified. {error_msg}"
             )
