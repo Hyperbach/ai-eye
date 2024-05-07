@@ -105,6 +105,7 @@ class CallPrompt:
         user = kwargs.pop("user")
 
         body = self.prompt_fn.body
+        json_mode = self.prompt_fn.json_mode
 
         DatabaseLogHandler.log_fn_call_started(
             logger, self.prompt_fn.name, "prompt", self.model_name, kwargs
@@ -119,11 +120,17 @@ class CallPrompt:
 
         try:
             prompt = body.format(**kwargs)
+            parameters = {"model": self.model_name, "messages": [{"role": "user", "content": prompt}]}
+            if json_mode:
+                parameters["response_format"] = {"type": "json_object"}
+                parameters["messages"].append(
+                    {"role": "system",
+                     "content": "You are a helpful assistant designed to output JSON."})
 
             openai_cache_service = AICacheService(
                 base_url=self.base_url,
                 endpoint=self.ENDPOINT,
-                parameters={"model": self.model_name, "messages": [{"role": "user", "content": prompt}]},
+                parameters=parameters,
                 model=self.model_name,
             )
             log_instance = openai_cache_service.run(apikey=apikey, user=user)

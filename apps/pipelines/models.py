@@ -29,6 +29,7 @@ class Prompt(TimestampMixin):
         max_length=50,
         choices=TypesOfModels.choices
     )
+    json_mode: models.BooleanField = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = _("Prompt")
