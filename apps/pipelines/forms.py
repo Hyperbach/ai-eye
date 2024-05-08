@@ -14,7 +14,8 @@ console_logger = logging.getLogger("console")
 
 class PipelineCreateForm(forms.ModelForm):
     tags = forms.CharField(help_text="Enter tags separated by commas", required=False)
-    body = forms.CharField(widget=forms.Textarea)
+    body = forms.CharField(widget=forms.Textarea,
+                           help_text="Your pipeline code will be automatically reformatted for clarity upon saving.")
 
     class Meta:
         model = PipelineSource
@@ -60,6 +61,7 @@ class PipelineCreateForm(forms.ModelForm):
 
     def _save_body(self, pipeline):
         pipeline.body = self.cleaned_data["body"]
+        pipeline.body = pipeline.format()
         pipeline.save()
 
     def _save_tags(self, pipeline):

@@ -79,6 +79,8 @@ class CodeFormatter(ast.NodeVisitor):
         self.formatted_code = ""
         self.indent_level = 0
 
+    MAX_LENGTH = 50
+
     def generic_visit(self, node):
         # Ensures we don't ignore any node types not explicitly visited
         super().generic_visit(node)
@@ -88,7 +90,7 @@ class CodeFormatter(ast.NodeVisitor):
         func_name = self.deparse(node.func)
         inline_args = self.format_inline(node.args, node.keywords)
 
-        if len(func_name) + len(inline_args) + 2 <= 80:
+        if len(func_name) + len(inline_args) + 2 <= self.MAX_LENGTH:
             self.formatted_code += func_name + "(" + inline_args + "),\n"
         else:
             self.formatted_code += func_name + "(\n"
@@ -131,7 +133,7 @@ class CodeFormatter(ast.NodeVisitor):
             return repr(node.value)
         elif isinstance(node, ast.List):
             list_items = [self.deparse(el) for el in node.elts]
-            if any(len(item) > 80 for item in list_items):
+            if any(len(item) > self.MAX_LENGTH for item in list_items):
                 # Establish inner and outer indentation levels
                 inner_indent_level = self.indent_level + 1
                 inner_indent = ' ' * 4 * inner_indent_level

@@ -38,7 +38,7 @@
                         <tr>
                             <td>{{ pipeline.id }}</td>
                             <td>{{ pipeline.name }}</td>
-                            <td>{{ pipeline.body }}</td>
+                            <td><pre style="width: 510px; font-size: 11px;">{{ pipeline.body }}</pre></td>
                             <td>
                                 {% for tag in pipeline.tags.all %}
                                     {{ tag.name }}{% if not forloop.last %}, {% endif %}
