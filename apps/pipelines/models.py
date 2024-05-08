@@ -105,7 +105,10 @@ class PipelineSource(TimestampMixin):
         """
         Formats the expression for readability.
         """
-        return CodeFormatter().format(str(self.body))
+        formatted, success = CodeFormatter().format(str(self.body))
+        if formatted == "":
+            return self.body, False
+        return formatted, success
 
     def delete_dependents(self):
         with transaction.atomic():

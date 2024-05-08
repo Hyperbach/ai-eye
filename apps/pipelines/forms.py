@@ -25,7 +25,9 @@ class PipelineCreateForm(forms.ModelForm):
         super(PipelineCreateForm, self).__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
             self.fields['tags'].initial = ', '.join([tag.name for tag in self.instance.tags.all()])
-            self.fields['body'].initial = self.instance.format()
+            self.fields['body'].initial, success = self.instance.format()
+            if not success:
+                self.fields['body'].help_text = "Failed to format the expression. Please check the syntax."
 
     def clean(self):
         cleaned_data = super().clean()
@@ -61,7 +63,7 @@ class PipelineCreateForm(forms.ModelForm):
 
     def _save_body(self, pipeline):
         pipeline.body = self.cleaned_data["body"]
-        pipeline.body = pipeline.format()
+        pipeline.body, success = pipeline.format()
         pipeline.save()
 
     def _save_tags(self, pipeline):

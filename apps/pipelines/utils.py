@@ -172,9 +172,9 @@ class CodeFormatter(ast.NodeVisitor):
             tree = ast.parse(code)
             self.visit(tree)
             # Strip the trailing comma and newlines
-            return self.formatted_code.strip(',\n')
+            return self.formatted_code.strip(',\n'), True
         except SyntaxError:
-            return code
+            return code, False
 
 
 def _test(test_name, function_call, expected_result):
@@ -213,10 +213,10 @@ def main():
     )
 
     # Perform the first formatting
-    formatted_code = formatter.format(input_code)
+    formatted_code, success = formatter.format(input_code)
 
     # Perform the second formatting to test idempotence
-    reformatted_code = formatter.format(formatted_code)
+    reformatted_code, success = formatter.format(formatted_code)
 
     # Output the results
     print("Formatted Code:")
