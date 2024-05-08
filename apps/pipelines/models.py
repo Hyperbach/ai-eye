@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from core.models import TimestampMixin
 from pipelines.choices import TypesOfDAGNodes, TypesOfModels
 from pipelines.services.functions_manager import FUNCTIONS_MANAGER
+from pipelines.utils import CodeFormatter
 from pipelines.validators import FunctionNameValidator
 
 User = get_user_model()
@@ -104,20 +105,7 @@ class PipelineSource(TimestampMixin):
         """
         Formats the expression for readability.
         """
-        expression = str(self.body)
-        indent_level = 0
-        formatted_expression = ""
-        for char in expression:
-            if char == '(':
-                indent_level += 1
-                formatted_expression += char + "\n" + "    " * indent_level
-            elif char == ')':
-                indent_level -= 1
-                formatted_expression = formatted_expression.rstrip()  # Remove trailing spaces
-                formatted_expression += "\n" + "    " * indent_level + char
-            else:
-                formatted_expression += char
-        return formatted_expression
+        return CodeFormatter().format(str(self.body))
 
     def delete_dependents(self):
         with transaction.atomic():

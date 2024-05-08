@@ -14,15 +14,17 @@ console_logger = logging.getLogger("console")
 
 class PipelineCreateForm(forms.ModelForm):
     tags = forms.CharField(help_text="Enter tags separated by commas", required=False)
+    body = forms.CharField(widget=forms.Textarea)
 
     class Meta:
         model = PipelineSource
-        fields = ("name", "body")
+        fields = ("name",)
 
     def __init__(self, *args, **kwargs):
         super(PipelineCreateForm, self).__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
             self.fields['tags'].initial = ', '.join([tag.name for tag in self.instance.tags.all()])
+            self.fields['body'].initial = self.instance.format()
 
     def clean(self):
         cleaned_data = super().clean()
@@ -51,9 +53,14 @@ class PipelineCreateForm(forms.ModelForm):
                 dag_saver.save(pipeline=pipeline, update=self.instance.id is not None)
 
                 self._save_tags(pipeline)
+                self._save_body(pipeline)
                 self.save_m2m()
 
         return pipeline
+
+    def _save_body(self, pipeline):
+        pipeline.body = self.cleaned_data["body"]
+        pipeline.save()
 
     def _save_tags(self, pipeline):
         tag_names = [name.strip() for name in self.cleaned_data.get('tags', '').split(',')]

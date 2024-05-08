@@ -1,3 +1,4 @@
+import ast
 import json
 import re
 
@@ -73,6 +74,101 @@ def strip_json_response(input_str, strict=False):
             return '{}'
 
 
+class CodeFormatter(ast.NodeVisitor):
+    def __init__(self):
+        self.formatted_code = ""
+        self.indent_level = 0
+
+    def generic_visit(self, node):
+        # Ensures we don't ignore any node types not explicitly visited
+        super().generic_visit(node)
+
+    def visit_Call(self, node):
+        # Handling function call
+        func_name = self.deparse(node.func)
+        inline_args = self.format_inline(node.args, node.keywords)
+
+        if len(func_name) + len(inline_args) + 2 <= 80:
+            self.formatted_code += func_name + "(" + inline_args + "),\n"
+        else:
+            self.formatted_code += func_name + "(\n"
+            self.indent_level += 1
+
+            for i, arg in enumerate(node.args):
+                self.formatted_code += ' ' * 4 * self.indent_level
+                self.formatted_code += self.deparse(arg)
+                self.formatted_code += ",\n"
+
+            for i, kw in enumerate(node.keywords):
+                self.formatted_code += ' ' * 4 * self.indent_level
+                self.formatted_code += f"{kw.arg}={self.deparse(kw.value)}"
+                self.formatted_code += ",\n"
+
+            self.indent_level -= 1
+            self.formatted_code += ' ' * 4 * self.indent_level + "),\n"
+
+    def deparse(self, node):
+        if isinstance(node, ast.Call):
+            old_formatted_code = self.formatted_code
+            self.formatted_code = ""
+            self.visit_Call(node)
+            call_code = self.formatted_code
+            self.formatted_code = old_formatted_code
+            return call_code.rstrip(',\n')  # Clean up the output a bit
+        elif isinstance(node, ast.Name):
+            return node.id
+        elif isinstance(node, ast.Attribute):
+            return self.deparse(node.value) + '.' + node.attr
+        elif isinstance(node, ast.Str):
+            return repr(node.s)
+        elif isinstance(node, ast.Constant):  # For Python 3.8+
+            return repr(node.value)
+        elif isinstance(node, ast.List):
+            list_items = [self.deparse(el) for el in node.elts]
+            if any(len(item) > 80 for item in list_items):
+                # Establish inner and outer indentation levels
+                inner_indent_level = self.indent_level + 1
+                inner_indent = ' ' * 4 * inner_indent_level
+                outer_indent = ' ' * 4 * self.indent_level
+
+                # Build up the inner items line-by-line with appropriate indentation
+                formatted_items = []
+                for item in list_items:
+                    formatted_item = inner_indent + item
+                    formatted_items.append(formatted_item)
+
+                # Join the items into a single string with commas and newlines
+                formatted_items_str = ",\n".join(formatted_items)
+
+                # Construct the entire list with surrounding brackets
+                formatted_list = f"[\n{formatted_items_str}\n{outer_indent}]"
+
+                # Return the final formatted list string
+                return formatted_list
+            else:
+                return "[" + ", ".join(list_items) + "]"
+        else:
+            raise NotImplementedError(f"Unhandled node type: {type(node)}")
+
+    def format_inline(self, args, keywords):
+        args_str = ", ".join([self.deparse(arg) for arg in args])
+        kwargs_str = ", ".join([f"{kw.arg}={self.deparse(kw.value)}" for kw in keywords])
+        return args_str + (", " if args_str and kwargs_str else "") + kwargs_str
+
+    def format(self, code):
+        # Reset the formatted code and indentation level at the start of each format call
+        self.formatted_code = ""
+        self.indent_level = 0
+
+        try:
+            tree = ast.parse(code)
+            self.visit(tree)
+            # Strip the trailing comma and newlines
+            return self.formatted_code.strip(',\n')
+        except SyntaxError:
+            return code
+
+
 def _test(test_name, function_call, expected_result):
     print(f"Test Name: {test_name}")
     result = function_call
@@ -94,38 +190,73 @@ test_cases = [
      [{"key1": "value1"}, {"key2": "value2"}]),
 ]
 
-for name, func_call, expected in test_cases:
-    _test(name, func_call, expected)
 
-# Tests for strip_json_response in non-strict mode
-_test("Non-strict: Unwrapped JSON", strip_json_response('{"key": "value"}', strict=False),
-      json.dumps({"key": "value"}, indent=4))
-_test("Non-strict: Wrapped JSON", strip_json_response('\n```json\n{"key": "value"}\n```\n', strict=False),
-      json.dumps({"key": "value"}, indent=4))
-_test("Non-strict: Unwrapped JSON in the middle of text",
-      strip_json_response('Random text before {"key": "value"} Random text after', strict=False),
-     'Random text before {"key": "value"} Random text after')
-_test("Non-strict: Wrapped JSON in the middle of text",
-      strip_json_response('Random text before ```json\n{"key": "value"}\n``` Random text after', strict=False),
-     'Random text before ```json\n{"key": "value"}\n``` Random text after')
-_test("Non-strict: Invalid wrapped JSON", strip_json_response('```json\n{"key": ', strict=False), '```json\n{"key": ')
-_test("Non-strict: Invalid unwrapped JSON surrounded by text",
-      strip_json_response('Random text before {"key": Random text after', strict=False),
-     'Random text before {"key": Random text after')
+def main():
+    # Create an instance of the formatter
+    formatter = CodeFormatter()
 
-# Tests for strip_json_response in strict mode
-_test("Strict: Unwrapped JSON", strip_json_response('{"key": "value"}', strict=True),
-      json.dumps({"key": "value"}, indent=4))
-_test("Strict: Wrapped JSON", strip_json_response('```json\n{"key": "value"}\n```', strict=True),
-      json.dumps({"key": "value"}, indent=4))
-_test("Strict: Unwrapped JSON in the middle of text",
-      strip_json_response('Random text before {"key": "value"} Random text after', strict=True),
-      json.dumps({"key": "value"}, indent=4))
-_test("Strict: Wrapped JSON in the middle of text",
-      strip_json_response('Random text before ```json\n{"key": "value"}\n``` Random text after', strict=True),
-      json.dumps({"key": "value"}, indent=4))
-_test("Strict: Invalid wrapped JSON", strip_json_response('```json\n{"key": ', strict=True), '{}')
-_test("Strict: Invalid unwrapped JSON surrounded by text",
-      strip_json_response('Random text before {"key": Random text after', strict=True), '{}')
+    # The input string that needs formatting
+    input_code = (
+        "concat(generate_proposal(proposal_template=template, job_info=job_details, "
+        "job_instructions=analyze_job_instructions(job_data, set='detailed_instructions'), freelancer=freelancer_info),"
+        "get_config_value(config_key='default_settings'), modify_settings(setting=apply_settings_change("
+        "change='update_interval', value=get_current_setting(setting_name='interval')), confirmation=confirm_changes("
+        "confirmation_message='Are you sure?', options=['Yes', 'No', 'Another very long option'])))"
+    )
 
-print("All tests passed successfully!")
+    # Perform the first formatting
+    formatted_code = formatter.format(input_code)
+
+    # Perform the second formatting to test idempotence
+    reformatted_code = formatter.format(formatted_code)
+
+    # Output the results
+    print("Formatted Code:")
+    print(formatted_code)
+    print("\nReformatted Code (for idempotence check):")
+    print(reformatted_code)
+
+    # Check if the initial formatted code matches the re-formatted code
+    assert formatted_code == reformatted_code, \
+        "Idempotence check failed: Formatted code differs on repeated formatting."
+
+    for name, func_call, expected in test_cases:
+        _test(name, func_call, expected)
+
+    # Tests for strip_json_response in non-strict mode
+    _test("Non-strict: Unwrapped JSON", strip_json_response('{"key": "value"}', strict=False),
+          json.dumps({"key": "value"}, indent=4))
+    _test("Non-strict: Wrapped JSON", strip_json_response('\n```json\n{"key": "value"}\n```\n', strict=False),
+          json.dumps({"key": "value"}, indent=4))
+    _test("Non-strict: Unwrapped JSON in the middle of text",
+          strip_json_response('Random text before {"key": "value"} Random text after', strict=False),
+          'Random text before {"key": "value"} Random text after')
+    _test("Non-strict: Wrapped JSON in the middle of text",
+          strip_json_response('Random text before ```json\n{"key": "value"}\n``` Random text after', strict=False),
+          'Random text before ```json\n{"key": "value"}\n``` Random text after')
+    _test("Non-strict: Invalid wrapped JSON", strip_json_response('```json\n{"key": ', strict=False),
+          '```json\n{"key": ')
+    _test("Non-strict: Invalid unwrapped JSON surrounded by text",
+          strip_json_response('Random text before {"key": Random text after', strict=False),
+          'Random text before {"key": Random text after')
+
+    # Tests for strip_json_response in strict mode
+    _test("Strict: Unwrapped JSON", strip_json_response('{"key": "value"}', strict=True),
+          json.dumps({"key": "value"}, indent=4))
+    _test("Strict: Wrapped JSON", strip_json_response('```json\n{"key": "value"}\n```', strict=True),
+          json.dumps({"key": "value"}, indent=4))
+    _test("Strict: Unwrapped JSON in the middle of text",
+          strip_json_response('Random text before {"key": "value"} Random text after', strict=True),
+          json.dumps({"key": "value"}, indent=4))
+    _test("Strict: Wrapped JSON in the middle of text",
+          strip_json_response('Random text before ```json\n{"key": "value"}\n``` Random text after', strict=True),
+          json.dumps({"key": "value"}, indent=4))
+    _test("Strict: Invalid wrapped JSON", strip_json_response('```json\n{"key": ', strict=True), '{}')
+    _test("Strict: Invalid unwrapped JSON surrounded by text",
+          strip_json_response('Random text before {"key": Random text after', strict=True), '{}')
+
+    print("All tests passed successfully!")
+
+
+if __name__ == "__main__":
+    main()
