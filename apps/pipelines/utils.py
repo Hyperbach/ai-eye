@@ -97,12 +97,18 @@ class CodeFormatter(ast.NodeVisitor):
             for i, arg in enumerate(node.args):
                 self.formatted_code += ' ' * 4 * self.indent_level
                 self.formatted_code += self.deparse(arg)
-                self.formatted_code += ",\n"
+                if i < len(node.args) - 1 or node.keywords:
+                    self.formatted_code += ",\n"  # Add comma if not the last argument
+                else:
+                    self.formatted_code += "\n"  # No comma for the last argument
 
             for i, kw in enumerate(node.keywords):
                 self.formatted_code += ' ' * 4 * self.indent_level
                 self.formatted_code += f"{kw.arg}={self.deparse(kw.value)}"
-                self.formatted_code += ",\n"
+                if i < len(node.keywords) - 1:
+                    self.formatted_code += ",\n"  # Add comma if not the last keyword argument
+                else:
+                    self.formatted_code += "\n"  # No comma for the last keyword argument
 
             self.indent_level -= 1
             self.formatted_code += ' ' * 4 * self.indent_level + "),\n"
