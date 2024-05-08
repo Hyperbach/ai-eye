@@ -459,3 +459,31 @@ def get(var):
     context = get_context()
     if context and "vars" in context:
         return context["vars"].get(var)
+
+
+@type_inference_decorator()
+def keys(json_input, keys_str):
+    """
+    Extract specified keys from a JSON string or dictionary and return as JSON.
+
+    Args:
+    - json_input (str or dict): The input JSON data, either as a string or as a dictionary.
+    - keys_str (str): A comma-separated string listing the desired keys.
+
+    Returns:
+    - str: JSON string containing only the specified keys.
+    """
+    try:
+        # Create a set of requested keys
+        requested_keys = set(keys_str.split(','))
+
+        # Build a new dictionary containing only the requested keys
+        output_data = {key: json_input[key] for key in requested_keys if key in json_input}
+
+        # Convert the filtered dictionary back to a JSON string
+        return json.dumps(output_data)
+
+    except json.JSONDecodeError as e:
+        return f"Invalid JSON input: {str(e)}"
+    except Exception as e:
+        return f"An error occurred: {str(e)}"

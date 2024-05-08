@@ -11,6 +11,11 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.views import View, generic
 from django.views.generic import TemplateView
+from openai import APIStatusError, OpenAI
+from rest_framework import permissions, status
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from api.models import Log
 from api.permissions import AiEyeAdminPermission
@@ -22,7 +27,6 @@ from core.services.uploaders import AssistantUploader, DocumentUploader
 from dashboard.forms import PublicTokenCreateForm, PublicTokenUpdateForm
 from dashboard.serializers import BuiltinFunctionsSyncSerializer
 from dblogs.models import PipelineExecutionLog
-from openai import APIStatusError, OpenAI
 from pipelines.forms import AssistantForm, DocumentForm, PipelineCreateForm
 from pipelines.models import (
     Assistant,
@@ -32,10 +36,6 @@ from pipelines.models import (
     Prompt,
 )
 from pipelines.services.functions_manager import FUNCTIONS_MANAGER
-from rest_framework import permissions, status
-from rest_framework.authentication import SessionAuthentication
-from rest_framework.response import Response
-from rest_framework.views import APIView
 
 logger = logging.getLogger("console")
 
