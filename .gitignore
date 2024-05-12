@@ -165,8 +165,8 @@ dev.db
 .mypy_cache
 
 # ignore custom user-defined functions
-funcs/*
-!funcs/builtins.py
-!funcs/__init__.py
+#funcs/*
+#!funcs/builtins.py
+#!funcs/__init__.py
 
 aieye.kb
