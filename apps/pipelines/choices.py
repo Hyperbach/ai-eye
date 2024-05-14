@@ -74,6 +74,8 @@ class TypesOfModels(models.TextChoices):
 
 
 MODEL_TO_SERVICE_MAPPING = {
+    TypesOfModels.GPT_4O: AIServices.OPENAI,
+    TypesOfModels.GPT_4_TURBO: AIServices.OPENAI,
     TypesOfModels.GPT_4_TURBO_PREVIEW: AIServices.OPENAI,
     TypesOfModels.GPT_4_TURBO_1106: AIServices.OPENAI,
     TypesOfModels.GPT_4_1106_VISION_PREVIEW: AIServices.OPENAI,
