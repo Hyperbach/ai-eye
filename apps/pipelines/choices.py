@@ -25,6 +25,7 @@ class AIServices(models.TextChoices):
 
 class TypesOfModels(models.TextChoices):
     # OpenAI Models
+    GPT_4O = "gpt-4o", _("GPT-4o")
     GPT_4_TURBO = "gpt-4-turbo", _("GPT-4 Turbo")
     GPT_4_TURBO_PREVIEW = "gpt-4-turbo-preview", _("GPT-4 Turbo Preview")
     GPT_4_TURBO_1106 = "gpt-4-1106-preview", _("GPT-4 Turbo 1106")
@@ -45,6 +46,7 @@ class TypesOfModels(models.TextChoices):
 
     def get_pricing_details(self) -> Tuple[float, float]:
         pricing: dict[str, Tuple[float, float]] = {
+            "gpt-4o": (0.005, 0.015),
             "gpt-4-turbo": (0.01, 0.03),
             "gpt-4-turbo-preview": (0.01, 0.03),
             "gpt-4-1106-preview": (0.01, 0.03),
