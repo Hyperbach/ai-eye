@@ -23,8 +23,8 @@ def get_proposal_definition(proposal_style_name, structure_data, mapping_data):
     if not style_data:
         return {'error': 'Proposal style not found'}
 
-    sections_info = {}
-    for section, keys in style_data.items():
+    sections_info = {'_name': proposal_style_name}
+    for section, keys in style_data['structure'].items():
         if section != 'name' and section in structure_data:
             section_texts = []
             for key in keys:
