@@ -79,7 +79,7 @@ class ArgumentsGathererVisitor(BaseVisitor):
             if self.is_placeholder(child_func):
                 assign_arg_nodes = list(self.graph.successors(child))
                 if len(assign_arg_nodes) > 0:
-                    assert len(assign_arg_nodes) == 1
+                    assert len(assign_arg_nodes) == 1, f"Assign node should have only one child, but has more: {assign_arg_nodes}"
                     arg_names.update(self.visit(assign_arg_nodes[0]))
                 else:
                     arg_names.update(self.visit_leaf(child))

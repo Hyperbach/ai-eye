@@ -487,3 +487,31 @@ def keys(json_input, keys_str):
         return f"Invalid JSON input: {str(e)}"
     except Exception as e:
         return f"An error occurred: {str(e)}"
+
+
+@type_inference_decorator()
+def value(json_input, key_str):
+    """
+    Extract a single key value from a JSON string or dictionary and return as a string.
+
+    Args:
+    - json_input (str or dict): The input JSON data, either as a string or as a dictionary.
+    - key_str (str): The key to extract from the JSON data.
+
+    Returns:
+    - str: The value of the specified key.
+    """
+    try:
+        # If the input is a string, convert it to a dictionary
+        if isinstance(json_input, str):
+            json_input = json.loads(json_input)
+
+        # Extract the value of the specified key
+        return json_input[key_str]
+
+    except json.JSONDecodeError as e:
+        return f"Invalid JSON input: {str(e)}"
+    except KeyError as e:
+        return f"Key not found: {str(e)}"
+    except Exception as e:
+        return f"An error occurred: {str(e)}"
