@@ -119,6 +119,7 @@ class CallPrompt:
         text_response = ""
 
         try:
+            console_logger.info(f"Formatting body {body} with kwargs {kwargs}")
             prompt = body.format(**kwargs)
             parameters = {"model": self.model_name, "messages": [{"role": "user", "content": prompt}]}
             if json_mode:
