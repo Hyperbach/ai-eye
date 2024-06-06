@@ -5,7 +5,7 @@
     overflow-wrap: break-word;
 }
 
-.extra-row  {
+.extra-row {
     visibility: collapse;
     transition: all 0.3s ease-in-out;
 }
@@ -17,6 +17,7 @@
 
 .show > td > div {
     max-height: 500px;
+    min-width: 300px;
 }
 
 .main-row {
