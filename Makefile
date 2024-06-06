@@ -74,3 +74,13 @@ psql:
 
 collectstatic:
 	docker compose run --rm web python manage.py collectstatic --noinput
+
+copy-static:
+	@echo This will remove all files in /var/www/aieye/static/ and copy the files from ./staticfiles/. Are you sure you want to continue?
+	@read -p "Continue? [y/N] " response; \
+	if [ "$$response" != "y" ]; then \
+		echo "Aborting"; \
+		exit 1; \
+	fi
+	@sudo rm -rf /var/www/aieye/static/*
+	@sudo cp -r ./staticfiles/* /var/www/aieye/static/
